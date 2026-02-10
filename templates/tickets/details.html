@@ -1,0 +1,738 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Ticket Details{% endblock %}
+{% block page_title %}Ticket Details{% endblock %}
+
+{% block header_actions %}
+<a href="/{{ company_name }}/tickets" class="btn btn-secondary">
+    <i class="fas fa-arrow-left"></i> Back to Tickets
+</a>
+{% endblock %}
+
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/ticket-interactions.css' %}">
+<style>
+
+</style>
+{% endblock %}
+
+
+{% block content %}
+<div id="ticket-detail-container">
+    <div class="two-col-layout">
+        <!-- Main Content -->
+        <div>
+            <!-- Ticket Header -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div>
+                            <h2 id="ticket-id" class="mb-2" style="font-size: var(--font-size-xl);"></h2>
+                            <h3 id="ticket-subject"
+                                style="font-size: var(--font-size-lg); font-weight: var(--font-weight-semibold); margin: 0; padding: var(--spacing-xs); border-radius: var(--radius-md); transition: background-color var(--animation-fast);"
+                                title="Click to edit"></h3>
+                        </div>
+                        <span id="ticket-status-badge"></span>
+                    </div>
+
+                    <div class="three-col-metrics"
+                        style="margin-top: var(--spacing-lg); padding-top: var(--spacing-lg); border-top: 1px solid var(--color-border-light);">
+                        <div>
+                            <div class="text-tertiary text-sm mb-1">From</div>
+                            <div class="font-medium" id="ticket-sender"></div>
+                        </div>
+                        <div>
+                            <div class="text-tertiary text-sm mb-1">Project</div>
+                            <div class="font-medium" id="ticket-project"></div>
+                        </div>
+                        <div>
+                            <div class="text-tertiary text-sm mb-1">Priority</div>
+                            <div id="ticket-priority-badge"></div>
+                        </div>
+                        <div>
+                            <div class="text-tertiary text-sm mb-1">Assigned To</div>
+                            <div class="font-medium" id="ticket-assigned"></div>
+                        </div>
+                        <div>
+                            <div class="text-tertiary text-sm mb-1">Created</div>
+                            <div class="font-medium" id="ticket-created"></div>
+                        </div>
+                        <div>
+                            <div class="text-tertiary text-sm mb-1">Last Updated</div>
+                            <div class="font-medium" id="ticket-updated"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Description -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title">Description</h5>
+                </div>
+                <div class="card-body">
+                    <div id="ticket-description"
+                        style="white-space: pre-wrap; line-height: var(--line-height-relaxed); color: var(--color-text-primary); padding: var(--spacing-xs); border-radius: var(--radius-md); transition: background-color var(--animation-fast); min-height: 60px;"
+                        title="Click to edit"></div>
+
+                    <!-- Attachments Section -->
+                    <div id="ticket-attachments" class="mt-4 pt-3 border-top" style="display: none;">
+                        <h6 class="text-sm font-semibold text-tertiary mb-2">Attachments</h6>
+                        <div id="ticket-attachments-list" class="d-flex flex-wrap gap-2"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Comments -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title">Comments</h5>
+                </div>
+                <div class="card-body" style="padding: 0;">
+                    <div id="comments-list" style="max-height: 500px; overflow-y: auto; padding: var(--spacing-lg);">
+                        <div class="loading">
+                            <div class="spinner"></div>
+                            <span style="margin-left: var(--spacing-sm);">Loading comments...</span>
+                        </div>
+                    </div>
+
+                    <div
+                        style="padding: var(--spacing-lg); border-top: 1px solid var(--color-border-light); background-color: var(--color-bg-secondary);">
+                        <form id="comment-form" enctype="multipart/form-data" autocomplete="off">
+                            <div class="form-group mb-2">
+                                <textarea id="comment-text" class="form-control" rows="3"
+                                    placeholder="Add a comment... Use @username to mention team members"
+                                    style="resize: vertical;"></textarea>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <input type="file" id="comment-attachment" name="attachments" multiple
+                                        accept="image/*,.pdf,.doc,.docx,.txt,.csv,.xlsx,.xls" style="display: none;">
+                                    <button type="button" class="btn btn-sm btn-secondary"
+                                        onclick="document.getElementById('comment-attachment').click();">
+                                        <i class="fas fa-paperclip"></i> Attach Files
+                                    </button>
+                                    <div id="comment-file-preview" class="d-inline-flex flex-wrap gap-1"
+                                        style="margin-left: var(--spacing-sm);"></div>
+                                </div>
+                                <div>
+                                    <label class="d-flex align-items-center gap-2"
+                                        style="cursor: pointer; font-size: var(--font-size-sm);"
+                                        title="Internal comments are only visible to your team, not to the customer">
+                                        <input type="checkbox" id="comment-internal" style="margin: 0;">
+                                        <span>Internal (team only)</span>
+                                    </label>
+                                </div>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-paper-plane"></i> Post Comment
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div>
+            <!-- Update Ticket -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title">Update Ticket</h5>
+                </div>
+                <div class="card-body">
+                    <form id="update-form">
+                        <div class="form-group">
+                            <label class="form-label">Status</label>
+                            <select class="form-select" id="update-status">
+                                <option value="">Loading...</option>
+                            </select>
+                            <div id="allowed-transitions" class="text-xs text-tertiary mt-1" style="display: none;">
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Priority</label>
+                            <select class="form-select" id="update-priority">
+                                <option value="low">Low</option>
+                                <option value="medium">Medium</option>
+                                <option value="high">High</option>
+                                <option value="critical">Critical</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Assign To</label>
+                            <select class="form-select" id="update-assigned-to">
+                                <option value="">Unassigned</option>
+                            </select>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="fas fa-save"></i> Update Ticket
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Activity Timeline -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title">Activity Timeline</h5>
+                </div>
+                <div class="card-body" style="padding: 0;">
+                    <div id="activity-timeline"
+                        style="max-height: 500px; overflow-y: auto; padding: var(--spacing-lg);">
+                        <div class="loading">
+                            <div class="spinner"></div>
+                            <span style="margin-left: var(--spacing-sm);">Loading activity...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/ticket-interactions.js' %}"></script>
+<script>
+    const ticketId = "{{ ticket_id }}";
+    let currentTicket = null;
+    let subjectEditor = null;
+    let descriptionEditor = null;
+    let commentDraftManager = null;
+    let mentionManager = null;
+    let activityTimeline = null;
+    let allUsers = [];
+
+    document.addEventListener('DOMContentLoaded', async () => {
+        // Load users first to ensure dropdown is populated
+        await loadUsers();
+        await loadTicket();
+        setupInlineEditing();
+        setupCommentForm();
+        setupUpdateForm();
+        setupMentions();
+
+        // File input handler for comments
+        const commentFileInput = document.getElementById('comment-attachment');
+        if (commentFileInput) {
+            commentFileInput.addEventListener('change', function (e) {
+                const files = Array.from(e.target.files);
+                const preview = document.getElementById('comment-file-preview');
+
+                if (files.length === 0) {
+                    preview.innerHTML = '';
+                    return;
+                }
+
+                preview.innerHTML = files.map(file => `
+                <span class="badge" style="background-color: var(--color-bg-secondary); color: var(--color-text-primary); padding: var(--spacing-xs) var(--spacing-sm); font-size: var(--font-size-xs);">
+                    <i class="fas fa-file"></i> ${file.name} (${(file.size / 1024).toFixed(1)} KB)
+                </span>
+            `).join('');
+            });
+        }
+    });
+
+    async function loadTicket() {
+        try {
+            console.log('Loading ticket:', ticketId); // Debug log
+            currentTicket = await api.getTicket(ticketId);
+            console.log('Ticket loaded:', currentTicket); // Debug log
+            renderTicket(currentTicket);
+        } catch (error) {
+            console.error('Error loading ticket:', error); // Debug log
+            showError('Failed to load ticket: ' + (error.message || 'Unknown error'));
+            // Show error state in UI
+            document.getElementById('ticket-id').textContent = 'Error loading ticket';
+            document.getElementById('ticket-subject').textContent = 'Please refresh the page or contact support';
+        }
+    }
+
+    async function loadUsers() {
+        try {
+            const response = await api.getUsers();
+            // Robustly handle pagination object or direct array
+            if (Array.isArray(response)) {
+                allUsers = response;
+            } else if (response && Array.isArray(response.results)) {
+                allUsers = response.results;
+            } else if (response && Array.isArray(response.users)) {
+                allUsers = response.users;
+            } else {
+                allUsers = [];
+                console.warn('Unexpected users response format:', response);
+            }
+        } catch (error) {
+            console.error('Failed to load users:', error);
+            allUsers = [];
+        }
+    }
+
+    function loadAssigneeOptions(users, currentAssigneeId) {
+        const select = document.getElementById('update-assigned-to');
+        if (!select) return;
+
+        // Clear existing options
+        select.innerHTML = '<option value="">Unassigned</option>';
+
+        // Filter and add users
+        const assignableUsers = users.filter(user =>
+            user.is_active && (user.role === 'agent' || user.role === 'manager' || user.role === 'admin')
+        );
+
+        assignableUsers.forEach(user => {
+            const option = document.createElement('option');
+            option.value = user.id;
+            // Use dataset to store extra info if needed, though SearchableDropdown mainly uses text
+            option.textContent = user.full_name;
+            select.appendChild(option);
+        });
+
+        // Set current value
+        if (currentAssigneeId) {
+            select.value = currentAssigneeId;
+        }
+
+        // Initialize Searchable Dropdown
+        if (window.SearchableDropdown) {
+            // Check if already initialized
+            const existing = select.parentNode.querySelector('.searchable-dropdown');
+            if (!existing) {
+                new SearchableDropdown(select);
+            }
+        }
+    }
+
+    function setupInlineEditing() {
+        // Subject inline editing
+        const subjectEl = document.getElementById('ticket-subject');
+        if (subjectEl && !subjectEditor) {
+            subjectEditor = new InlineEditor(subjectEl, {
+                placeholder: 'Enter ticket subject',
+                onSave: async (newValue, oldValue) => {
+                    if (newValue !== oldValue) {
+                        try {
+                            await api.updateTicket(ticketId, { subject: newValue });
+                            showSuccess('Subject updated');
+                        } catch (error) {
+                            showError('Failed to update subject: ' + error.message);
+                            subjectEl.textContent = oldValue; // Revert on error
+                        }
+                    }
+                }
+            });
+
+            // Hover effect
+            subjectEl.addEventListener('mouseenter', function () {
+                this.style.backgroundColor = 'var(--color-bg-hover)';
+            });
+            subjectEl.addEventListener('mouseleave', function () {
+                this.style.backgroundColor = 'transparent';
+            });
+        }
+
+        // Description inline editing
+        const descEl = document.getElementById('ticket-description');
+        if (descEl && !descriptionEditor) {
+            descriptionEditor = new InlineEditor(descEl, {
+                placeholder: 'Enter ticket description',
+                multiline: true,
+                onSave: async (newValue, oldValue) => {
+                    if (newValue !== oldValue) {
+                        try {
+                            await api.updateTicket(ticketId, { description: newValue });
+                            showSuccess('Description updated');
+                        } catch (error) {
+                            showError('Failed to update description: ' + error.message);
+                            descEl.textContent = oldValue; // Revert on error
+                        }
+                    }
+                }
+            });
+
+            // Hover effect
+            descEl.addEventListener('mouseenter', function () {
+                this.style.backgroundColor = 'var(--color-bg-hover)';
+            });
+            descEl.addEventListener('mouseleave', function () {
+                this.style.backgroundColor = 'transparent';
+            });
+        }
+    }
+
+    function renderTicket(t) {
+        // Ticket ID and Subject
+        document.getElementById('ticket-id').innerHTML = `<i class="fas fa-ticket-alt" style="color: var(--color-brand-primary);"></i> ${t.ticket_id || t.id}`;
+        document.getElementById('ticket-subject').textContent = t.subject || '';
+
+        // Enhanced Status Badge with visual indicator
+        const statusClass = getStatusClass(t.status);
+        const statusConfig = getStatusConfig(t.status);
+        document.getElementById('ticket-status-badge').innerHTML =
+            `<span class="badge badge-status-${statusClass}" style="position: relative; padding-left: 24px;">
+            <span style="position: absolute; left: 6px; top: 50%; transform: translateY(-50%); width: 8px; height: 8px; border-radius: 50%; background-color: ${statusConfig.color};"></span>
+            ${formatStatus(t.status)}
+        </span>`;
+
+        // Meta Information
+        document.getElementById('ticket-sender').innerHTML =
+            `${t.sender_name || ''} <span class="text-tertiary">&lt;${t.sender_email || ''}&gt;</span>`;
+        document.getElementById('ticket-project').textContent = t.project_key || '-';
+
+        // Enhanced Priority Badge with visual indicator
+        const priorityConfig = getPriorityConfig(t.priority || 'low');
+        document.getElementById('ticket-priority-badge').innerHTML =
+            `<span class="badge badge-priority-${t.priority || 'low'}" style="position: relative; padding-left: 20px;">
+            <i class="fas ${priorityConfig.icon}" style="position: absolute; left: 4px; top: 50%; transform: translateY(-50%); font-size: 10px;"></i>
+            ${formatPriority(t.priority || 'low')}
+        </span>`;
+
+        document.getElementById('ticket-assigned').textContent = t.assigned_to_name || 'Unassigned';
+        document.getElementById('ticket-created').textContent = formatDateTime(t.created_at);
+        document.getElementById('ticket-updated').textContent = formatDateTime(t.updated_at || t.created_at);
+        document.getElementById('ticket-description').textContent = t.description || 'No description provided.';
+
+        // Update Form
+        document.getElementById('update-status').value = t.status || 'open';
+        document.getElementById('update-priority').value = t.priority || 'low';
+
+        // Load assignee options
+        loadAssigneeOptions(allUsers, t.assigned_to_id);
+
+        // Load status options
+        loadStatusOptions(t.allowed_transitions || []);
+
+        // Render comments and activity timeline
+        renderComments(t.comments || []);
+        renderActivityTimeline(t.history || []);
+
+        // Render Attachments
+        if (t.attachments && t.attachments.length > 0) {
+            const attachContainer = document.getElementById('ticket-attachments');
+            const attachList = document.getElementById('ticket-attachments-list');
+
+            attachList.innerHTML = t.attachments.map(att => {
+                const isImage = att.mime_type?.startsWith('image/') || /\.(jpg|jpeg|png|gif|webp)$/i.test(att.filename);
+                const iconOrImage = isImage
+                    ? `<img src="/api/${window.api.getCompanyName()}/tickets/${t.id}/attachments/${att.id}?inline=true" style="width: 40px; height: 40px; object-fit: cover; border-radius: 4px;" alt="${att.filename}">`
+                    : `<i class="fas fa-file text-primary" style="font-size: 24px;"></i>`;
+
+                return `
+                <div class="attachment-badge" style="cursor: pointer;" onclick="handleDownload(event, ${t.id}, ${att.id}, '${att.filename}')" title="${att.filename}">
+                    <div class="card p-2 d-flex flex-row align-items-center gap-2 hover-shadow-sm" style="border: 1px solid var(--color-border-light);">
+                        ${iconOrImage}
+                        <div>
+                            <div class="text-sm font-medium text-dark text-truncate" style="max-width: 150px;">${att.filename}</div>
+                            <div class="text-xs text-tertiary">${formatFileSize(att.file_size)}</div>
+                        </div>
+                        <i class="fas fa-download text-tertiary ms-2"></i>
+                    </div>
+                </div>
+            `}).join('');
+
+            attachContainer.style.display = 'block';
+        } else {
+            document.getElementById('ticket-attachments').style.display = 'none';
+        }
+    }
+
+
+
+    async function loadStatusOptions(allowedTransitions) {
+        try {
+            const statuses = await api.getStatuses();
+            const select = document.getElementById('update-status');
+            if (!select) {
+                console.error('Status select element not found');
+                return;
+            }
+
+            select.innerHTML = '';
+
+            // If no statuses returned, show error
+            if (!statuses || statuses.length === 0) {
+                select.innerHTML = '<option value="">No statuses available</option>';
+                console.error('No statuses returned from API');
+                return;
+            }
+
+            statuses.forEach(status => {
+                const option = document.createElement('option');
+                // Use status.id (which is the state name like 'open', 'in_progress')
+                option.value = status.id;
+                option.textContent = status.name;
+                // If allowedTransitions is provided and not empty, disable options not in the list
+                if (allowedTransitions && allowedTransitions.length > 0) {
+                    option.disabled = !allowedTransitions.includes(status.id);
+                }
+                select.appendChild(option);
+            });
+
+            // Set current status
+            if (currentTicket && currentTicket.status) {
+                select.value = currentTicket.status;
+            }
+
+            // Show allowed transitions hint
+            if (allowedTransitions && allowedTransitions.length > 0) {
+                const hint = document.getElementById('allowed-transitions');
+                if (hint) {
+                    hint.textContent = `Allowed transitions: ${allowedTransitions.map(s => statuses.find(st => st.id === s)?.name || s).join(', ')}`;
+                    hint.style.display = 'block';
+                }
+            }
+        } catch (error) {
+            console.error('Failed to load statuses:', error);
+            const select = document.getElementById('update-status');
+            if (select) {
+                select.innerHTML = '<option value="">Error loading statuses</option>';
+            }
+        }
+    }
+
+    function renderActivityTimeline(history) {
+        const container = document.getElementById('activity-timeline');
+        if (!container) return;
+
+        if (!history || history.length === 0) {
+            container.innerHTML = '<p class="text-center text-tertiary">No activity yet</p>';
+            return;
+        }
+
+        // Use ActivityTimeline class from ticket-interactions.js
+        if (window.ActivityTimeline) {
+            activityTimeline = new window.ActivityTimeline('activity-timeline', history);
+        } else {
+            // Fallback if class not loaded
+            container.innerHTML = history.map(h => `
+            <div style="padding: var(--spacing-sm) 0; border-left: 2px solid var(--color-border-light); padding-left: var(--spacing-md); margin-left: var(--spacing-sm);">
+                <div class="text-sm">
+                    <span class="font-semibold">${h.user_name || 'System'}</span>
+                    <span class="text-tertiary">${h.action || 'made a change'}</span>
+                </div>
+                ${h.old_value && h.new_value ? `
+                    <div class="text-xs text-tertiary mt-1">
+                        ${h.old_value} → ${h.new_value}
+                    </div>
+                ` : ''}
+                <div class="text-xs text-tertiary mt-1">${formatDateTime(h.created_at)}</div>
+            </div>
+        `).join('');
+        }
+    }
+
+    function renderComments(comments) {
+        const el = document.getElementById('comments-list');
+
+        if (comments.length === 0) {
+            el.innerHTML = '<p class="text-center text-tertiary">No comments yet</p>';
+            return;
+        }
+
+        el.innerHTML = comments.map((c, index) => `
+        <div style="padding: var(--spacing-md); background-color: var(--color-bg-secondary); border-radius: var(--radius-md); margin-bottom: var(--spacing-md);">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <div class="font-semibold">${c.user_name || 'Unknown'}</div>
+                <div class="text-tertiary text-sm">${formatDateTime(c.created_at)}</div>
+            </div>
+            <div style="color: var(--color-text-primary); line-height: var(--line-height-relaxed);">${c.comment || ''}</div>
+            ${c.attachments && c.attachments.length > 0 ? `
+                <div class="mt-2 d-flex flex-wrap gap-2">
+                    ${c.attachments.map(att => {
+            const isImage = att.mime_type?.startsWith('image/') || /\.(jpg|jpeg|png|gif|webp)$/i.test(att.filename);
+            const iconOrImage = isImage
+                ? `<img src="/api/${window.api.getCompanyName()}/tickets/${ticketId}/attachments/${att.id}?inline=true" style="width: 32px; height: 32px; object-fit: cover; border-radius: 4px;" alt="${att.filename}">`
+                : `<i class="fas fa-paperclip me-1"></i>`;
+
+            return `
+                        <div class="attachment-badge" onclick="handleDownload(event, ${ticketId}, ${att.id}, '${att.filename.replace("'", "\\'")}')" title="${att.filename}">
+                            <span class="badge" style="background-color: var(--color-bg-secondary); color: var(--color-brand-primary); cursor: pointer; padding: 6px 10px; border: 1px solid var(--color-border-light); display: inline-flex; align-items: center; gap: 4px;">
+                                ${iconOrImage} ${!isImage ? att.filename : ''}
+                            </span>
+                        </div>
+                    `}).join('')}
+                </div>
+            ` : ''}
+            ${c.is_internal ? `<div class="mt-2"><span class="badge" style="background-color: #fff4e5; color: #ffab00;">Internal</span></div>` : ''}
+        </div>
+    `).join('');
+
+        // Stagger comment animations
+        const commentItems = el.querySelectorAll('div[style*="padding"]');
+        AnimationUtils.staggerAnimation(Array.from(commentItems), 50);
+
+        // Smooth scroll to bottom
+        setTimeout(() => {
+            el.scrollTo({
+                top: el.scrollHeight,
+                behavior: 'smooth'
+            });
+        }, 100);
+    }
+
+    function setupCommentForm() {
+        const commentText = document.getElementById('comment-text');
+
+        // Initialize auto-save draft manager
+        if (!commentDraftManager) {
+            commentDraftManager = new CommentDraftManager('comment-text', ticketId);
+        }
+
+        document.getElementById('comment-form').addEventListener('submit', async e => {
+            e.preventDefault();
+
+            let text = commentText.value.trim();
+            const fileInput = document.getElementById('comment-attachment');
+            const files = fileInput ? fileInput.files : [];
+            const isInternal = document.getElementById('comment-internal').checked;
+
+            // Allow comments with just files or just text
+            if (!text && files.length === 0) return;
+
+            // Process mentions
+            if (mentionManager) {
+                const mentions = mentionManager.getMentions();
+                // You can process mentions here if needed
+            }
+
+            // Show loading state
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            AnimationUtils.setButtonLoading(submitBtn, true);
+
+            try {
+                if (files.length > 0) {
+                    // Use FormData for file uploads
+                    await api.addComment(ticketId, text || '', files, isInternal);
+                } else {
+                    // Use JSON for text-only comments
+                    await api.addComment(ticketId, text, null, isInternal);
+                }
+
+                // Clear form and draft
+                commentText.value = '';
+                fileInput.value = '';
+                document.getElementById('comment-file-preview').innerHTML = '';
+                document.getElementById('comment-internal').checked = false;
+                if (commentDraftManager) {
+                    commentDraftManager.clear();
+                }
+
+                showSuccess('Comment added successfully');
+
+                // Reload ticket with fade animation
+                const commentsList = document.getElementById('comments-list');
+                AnimationUtils.fadeOut(commentsList, 200, async () => {
+                    await loadTicket();
+                    AnimationUtils.fadeIn(commentsList, 200);
+                });
+            } catch (error) {
+                showError('Failed to add comment: ' + error.message);
+            } finally {
+                AnimationUtils.setButtonLoading(submitBtn, false);
+            }
+        });
+    }
+
+    function setupMentions() {
+        const commentText = document.getElementById('comment-text');
+        if (commentText && allUsers.length > 0) {
+            mentionManager = new MentionManager(commentText, allUsers);
+        }
+    }
+
+    function setupUpdateForm() {
+        const updateForm = document.getElementById('update-form');
+        if (!updateForm) {
+            console.error('Update form not found');
+            return;
+        }
+
+        updateForm.addEventListener('submit', async e => {
+            e.preventDefault();
+
+            const status = document.getElementById('update-status')?.value;
+            const priority = document.getElementById('update-priority')?.value;
+            const assigned_to = document.getElementById('update-assigned-to')?.value;
+            const statusBadge = document.getElementById('ticket-status-badge');
+            const oldStatus = currentTicket?.status;
+
+            // Validate required fields
+            if (!status) {
+                showError('Please select a status');
+                return;
+            }
+
+            // Animate status change
+            if (status !== oldStatus && statusBadge) {
+                if (window.AnimationUtils && AnimationUtils.animateStatusChange) {
+                    AnimationUtils.animateStatusChange(statusBadge.querySelector('.badge'), status);
+                }
+            }
+
+            // Show loading state on button
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            if (window.AnimationUtils && AnimationUtils.setButtonLoading) {
+                AnimationUtils.setButtonLoading(submitBtn, true);
+            } else {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Updating...';
+            }
+
+            try {
+                const updateData = { status, priority };
+                if (assigned_to && assigned_to !== '') {
+                    updateData.assigned_to = parseInt(assigned_to);
+                } else {
+                    // Unassign ticket
+                    updateData.assigned_to = null;
+                }
+
+                console.log('Updating ticket with data:', updateData);
+                await api.updateTicket(ticketId, updateData);
+                showSuccess('Ticket updated successfully');
+                await loadTicket();
+            } catch (error) {
+                console.error('Update ticket error:', error);
+                showError('Failed to update ticket: ' + (error.message || 'Unknown error'));
+            } finally {
+                if (window.AnimationUtils && AnimationUtils.setButtonLoading) {
+                    AnimationUtils.setButtonLoading(submitBtn, false);
+                } else {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = '<i class="fas fa-save"></i> Update Ticket';
+                }
+            }
+        });
+    }
+
+    // renderHistory is replaced by renderActivityTimeline
+
+
+
+    async function handleDownload(e, ticketId, attId, filename) {
+        if (e) e.preventDefault();
+        try {
+            console.log('Downloading file:', filename);
+            const blob = await api.downloadAttachment(ticketId, attId);
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+        } catch (error) {
+            console.error('Download error:', error);
+            showError('Download failed: ' + error.message);
+        }
+    }
+
+
+</script>
+{% endblock %}

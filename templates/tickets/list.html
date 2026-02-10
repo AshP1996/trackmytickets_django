@@ -1,0 +1,362 @@
+{% extends "base.html" %}
+
+{% block title %}Tickets - Ticket Management System{% endblock %}
+{% block page_title %}Tickets{% endblock %}
+
+{% block header_actions %}
+<a href="/{{ company_name }}/tickets/create" class="btn btn-primary">
+    <i class="fas fa-plus"></i>
+    New Ticket
+</a>
+{% endblock %}
+
+{% block content %}
+<!-- Filters -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form id="filter-form"
+            style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--spacing-md); align-items: end;">
+            <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label">Search</label>
+                <input type="text" class="form-control" id="search" placeholder="Search tickets...">
+            </div>
+
+            <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label">Status</label>
+                <select class="form-select" id="status-filter">
+                    <option value="">All Statuses</option>
+                </select>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label">Priority</label>
+                <select class="form-select" id="priority-filter">
+                    <option value="">All Priorities</option>
+                    <option value="low">Low</option>
+                    <option value="medium">Medium</option>
+                    <option value="high">High</option>
+                    <option value="critical">Critical</option>
+                </select>
+            </div>
+
+            <div class="form-group" id="department-filter-container" style="margin-bottom: 0;">
+                <label class="form-label">Department</label>
+                <select class="form-select" id="department-filter">
+                    <option value="">All Departments</option>
+                </select>
+            </div>
+
+            <div class="form-group" id="project-filter-container" style="margin-bottom: 0;">
+                <label class="form-label">Project</label>
+                <select class="form-select" id="project-filter">
+                    <option value="">All Projects</option>
+                </select>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label">&nbsp;</label>
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-search"></i> Filter
+                    </button>
+                    <button type="button" class="btn btn-secondary" onclick="resetFilters()">
+                        <i class="fas fa-times"></i> Clear
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Tickets Table -->
+<div class="card">
+    <div class="card-body" style="padding: 0;">
+        <div class="table-container">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Ticket ID</th>
+                        <th>Subject</th>
+                        <th>Status</th>
+                        <th>Priority</th>
+                        <th>Project</th>
+                        <th>Assigned To</th>
+                        <th>Created</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="tickets-table">
+                    <!-- Skeleton loaders will be inserted here -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Pagination -->
+    <div class="card-footer">
+        <nav aria-label="Tickets pagination">
+            <ul class="pagination justify-content-center mb-0" id="pagination" style="gap: var(--spacing-xs);">
+            </ul>
+        </nav>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let currentPage = 1;
+    let currentFilters = {};
+    let currentUser = null;
+
+    async function loadTickets(page = 1) {
+        const tbody = document.getElementById('tickets-table');
+
+        // Show skeleton loaders
+        tbody.innerHTML = '';
+        for (let i = 0; i < 5; i++) {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td><div class="skeleton skeleton-text short"></div></td>
+                <td>
+                    <div class="skeleton skeleton-text medium mb-1"></div>
+                    <div class="skeleton skeleton-text" style="width: 40%;"></div>
+                </td>
+                <td><div class="skeleton skeleton-badge"></div></td>
+                <td><div class="skeleton skeleton-badge"></div></td>
+                <td><div class="skeleton skeleton-text short"></div></td>
+                <td><div class="skeleton skeleton-text short"></div></td>
+                <td><div class="skeleton skeleton-text short"></div></td>
+                <td><div class="skeleton skeleton-badge"></div></td>
+            `;
+            tbody.appendChild(row);
+        }
+
+        try {
+            currentPage = page;
+            currentUser = await api.getCurrentUser();
+
+            const params = {
+                page: page,
+                per_page: 20,
+                ...currentFilters
+            };
+
+            let data;
+
+            // Use appropriate endpoint based on role (new role system: admin, manager, agent)
+            // All roles use the same endpoint - permissions are handled server-side
+            data = await api.getTickets(params);
+
+            console.log('Tickets API response:', data); // Debug log
+
+            // Small delay for smooth transition
+            await new Promise(resolve => setTimeout(resolve, 300));
+
+            // Handle both paginated and non-paginated responses
+            const tickets = data.results || data.tickets || (Array.isArray(data) ? data : []);
+            const totalPages = data.pages || data.total_pages || 1;
+
+            renderTickets(tickets);
+            renderPagination(totalPages, page);
+
+        } catch (error) {
+            console.error('Error loading tickets:', error);
+            showError('Failed to load tickets: ' + (error.message || 'Unknown error'));
+            // Show empty state on error
+            const tbody = document.getElementById('tickets-table');
+            tbody.innerHTML = '<tr><td colspan="8" class="text-center text-tertiary">Error loading tickets. Please refresh the page.</td></tr>';
+        }
+    }
+
+    function renderTickets(tickets) {
+        const tbody = document.getElementById('tickets-table');
+
+        if (tickets.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="8" class="text-center text-tertiary">No tickets found</td></tr>';
+            return;
+        }
+
+        // Clear and fade in new content
+        tbody.style.opacity = '0';
+        tbody.innerHTML = tickets.map(ticket => `
+            <tr onclick="window.location.href='/' + window.api.getCompanyName() + '/tickets/' + ticket.id" style="cursor: pointer;">
+                <td><span class="font-semibold">${ticket.ticket_id || ticket.id}</span></td>
+                <td>
+                    <div>${truncate(ticket.subject || '', 60)}</div>
+                    <small class="text-tertiary">${ticket.sender_email || ''}</small>
+                </td>
+                <td><span class="badge badge-status-${getStatusClass(ticket.status)}">${formatStatus(ticket.status)}</span></td>
+                <td><span class="badge badge-priority-${ticket.priority || 'low'}">${formatPriority(ticket.priority || 'low')}</span></td>
+                <td><span class="text-secondary">${ticket.project_key || '-'}</span></td>
+                <td><span class="text-secondary">${ticket.assigned_to_name || '<span class="text-tertiary">Unassigned</span>'}</span></td>
+                <td><span class="text-tertiary text-sm">${formatDate(ticket.created_at)}</span></td>
+                <td>
+                    <a href="/${window.api.getCompanyName()}/tickets/${ticket.id}" class="btn btn-sm btn-secondary" onclick="event.stopPropagation();">
+                        <i class="fas fa-eye"></i>
+                    </a>
+                </td>
+            </tr>
+        `).join('');
+
+        // Fade in with stagger
+        requestAnimationFrame(() => {
+            tbody.style.transition = 'opacity 200ms ease-out';
+            tbody.style.opacity = '1';
+
+            // Stagger row animations
+            const rows = tbody.querySelectorAll('tr');
+            rows.forEach((row, index) => {
+                row.style.opacity = '0';
+                row.style.transform = 'translateY(10px)';
+                setTimeout(() => {
+                    row.style.transition = 'opacity 200ms ease-out, transform 200ms ease-out';
+                    row.style.opacity = '1';
+                    row.style.transform = 'translateY(0)';
+                }, index * 30);
+            });
+        });
+    }
+
+    function renderPagination(totalPages, currentPage) {
+        const pagination = document.getElementById('pagination');
+
+        if (totalPages <= 1) {
+            pagination.innerHTML = '';
+            return;
+        }
+
+        let html = '';
+
+        // Previous button
+        html += `
+            <li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
+                <a class="page-link" href="#" onclick="loadTickets(${currentPage - 1}); return false;" style="padding: var(--spacing-xs) var(--spacing-sm); border: 1px solid var(--color-border); border-radius: var(--radius-md); text-decoration: none; color: var(--color-text-primary);">
+                    Previous
+                </a>
+            </li>
+        `;
+
+        // Page numbers
+        for (let i = 1; i <= totalPages; i++) {
+            if (i === 1 || i === totalPages || (i >= currentPage - 2 && i <= currentPage + 2)) {
+                html += `
+                    <li class="page-item ${i === currentPage ? 'active' : ''}">
+                        <a class="page-link" href="#" onclick="loadTickets(${i}); return false;" style="padding: var(--spacing-xs) var(--spacing-sm); border: 1px solid var(--color-border); border-radius: var(--radius-md); text-decoration: none; ${i === currentPage ? 'background-color: var(--color-brand-primary); color: white;' : 'color: var(--color-text-primary);'}">
+                            ${i}
+                        </a>
+                    </li>
+                `;
+            } else if (i === currentPage - 3 || i === currentPage + 3) {
+                html += `<li class="page-item disabled"><span class="page-link" style="padding: var(--spacing-xs) var(--spacing-sm);">...</span></li>`;
+            }
+        }
+
+        // Next button
+        html += `
+            <li class="page-item ${currentPage === totalPages ? 'disabled' : ''}">
+                <a class="page-link" href="#" onclick="loadTickets(${currentPage + 1}); return false;" style="padding: var(--spacing-xs) var(--spacing-sm); border: 1px solid var(--color-border); border-radius: var(--radius-md); text-decoration: none; color: var(--color-text-primary);">
+                    Next
+                </a>
+            </li>
+        `;
+
+        pagination.innerHTML = html;
+    }
+
+    async function loadFilters() {
+        try {
+            currentUser = await api.getCurrentUser();
+
+            // Load statuses (use workflow states or default statuses)
+            try {
+                // Try to get statuses from workflow, fallback to default
+                const statuses = [
+                    { id: 'open', name: 'Open' },
+                    { id: 'in_progress', name: 'In Progress' },
+                    { id: 'waiting', name: 'Waiting' },
+                    { id: 'resolved', name: 'Resolved' },
+                    { id: 'closed', name: 'Closed' }
+                ];
+                const statusSelect = document.getElementById('status-filter');
+                statuses.forEach(status => {
+                    const option = document.createElement('option');
+                    option.value = status.id;
+                    option.textContent = status.name;
+                    statusSelect.appendChild(option);
+                });
+            } catch (e) {
+                console.error('Failed to load statuses:', e);
+            }
+
+            // Load projects
+            try {
+                const projectsResponse = await api.getProjects();
+                // Handle paginated response (projects array) or direct array
+                const projects = projectsResponse.projects || projectsResponse || [];
+                const projectSelect = document.getElementById('project-filter');
+                if (projects && projects.length > 0) {
+                    projects.forEach(project => {
+                        const option = document.createElement('option');
+                        option.value = project.id;
+                        option.textContent = `${project.key} - ${project.name}`;
+                        projectSelect.appendChild(option);
+                    });
+                }
+            } catch (e) {
+                console.error('Failed to load projects:', e);
+            }
+
+            // Load departments (only for admin)
+            if (currentUser.role === 'admin') {
+                const departments = await api.getDepartments();
+                const deptSelect = document.getElementById('department-filter');
+                departments.forEach(dept => {
+                    const option = document.createElement('option');
+                    option.value = dept.id;
+                    option.textContent = dept.name;
+                    deptSelect.appendChild(option);
+                });
+            } else {
+                document.getElementById('department-filter-container').style.display = 'none';
+            }
+
+        } catch (error) {
+            console.error('Failed to load filters:', error);
+        }
+    }
+
+    function resetFilters() {
+        document.getElementById('filter-form').reset();
+        currentFilters = {};
+        loadTickets(1);
+    }
+
+    // Filter form submission
+    document.getElementById('filter-form').addEventListener('submit', function (e) {
+        e.preventDefault();
+
+        currentFilters = {
+            search: document.getElementById('search').value,
+            status: document.getElementById('status-filter').value,
+            priority: document.getElementById('priority-filter').value,
+            department: document.getElementById('department-filter').value,
+            project_id: document.getElementById('project-filter').value
+        };
+
+        // Remove empty filters
+        Object.keys(currentFilters).forEach(key => {
+            if (!currentFilters[key]) delete currentFilters[key];
+        });
+
+        loadTickets(1);
+    });
+
+
+
+    // Initialize page
+    document.addEventListener('DOMContentLoaded', function () {
+        loadFilters();
+        loadTickets(1);
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,984 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- SEO Meta Tags -->
+    <title>TrackMyTicket - Smart Ticket Tracking for Modern Teams | Customer Support System</title>
+    <meta name="description"
+        content="Streamline your customer support with TrackMyTicket. Smart ticket tracking, multi-tenant SaaS platform, and exceptional customer experiences. Get started today!">
+    <meta name="keywords"
+        content="ticket tracking, customer support, help desk, ticket management, support system, SaaS, multi-tenant">
+    <meta name="author" content="TrackMyTicket">
+    <meta name="robots" content="index, follow">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="{{ BASE_URL }}/">
+    <meta property="og:title" content="TrackMyTicket - Smart Ticket Tracking for Modern Teams">
+    <meta property="og:description"
+        content="Streamline your customer support with TrackMyTicket. Smart ticket tracking and exceptional customer experiences.">
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="{{ BASE_URL }}/">
+    <meta property="twitter:title" content="TrackMyTicket - Smart Ticket Tracking for Modern Teams">
+    <meta property="twitter:description"
+        content="Streamline your customer support with TrackMyTicket. Smart ticket tracking and exceptional customer experiences.">
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="{% static 'images/logo.png' %}">
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+
+    <!-- Landing Page Styles -->
+    <link rel="stylesheet" href="{% static 'css/landing.css' %}">
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-color: #6366f1;
+            --primary-dark: #4f46e5;
+            --secondary-color: #8b5cf6;
+            --accent-color: #ec4899;
+            --text-dark: #1f2937;
+            --text-light: #6b7280;
+            --bg-light: #f9fafb;
+            --bg-white: #ffffff;
+            --border-color: #e5e7eb;
+            --success-color: #10b981;
+            --gradient-primary: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            --gradient-secondary: linear-gradient(135deg, #ec4899 0%, #8b5cf6 100%);
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            color: var(--text-dark);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        /* Navigation */
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            box-shadow: var(--shadow-sm);
+            z-index: 1000;
+            padding: 1rem 0;
+            transition: all 0.3s ease;
+        }
+
+        .navbar.scrolled {
+            box-shadow: var(--shadow-md);
+        }
+
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            text-decoration: none;
+        }
+
+        .logo i {
+            font-size: 2rem;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+            align-items: center;
+        }
+
+        .nav-links a {
+            color: var(--text-dark);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s ease;
+        }
+
+        .nav-links a:hover {
+            color: var(--primary-color);
+        }
+
+        .btn-login {
+            background: var(--gradient-primary);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            text-decoration: none;
+            font-weight: 600;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .btn-login:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+            color: white;
+        }
+
+        /* Hero Section */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            position: relative;
+            overflow: hidden;
+            padding-top: 80px;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg width="100" height="100" xmlns="http://www.w3.org/2000/svg"><defs><pattern id="grid" width="100" height="100" patternUnits="userSpaceOnUse"><path d="M 100 0 L 0 0 0 100" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="1"/></pattern></defs><rect width="100" height="100" fill="url(%23grid)"/></svg>');
+            opacity: 0.3;
+        }
+
+        .hero-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 4rem 2rem;
+            position: relative;
+            z-index: 1;
+            text-align: center;
+            color: white;
+        }
+
+        .hero h1 {
+            font-size: 3.5rem;
+            font-weight: 800;
+            margin-bottom: 1.5rem;
+            line-height: 1.2;
+            animation: fadeInUp 0.8s ease;
+        }
+
+        .hero .subtitle {
+            font-size: 1.5rem;
+            margin-bottom: 2rem;
+            opacity: 0.95;
+            font-weight: 300;
+            animation: fadeInUp 0.8s ease 0.2s both;
+        }
+
+        .hero .description {
+            font-size: 1.125rem;
+            margin-bottom: 3rem;
+            opacity: 0.9;
+            max-width: 700px;
+            margin-left: auto;
+            margin-right: auto;
+            animation: fadeInUp 0.8s ease 0.4s both;
+        }
+
+        .hero-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+            animation: fadeInUp 0.8s ease 0.6s both;
+        }
+
+        .btn-primary {
+            background: white;
+            color: var(--primary-color);
+            padding: 1rem 2.5rem;
+            border-radius: 0.5rem;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 1.125rem;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-xl);
+            color: var(--primary-color);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 1rem 2.5rem;
+            border-radius: 0.5rem;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 1.125rem;
+            border: 2px solid white;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+
+        .btn-secondary:hover {
+            background: white;
+            color: var(--primary-color);
+            color: white;
+        }
+
+        /* Features Section */
+        .features {
+            padding: 6rem 2rem;
+            background: var(--bg-white);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .section-title {
+            text-align: center;
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            color: var(--text-dark);
+        }
+
+        .section-subtitle {
+            text-align: center;
+            font-size: 1.125rem;
+            color: var(--text-light);
+            margin-bottom: 4rem;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-top: 3rem;
+        }
+
+        .feature-card {
+            background: var(--bg-white);
+            padding: 2rem;
+            border-radius: 1rem;
+            box-shadow: var(--shadow-md);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-xl);
+        }
+
+        .feature-icon {
+            width: 60px;
+            height: 60px;
+            background: var(--gradient-primary);
+            border-radius: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1.5rem;
+            color: white;
+            font-size: 1.5rem;
+        }
+
+        .feature-card h3 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: var(--text-dark);
+        }
+
+        .feature-card p {
+            color: var(--text-light);
+            line-height: 1.7;
+        }
+
+        /* About Section */
+        .about {
+            padding: 6rem 2rem;
+            background: var(--bg-light);
+        }
+
+        .about-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4rem;
+            align-items: center;
+        }
+
+        .about-text h2 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            color: var(--text-dark);
+        }
+
+        .about-text p {
+            font-size: 1.125rem;
+            color: var(--text-light);
+            margin-bottom: 1.5rem;
+            line-height: 1.8;
+        }
+
+        .about-image {
+            background: var(--gradient-primary);
+            border-radius: 1rem;
+            height: 400px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 8rem;
+            box-shadow: var(--shadow-xl);
+        }
+
+        /* Enquiry Form Section */
+        .enquiry {
+            padding: 6rem 2rem;
+            background: var(--bg-white);
+        }
+
+        .enquiry-form-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: var(--bg-white);
+            padding: 3rem;
+            border-radius: 1rem;
+            box-shadow: var(--shadow-lg);
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: var(--text-dark);
+        }
+
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 2px solid var(--border-color);
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            font-family: inherit;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 120px;
+        }
+
+        .form-submit {
+            width: 100%;
+            background: var(--gradient-primary);
+            color: white;
+            padding: 1rem;
+            border: none;
+            border-radius: 0.5rem;
+            font-size: 1.125rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .form-submit:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .form-submit:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .form-message {
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin-bottom: 1.5rem;
+            display: none;
+        }
+
+        .form-message.success {
+            background: #d1fae5;
+            color: #065f46;
+            display: block;
+        }
+
+        .form-message.error {
+            background: #fee2e2;
+            color: #991b1b;
+            display: block;
+        }
+
+        /* Footer */
+        .footer {
+            background: var(--text-dark);
+            color: white;
+            padding: 3rem 2rem;
+            text-align: center;
+        }
+
+        .footer-content {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        /* Animations */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .fade-in-section {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.8s ease-out, transform 0.8s ease-out;
+            will-change: opacity, transform;
+        }
+
+        .fade-in-section.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Staggered transition delays for feature cards if desired, 
+           but IntersectionObserver usually handles them as they appear. 
+           We can add a slight delay based on :nth-child if they are in the same view. */
+        .features-grid .feature-card:nth-child(2) {
+            transition-delay: 0.1s;
+        }
+
+        .features-grid .feature-card:nth-child(3) {
+            transition-delay: 0.2s;
+        }
+
+        .features-grid .feature-card:nth-child(4) {
+            transition-delay: 0.3s;
+        }
+
+        /* Mobile Responsive */
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+
+            .hero .subtitle {
+                font-size: 1.25rem;
+            }
+
+            .nav-links {
+                display: none;
+            }
+
+            .about-content {
+                grid-template-columns: 1fr;
+            }
+
+            .features-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .enquiry-form-container {
+                padding: 2rem 1.5rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Navigation -->
+    <nav class="navbar" id="navbar">
+        <div class="nav-container">
+            <a href="/" class="logo" style="display: flex; align-items: center; gap: 12px; text-decoration: none;">
+                <img src="{% static 'images/logo.png' %}" alt="TrackMyTicket Logo"
+                    style="height: 48px; width: auto; object-fit: contain; display: block;"
+                    onerror="this.style.display='none'; this.nextElementSibling.style.marginLeft='0';">
+                <span style="font-size: 20px; font-weight: 700;">TrackMyTicket</span>
+            </a>
+            <div class="nav-links">
+                <a href="#features">Features</a>
+                <a href="#about">About</a>
+                <a href="#promotion">Join Free</a>
+                <a href="#enquiry">Contact</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-content">
+            <h1>Streamline Your Support</h1>
+            <p class="subtitle">Smart ticket tracking for modern teams</p>
+            <p class="description">
+                Deliver exceptional customer experiences with our powerful, multi-tenant ticket management platform.
+                Built for teams who care about quality support.
+            </p>
+            <div class="hero-buttons">
+                <a href="#promotion" class="btn-primary">Join Free</a>
+                <a href="#features" class="btn-secondary">Learn More</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features" id="features">
+        <div class="container">
+            <h2 class="section-title">Powerful Features</h2>
+            <p class="section-subtitle">
+                Everything you need to manage customer support efficiently
+            </p>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-ticket-alt"></i>
+                    </div>
+                    <h3>Smart Ticket Tracking</h3>
+                    <p>
+                        Organize and track tickets with ease. Our intelligent system helps you manage
+                        customer requests efficiently with automated workflows.
+                    </p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <h3>Multi-Tenant Architecture</h3>
+                    <p>
+                        Perfect for SaaS providers. Each organization gets its own isolated environment
+                        with custom subdomains and dedicated resources.
+                    </p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <h3>Analytics & Reporting</h3>
+                    <p>
+                        Get insights into your support performance with comprehensive analytics,
+                        SLA tracking, and detailed reports.
+                    </p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-project-diagram"></i>
+                    </div>
+                    <h3>Project Management</h3>
+                    <p>
+                        Organize tickets by projects with Jira-style workflows. Manage multiple
+                        projects with ease and track progress effectively.
+                    </p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-shield-alt"></i>
+                    </div>
+                    <h3>Secure & Reliable</h3>
+                    <p>
+                        Enterprise-grade security with encrypted secrets, role-based access control,
+                        and secure multi-tenant isolation.
+                    </p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-mobile-alt"></i>
+                    </div>
+                    <h3>Mobile Friendly</h3>
+                    <p>
+                        Access your tickets from anywhere. Our responsive design works perfectly
+                        on desktop, tablet, and mobile devices.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Screenshot Showcase Section -->
+    <section class="showcase" id="showcase" style="padding: 6rem 2rem; background: var(--bg-white);">
+        <div class="container">
+            <h2 class="section-title">See It in Action</h2>
+            <p class="section-subtitle">
+                Experience the clean, intuitive interface designed for modern support teams.
+            </p>
+
+            <div class="screenshot-carousel"
+                style="position: relative; max-width: 1000px; margin: 0 auto; overflow: hidden; border-radius: 1rem; box-shadow: var(--shadow-2xl);">
+                <div class="carousel-track" style="display: flex; transition: transform 0.5s ease-in-out;">
+                    <!-- Dashboards -->
+                    <div class="carousel-slide" style="min-width: 100%;">
+                        <img src="{% static 'images/screenshots/Screenshot from 2026-02-09 18-16-41.png' %}"
+                            alt="Dashboard Overview" style="width: 100%; display: block;">
+                        <div class="slide-caption"
+                            style="background: rgba(0,0,0,0.7); color: white; padding: 1rem; text-align: center; position: absolute; bottom: 0; width: 100%;">
+                            <h3>Comprehensive Dashboard</h3>
+                            <p>Get a bird's-eye view of your support operations with real-time metrics.</p>
+                        </div>
+                    </div>
+                    <!-- Ticket Detail -->
+                    <div class="carousel-slide" style="min-width: 100%;">
+                        <img src="{% static 'images/screenshots/Screenshot from 2026-02-09 18-17-10.png' %}"
+                            alt="Ticket Management" style="width: 100%; display: block;">
+                        <div class="slide-caption"
+                            style="background: rgba(0,0,0,0.7); color: white; padding: 1rem; text-align: center; position: absolute; bottom: 0; width: 100%;">
+                            <h3>Efficient Ticket Management</h3>
+                            <p>Manage conversations, assignments, and priorities in one place.</p>
+                        </div>
+                    </div>
+                    <!-- Admin Settings -->
+                    <div class="carousel-slide" style="min-width: 100%;">
+                        <img src="{% static 'images/screenshots/Screenshot from 2026-02-09 18-17-32.png' %}"
+                            alt="Admin Settings" style="width: 100%; display: block;">
+                        <div class="slide-caption"
+                            style="background: rgba(0,0,0,0.7); color: white; padding: 1rem; text-align: center; position: absolute; bottom: 0; width: 100%;">
+                            <h3>Powerful Administration</h3>
+                            <p>Configure departments, users, and workflows to match your internal processes.</p>
+                        </div>
+                    </div>
+                    <!-- User Profile/Stats -->
+                    <div class="carousel-slide" style="min-width: 100%;">
+                        <img src="{% static 'images/screenshots/Screenshot from 2026-02-09 18-18-09.png' %}"
+                            alt="User Insights" style="width: 100%; display: block;">
+                        <div class="slide-caption"
+                            style="background: rgba(0,0,0,0.7); color: white; padding: 1rem; text-align: center; position: absolute; bottom: 0; width: 100%;">
+                            <h3>Team Insights</h3>
+                            <p>Track performance and workload distribution across your team.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Controls -->
+                <button class="carousel-btn prev"
+                    style="position: absolute; top: 50%; left: 1rem; transform: translateY(-50%); background: rgba(255,255,255,0.8); border: none; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; font-size: 1.2rem; display: flex; align-items: center; justify-content: center; transition: background 0.2s;"><i
+                        class="fas fa-chevron-left"></i></button>
+                <button class="carousel-btn next"
+                    style="position: absolute; top: 50%; right: 1rem; transform: translateY(-50%); background: rgba(255,255,255,0.8); border: none; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; font-size: 1.2rem; display: flex; align-items: center; justify-content: center; transition: background 0.2s;"><i
+                        class="fas fa-chevron-right"></i></button>
+            </div>
+
+            <!-- Indicators -->
+            <div class="carousel-indicators"
+                style="display: flex; justify-content: center; gap: 0.5rem; margin-top: 1.5rem;">
+                <span class="indicator active"
+                    style="width: 10px; height: 10px; background: var(--primary-color); border-radius: 50%; cursor: pointer; opacity: 1;"></span>
+                <span class="indicator"
+                    style="width: 10px; height: 10px; background: var(--primary-color); border-radius: 50%; cursor: pointer; opacity: 0.3;"></span>
+                <span class="indicator"
+                    style="width: 10px; height: 10px; background: var(--primary-color); border-radius: 50%; cursor: pointer; opacity: 0.3;"></span>
+                <span class="indicator"
+                    style="width: 10px; height: 10px; background: var(--primary-color); border-radius: 50%; cursor: pointer; opacity: 0.3;"></span>
+            </div>
+
+            <script>
+                document.addEventListener('DOMContentLoaded', function () {
+                    const track = document.querySelector('.carousel-track');
+                    const slides = document.querySelectorAll('.carousel-slide');
+                    const nextBtn = document.querySelector('.carousel-btn.next');
+                    const prevBtn = document.querySelector('.carousel-btn.prev');
+                    const indicators = document.querySelectorAll('.indicator');
+
+                    let currentIndex = 0;
+
+                    function updateSlide(index) {
+                        track.style.transform = `translateX(-${index * 100}%)`;
+                        indicators.forEach((ind, i) => {
+                            ind.style.opacity = i === index ? '1' : '0.3';
+                        });
+                        currentIndex = index;
+                    }
+
+                    nextBtn.addEventListener('click', () => {
+                        currentIndex = (currentIndex + 1) % slides.length;
+                        updateSlide(currentIndex);
+                    });
+
+                    prevBtn.addEventListener('click', () => {
+                        currentIndex = (currentIndex - 1 + slides.length) % slides.length;
+                        updateSlide(currentIndex);
+                    });
+
+                    indicators.forEach((ind, i) => {
+                        ind.addEventListener('click', () => updateSlide(i));
+                    });
+
+                    // Auto-advance
+                    setInterval(() => {
+                        currentIndex = (currentIndex + 1) % slides.length;
+                        updateSlide(currentIndex);
+                    }, 5000);
+                });
+            </script>
+        </div>
+    </section>
+
+    <!-- About Section -->
+    <section class="about" id="about">
+        <div class="container">
+            <div class="about-content">
+                <div class="about-text">
+                    <h2>About TrackMyTicket</h2>
+                    <p>
+                        TrackMyTicket is a modern, cloud-based ticket management system designed for
+                        teams that need powerful support tools without the complexity. We've built a
+                        platform that scales with your business.
+                    </p>
+                    <p>
+                        Whether you're a small startup or a large enterprise, our multi-tenant architecture
+                        ensures each organization gets the isolation and customization they need. With
+                        features like project-based organization, workflow management, and comprehensive
+                        analytics, you'll have everything you need to deliver exceptional customer support.
+                    </p>
+                    <p>
+                        Our platform is built with modern technologies and best practices, ensuring reliability,
+                        security, and performance. Join thousands of teams who trust TrackMyTicket for their
+                        customer support needs.
+                    </p>
+                </div>
+                <div class="about-image">
+                    <i class="fas fa-headset"></i>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Free Join Promotion Section -->
+    <section class="promotion" id="promotion"
+        style="padding: 6rem 2rem; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; position: relative; overflow: hidden;">
+        <div class="container" style="max-width: 1200px; margin: 0 auto; position: relative; z-index: 1;">
+            <div style="text-align: center; max-width: 800px; margin: 0 auto;">
+                <h2 style="font-size: 3rem; font-weight: 800; margin-bottom: 1.5rem; color: white;">Free for Now</h2>
+                <p style="font-size: 1.5rem; margin-bottom: 2rem; opacity: 0.95;">
+                    Join thousands of teams already using TrackMyTicket. Early access is completely free.
+                </p>
+                <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; margin-bottom: 3rem;">
+                    <a href="#enquiry" class="btn-primary"
+                        style="background: white; color: var(--primary-color); padding: 1.25rem 3rem; border-radius: 0.5rem; text-decoration: none; font-weight: 600; font-size: 1.25rem; transition: transform 0.2s ease, box-shadow 0.2s ease; border: none; cursor: pointer;">
+                        Get Started Free
+                    </a>
+                    <a href="#features" class="btn-secondary"
+                        style="background: rgba(255, 255, 255, 0.2); color: white; padding: 1.25rem 3rem; border-radius: 0.5rem; text-decoration: none; font-weight: 600; font-size: 1.25rem; border: 2px solid white; transition: all 0.2s ease;">
+                        Learn More
+                    </a>
+                </div>
+                <div
+                    style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 2rem; margin-top: 4rem;">
+                    <div style="text-align: center;">
+                        <div style="font-size: 2.5rem; font-weight: 700; margin-bottom: 0.5rem;">99.9%</div>
+                        <div style="opacity: 0.9;">Uptime</div>
+                    </div>
+                    <div style="text-align: center;">
+                        <div style="font-size: 2.5rem; font-weight: 700; margin-bottom: 0.5rem;">5 min</div>
+                        <div style="opacity: 0.9;">Quick Setup</div>
+                    </div>
+                    <div style="text-align: center;">
+                        <div style="font-size: 2.5rem; font-weight: 700; margin-bottom: 0.5rem;">24/7</div>
+                        <div style="opacity: 0.9;">Support</div>
+                    </div>
+                    <div style="text-align: center;">
+                        <div style="font-size: 2.5rem; font-weight: 700; margin-bottom: 0.5rem;">∞</div>
+                        <div style="opacity: 0.9;">Unlimited Tickets</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Enquiry Form Section -->
+    <section class="enquiry" id="enquiry">
+        <div class="container">
+            <h2 class="section-title">Get In Touch</h2>
+            <p class="section-subtitle">
+                Have questions? We'd love to hear from you. Send us a message and we'll respond as soon as possible.
+            </p>
+            <div class="enquiry-form-container">
+                <div class="form-message" id="form-message"></div>
+                <form id="enquiry-form">
+                    <div class="form-group">
+                        <label for="name">Full Name *</label>
+                        <input type="text" id="name" name="name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="email">Email Address *</label>
+                        <input type="email" id="email" name="email" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="company">Company Name</label>
+                        <input type="text" id="company" name="company">
+                    </div>
+                    <div class="form-group">
+                        <label for="phone">Phone Number</label>
+                        <input type="tel" id="phone" name="phone">
+                    </div>
+                    <div class="form-group">
+                        <label for="message">Message *</label>
+                        <textarea id="message" name="message" required></textarea>
+                    </div>
+                    <button type="submit" class="form-submit" id="submit-btn">
+                        Send Message
+                    </button>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-content">
+            <p>&copy; 2026 TrackMyTicket. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Navbar scroll effect
+        window.addEventListener('scroll', function () {
+            const navbar = document.getElementById('navbar');
+            if (window.scrollY > 50) {
+                navbar.classList.add('scrolled');
+            } else {
+                navbar.classList.remove('scrolled');
+            }
+        });
+
+        // Smooth scrolling
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+
+        // Scroll Animations (Intersection Observer)
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                    observer.unobserve(entry.target); // Only animate once
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('.feature-card, .section-title, .section-subtitle, .about-content, .showcase .container, .enquiry-form-container').forEach(el => {
+            el.classList.add('fade-in-section');
+            observer.observe(el);
+        });
+
+        // Enquiry form submission
+        const enquiryForm = document.getElementById('enquiry-form');
+        const formMessage = document.getElementById('form-message');
+        const submitBtn = document.getElementById('submit-btn');
+
+        enquiryForm.addEventListener('submit', async function (e) {
+            e.preventDefault();
+
+            // Disable submit button
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Sending...';
+
+            // Get form data
+            const formData = {
+                name: document.getElementById('name').value.trim(),
+                email: document.getElementById('email').value.trim(),
+                company: document.getElementById('company').value.trim(),
+                phone: document.getElementById('phone').value.trim(),
+                message: document.getElementById('message').value.trim()
+            };
+
+            try {
+                const response = await fetch('/api/platform/public/enquiries', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    // Success
+                    formMessage.className = 'form-message success';
+                    formMessage.textContent = data.message || 'Thank you for your enquiry! We will get back to you soon.';
+                    enquiryForm.reset();
+
+                    // Scroll to message
+                    formMessage.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                } else {
+                    // Error
+                    formMessage.className = 'form-message error';
+                    formMessage.textContent = data.error || 'Failed to send message. Please try again.';
+                }
+            } catch (error) {
+                formMessage.className = 'form-message error';
+                formMessage.textContent = 'Network error. Please check your connection and try again.';
+            } finally {
+                // Re-enable submit button
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Send Message';
+            }
+        });
+    </script>
+</body>
+
+</html>

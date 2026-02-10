@@ -1,0 +1,503 @@
+{% extends "base.html" %}
+
+{% block title %}Projects - Ticket Management System{% endblock %}
+{% block page_title %}Projects{% endblock %}
+
+{% block header_actions %}
+<button class="btn btn-primary" id="new-project-btn">
+    <i class="fas fa-plus"></i>
+    New Project
+</button>
+{% endblock %}
+
+{% block content %}
+<!-- Projects Grid -->
+<div id="projects-container"
+    style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: var(--spacing-lg);">
+    <div class="loading">
+        <div class="spinner"></div>
+        <span style="margin-left: var(--spacing-sm);">Loading projects...</span>
+    </div>
+</div>
+
+<!-- Create Project Modal -->
+<div class="modal fade" id="createProjectModal" tabindex="-1" aria-labelledby="createProjectModalLabel"
+    style="z-index: 1055;" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="createProjectModalLabel">Create New Project</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="create-project-form">
+                <div class="modal-body">
+                    <div class="form-group mb-3">
+                        <label class="form-label required">Project Name</label>
+                        <input type="text" class="form-control" id="project-name" name="name" required
+                            placeholder="e.g., Customer Support">
+                        <small class="form-text text-tertiary">A descriptive name for your project</small>
+                    </div>
+
+                    <div class="form-group mb-3">
+                        <label class="form-label required">Project Key</label>
+                        <input type="text" class="form-control" id="project-key" name="key" required
+                            placeholder="e.g., SUP, ENG" maxlength="10" style="text-transform: uppercase;">
+                        <small class="form-text text-tertiary">2-10 uppercase letters and numbers, starting with a
+                            letter (e.g., SUP, ENG)</small>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <label class="form-label">Start Date</label>
+                            <input type="date" class="form-control" name="start_date">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">End Date</label>
+                            <input type="date" class="form-control" name="end_date">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Extension Date</label>
+                            <input type="date" class="form-control" name="extension_date">
+                        </div>
+                    </div>
+
+                    <div class="form-group mb-3">
+                        <label class="form-label">Description</label>
+                        <textarea class="form-control" id="project-description" name="description" rows="3"
+                            placeholder="Optional project description"></textarea>
+                    </div>
+
+                    <div class="form-group mb-3">
+                        <label class="form-label">Lead User</label>
+                        <select class="form-select" id="project-lead" name="lead_user_id">
+                            <option value="">Unassigned</option>
+                        </select>
+                        <small class="form-text text-tertiary">Optional: Assign a project lead (manager)</small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="create-project-btn">
+                        <i class="fas fa-plus"></i> Create Project
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let allUsers = [];
+    let isEditing = false;
+    let editingId = null;
+
+    document.addEventListener('DOMContentLoaded', async () => {
+        // Initial load
+        await loadProjects();
+
+        // Check admin role for "New Project" button
+        const user = await api.getCurrentUser();
+        if (user && user.role === 'admin') {
+            const headerActions = document.querySelector('.header-actions');
+            if (headerActions && !document.getElementById('new-project-btn')) {
+                const btn = document.createElement('a');
+                btn.href = '#';
+                btn.className = 'btn btn-primary';
+                btn.id = 'new-project-btn';
+                btn.innerHTML = '<i class="fas fa-plus"></i> New Project';
+                btn.onclick = (e) => { e.preventDefault(); showCreateProjectModal(); };
+                headerActions.appendChild(btn);
+            }
+        }
+    });
+
+    async function loadProjects() {
+        try {
+            console.log('Loading projects...'); // Debug log
+            const response = await api.getProjects();
+            const currentUser = await api.getCurrentUser();
+            console.log('Projects API response:', response); // Debug log
+
+            // Handle paginated response
+            const projects = response.results || response.projects || (Array.isArray(response) ? response : []);
+            console.log('Projects to render:', projects.length); // Debug log
+
+            renderProjects(projects, currentUser);
+        } catch (error) {
+            console.error('Error loading projects:', error); // Debug log
+            showError('Failed to load projects: ' + (error.message || 'Unknown error'));
+            // Show error state
+            const container = document.getElementById('projects-container');
+            container.innerHTML = `
+            <div class="card" style="grid-column: 1 / -1; text-align: center; padding: var(--spacing-2xl);">
+                <p class="text-tertiary">Error loading projects. Please refresh the page.</p>
+                <button class="btn btn-primary mt-3" onclick="loadProjects()">
+                    <i class="fas fa-refresh"></i> Retry
+                </button>
+            </div>
+        `;
+        }
+    }
+
+    async function loadUsers() {
+        try {
+            const currentUser = getCurrentUser();
+            const leadSelect = document.getElementById('project-lead');
+
+            if (!leadSelect) return;
+
+            // Always show "Unassigned" option
+            leadSelect.innerHTML = '<option value="">Unassigned</option>';
+
+            // Load users for everyone (backend now allows employees)
+            // This allows managers to assign other users as project leads
+            try {
+                const usersData = await api.getUsers();
+                allUsers = usersData.users || usersData || [];
+
+                // Add users to the dropdown
+                allUsers.forEach(user => {
+                    if (user.is_active) {
+                        const option = document.createElement('option');
+                        option.value = user.id;
+                        option.textContent = user.full_name;
+                        leadSelect.appendChild(option);
+                    }
+                });
+            } catch (error) {
+                console.warn('Could not load users for dropdown:', error.message);
+                // Fallback: Show current user
+                const option = document.createElement('option');
+                option.value = currentUser.id;
+                option.textContent = currentUser.full_name + ' (You)';
+                option.selected = true;
+                leadSelect.appendChild(option);
+            }
+        } catch (error) {
+            console.error('Error loading users:', error);
+            // Don't block modal from opening if user loading fails
+        }
+    }
+
+    function renderProjects(projects, currentUser) {
+        const container = document.getElementById('projects-container');
+
+        if (projects.length === 0) {
+            container.innerHTML = `
+            <div class="card" style="grid-column: 1 / -1; text-align: center; padding: var(--spacing-2xl);">
+                <p class="text-tertiary">No projects found. Create your first project to get started.</p>
+                <button class="btn btn-primary mt-3" id="create-project-empty-btn">
+                    <i class="fas fa-plus"></i> Create Project
+                </button>
+            </div>
+        `;
+            // Re-attach event listener for dynamically created button
+            const emptyBtn = document.getElementById('create-project-empty-btn');
+            if (emptyBtn) {
+                emptyBtn.addEventListener('click', showCreateProjectModal);
+            }
+            return;
+        }
+
+        container.innerHTML = projects.map(project => `
+        <div class="card" onclick="window.location.href='/' + window.api.getCompanyName() + '/projects/' + project.id" style="cursor: pointer; transition: transform var(--transition-base);">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <div>
+                        <h3 class="mb-1" style="font-size: var(--font-size-lg);">
+                            <span class="font-semibold" style="color: var(--color-brand-primary);">${project.key}</span>
+                            <span class="text-secondary">${project.name}</span>
+                        </h3>
+                    </div>
+                    ${project.is_active ? '<span class="badge badge-status-resolved">Active</span>' : '<span class="badge" style="background-color: var(--color-bg-tertiary); color: var(--color-text-tertiary);">Inactive</span>'}
+                </div>
+                
+                ${project.description ? `<p class="text-secondary text-sm mb-3">${truncate(project.description, 100)}</p>` : ''}
+                
+                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--spacing-md); padding-top: var(--spacing-md); border-top: 1px solid var(--color-border-light);">
+                    <div>
+                        <div class="text-tertiary text-xs mb-1">Tickets</div>
+                        <div class="font-semibold">${project.tickets_count || 0}</div>
+                    </div>
+                    <div>
+                        <div class="text-tertiary text-xs mb-1">Lead</div>
+                        <div class="font-medium text-sm">${project.lead_user_name || 'Unassigned'}</div>
+                    </div>
+                </div>
+
+                <div class="mt-3 pt-3 border-top border-light">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <small class="text-tertiary">
+                            ${project.start_date ? formatDate(project.start_date) : 'No start'} 
+                            - 
+                            ${project.end_date ? formatDate(project.end_date) : 'No end'}
+                        </small>
+                    </div>
+                    ${project.extension_date ? `<div class="mb-2"><span class="badge bg-warning text-dark">Extended: ${formatDate(project.extension_date)}</span></div>` : ''}
+                    
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-outline-primary btn-sm flex-grow-1" onclick="openProjectAnalytics(event, ${project.id})">
+                            <i class="fas fa-chart-line"></i> Analytics
+                        </button>
+                        ${currentUser.role === 'admin' ? `
+                        <button class="btn btn-outline-secondary btn-sm" onclick="event.stopPropagation(); showEditProjectModal(${JSON.stringify(project).replace(/"/g, '&quot;')})">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn btn-outline-danger btn-sm" onclick="event.stopPropagation(); deleteProject(${project.id})">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                        ` : ''}
+                    </div>
+                </div>
+            </div>
+        </div>
+    `).join('');
+
+        // Add hover effect
+        container.querySelectorAll('.card').forEach(card => {
+            card.addEventListener('mouseenter', function () {
+                this.style.transform = 'translateY(-2px)';
+                this.style.boxShadow = 'var(--shadow-lg)';
+            });
+            card.addEventListener('mouseleave', function () {
+                this.style.transform = 'translateY(0)';
+                this.style.boxShadow = 'var(--shadow-sm)';
+            });
+        });
+    }
+
+    function showCreateProjectModal() {
+        isEditing = false;
+        editingId = null;
+        document.getElementById('createProjectModalLabel').textContent = 'New Project';
+        document.getElementById('create-project-btn').textContent = 'Create Project';
+
+        const keyInput = document.getElementById('project-key');
+        if (keyInput) {
+            keyInput.readOnly = false;
+            keyInput.classList.remove('bg-light');
+        }
+
+        // Check if Bootstrap is loaded
+        if (typeof bootstrap === 'undefined') {
+            console.error('Bootstrap is not loaded!');
+            showError('Bootstrap library is not loaded. Please refresh the page.');
+            return;
+        }
+
+        const modalElement = document.getElementById('createProjectModal');
+        if (!modalElement) {
+            console.error('Modal element not found!');
+            showError('Modal not found. Please refresh the page.');
+            return;
+        }
+
+        // Reset form
+        const form = document.getElementById('create-project-form');
+        if (form) {
+            form.reset();
+        }
+
+        loadUsers();
+
+        // Initialize Bootstrap modal with options
+        let modal = bootstrap.Modal.getInstance(modalElement);
+        if (!modal) {
+            modal = new bootstrap.Modal(modalElement, {
+                backdrop: true,
+                keyboard: true,
+                focus: true
+            });
+        }
+
+        // Show modal
+        modal.show();
+
+        // Auto-uppercase project key on input
+        if (keyInput) {
+            // Use event delegation to avoid duplicate listeners
+            keyInput.oninput = function () {
+                this.value = this.value.toUpperCase();
+            };
+        }
+
+        // Focus on first input after modal is shown
+        modalElement.addEventListener('shown.bs.modal', function () {
+            console.log('Modal shown event fired');
+            // Force visibility just in case
+            this.style.display = 'block';
+            this.style.opacity = '1';
+            this.style.backgroundColor = 'rgba(0,0,0,0.01)'; // Slight background trigger
+
+            const nameInput = document.getElementById('project-name');
+            if (nameInput) {
+                nameInput.focus();
+            }
+        }, { once: true });
+    }
+
+    function showEditProjectModal(project) {
+        isEditing = true;
+        editingId = project.id;
+
+        // Show modal first to ensure elements exist
+        showCreateProjectModal();
+
+        document.getElementById('createProjectModalLabel').textContent = 'Edit Project';
+        document.getElementById('create-project-btn').textContent = 'Update Project';
+
+        // Populate form
+        const form = document.getElementById('create-project-form');
+        form.elements['name'].value = project.name;
+
+        const keyInput = form.elements['key'];
+        keyInput.value = project.key;
+        keyInput.readOnly = true;
+        keyInput.classList.add('bg-light');
+
+        form.elements['description'].value = project.description || '';
+        form.elements['lead_user_id'].value = project.lead_user_id || '';
+
+        if (project.start_date) form.elements['start_date'].value = project.start_date.split('T')[0];
+        if (project.end_date) form.elements['end_date'].value = project.end_date.split('T')[0];
+        if (project.extension_date) form.elements['extension_date'].value = project.extension_date.split('T')[0];
+    }
+
+    async function deleteProject(id) {
+        if (!confirm('Are you sure you want to delete this project? This cannot be undone.')) return;
+
+        try {
+            await api.deleteProject(id);
+            showSuccess('Project deleted successfully');
+            loadProjects();
+        } catch (error) {
+            showError(error.message);
+        }
+    }
+
+    async function handleProjectSubmit(event) {
+        event.preventDefault();
+        const form = event.target;
+        const formData = new FormData(form);
+
+        const data = {
+            name: formData.get('name'),
+            description: formData.get('description'),
+            lead_user_id: formData.get('lead_user_id') || null,
+            start_date: formData.get('start_date') || null,
+            end_date: formData.get('end_date') || null,
+            extension_date: formData.get('extension_date') || null
+        };
+
+        if (!isEditing) {
+            data.key = formData.get('key');
+        }
+
+        try {
+            const btn = document.getElementById('create-project-btn');
+            const originalText = btn.textContent;
+            btn.disabled = true;
+            btn.textContent = isEditing ? 'Updating...' : 'Creating...';
+
+            if (isEditing) {
+                await api.updateProject(editingId, data);
+                showSuccess('Project updated successfully');
+            } else {
+                await api.createProject(data);
+                showSuccess('Project created successfully');
+            }
+
+            const modal = bootstrap.Modal.getInstance(document.getElementById('createProjectModal'));
+            modal.hide();
+            form.reset();
+            loadProjects();
+
+            btn.disabled = false;
+            btn.textContent = originalText;
+        } catch (error) {
+            showError(error.message);
+            const btn = document.getElementById('create-project-btn');
+            btn.disabled = false;
+            btn.textContent = isEditing ? 'Update Project' : 'Create Project';
+        }
+    }
+
+    // Replace default form submission
+    document.getElementById('create-project-form').onsubmit = handleProjectSubmit;
+
+    function truncate(str, length) {
+        if (!str) return '';
+        return str.length > length ? str.substring(0, length) + '...' : str;
+    }
+
+    function formatDate(dateStr) {
+        if (!dateStr) return '-';
+        return new Date(dateStr).toLocaleDateString();
+    }
+
+    function openProjectAnalytics(event, projectId) {
+        event.stopPropagation();
+        const company = window.api.getCompanyName();
+        console.log('Navigating to analytics:', { company, projectId });
+
+        if (!projectId) {
+            console.error('Invalid project ID');
+            showError('Invalid project ID');
+            return;
+        }
+
+        if (!company) {
+            console.error('Could not determine company name');
+            showError('Could not determine company context');
+            return;
+        }
+
+        window.location.href = `/${company}/projects/${projectId}/analytics`;
+    }
+
+    // Make function globally accessible
+    window.showCreateProjectModal = showCreateProjectModal;
+    window.openProjectAnalytics = openProjectAnalytics;
+
+    // Wait for DOM to be ready before attaching event listeners
+    document.addEventListener('DOMContentLoaded', function () {
+        loadProjects();
+
+        // Attach click handlers to buttons
+        const newProjectBtn = document.getElementById('new-project-btn');
+        if (newProjectBtn) {
+            newProjectBtn.addEventListener('click', showCreateProjectModal);
+        }
+
+        // Attach form submit handler
+        const form = document.getElementById('create-project-form');
+        if (form) {
+            form.addEventListener('submit', function (e) {
+                e.preventDefault();
+                console.log('Form submitted');
+                const formData = new FormData(e.target);
+                const projectData = {
+                    name: formData.get('name'),
+                    key: formData.get('key'),
+                    description: formData.get('description') || '',
+                    lead_user_id: formData.get('lead_user_id') || null,
+                    start_date: formData.get('start_date') || null,
+                    end_date: formData.get('end_date') || null,
+                    extension_date: formData.get('extension_date') || null
+                };
+
+                if (projectData.lead_user_id) {
+                    projectData.lead_user_id = parseInt(projectData.lead_user_id);
+                }
+
+                console.log('Creating project with data:', projectData);
+                createProject(projectData);
+            });
+        } else {
+            console.error('Create project form not found!');
+        }
+    });
+</script>
+{% endblock %}

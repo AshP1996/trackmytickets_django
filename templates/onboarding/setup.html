@@ -1,0 +1,146 @@
+{% extends "base.html" %}
+
+{% block title %}Set Up Your Profile{% endblock %}
+
+{% block extra_css %}
+<style>
+    .setup-container {
+        max-width: 600px;
+        margin: 4rem auto;
+    }
+
+    .setup-card {
+        background: white;
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-xl);
+        padding: 3rem;
+        opacity: 0;
+        animation: fade-in 0.5s ease-out forwards;
+    }
+
+    .progress-dots {
+        display: flex;
+        justify-content: center;
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+
+    .dot {
+        width: 12px;
+        height: 12px;
+        background: var(--color-bg-tertiary);
+        border-radius: 50%;
+        transition: all 0.3s;
+    }
+
+    .dot.active {
+        background: var(--color-brand-primary);
+        transform: scale(1.2);
+    }
+
+    .form-group {
+        text-align: left;
+        margin-bottom: 1.5rem;
+        opacity: 0;
+        animation: slide-in-right 0.5s ease-out forwards;
+    }
+
+    .form-group:nth-child(1) {
+        animation-delay: 0.2s;
+    }
+
+    .form-group:nth-child(2) {
+        animation-delay: 0.4s;
+    }
+
+    @keyframes fade-in {
+        to {
+            opacity: 1;
+        }
+    }
+
+    @keyframes slide-in-right {
+        from {
+            opacity: 0;
+            transform: translateX(20px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateX(0);
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="setup-container">
+    <div class="setup-card text-center">
+        <div class="progress-dots">
+            <span class="dot active"></span>
+            <span class="dot active"></span>
+        </div>
+
+        <h2 class="h3 mb-4 font-weight-bold">Complete Your Profile</h2>
+        <p class="text-muted mb-4">Let's make sure your details are correct.</p>
+
+        <form id="setup-form">
+            <div class="form-group">
+                <label class="form-label font-weight-bold">Full Name</label>
+                <input type="text" class="form-control form-control-lg" id="full_name" required
+                    value="{{ current_user.full_name }}">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label font-weight-bold">Department</label>
+                <input type="text" class="form-control form-control-lg" id="department"
+                    placeholder="e.g. IT, Sales, Marketing" value="{{ current_user.department or '' }}">
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-lg w-100 mt-4 shadow-sm"
+                style="opacity: 0; animation: fade-in 0.5s 0.6s forwards;">
+                Complete Setup <i class="fas fa-check-circle ml-2"></i>
+            </button>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.getElementById('setup-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const btn = e.target.querySelector('button');
+        const originalText = btn.innerHTML;
+
+        // AnimationUtils.setButtonLoading(btn, true);
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+        btn.disabled = true;
+
+        try {
+            const response = await api.request('/onboarding/complete', {
+                method: 'POST',
+                body: JSON.stringify({
+                    full_name: document.getElementById('full_name').value,
+                    department: document.getElementById('department').value
+                })
+            });
+
+            // Success animation before redirect
+            btn.innerHTML = '<i class="fas fa-check"></i> All Set!';
+            btn.classList.remove('btn-primary');
+            btn.classList.add('btn-success');
+
+            setTimeout(() => {
+                window.location.href = response.redirect;
+            }, 800);
+
+        } catch (error) {
+            console.error('Setup failed:', error);
+            alert('Failed to complete setup: ' + error.message);
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        }
+    });
+</script>
+{% endblock %}

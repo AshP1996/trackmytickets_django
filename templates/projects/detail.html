@@ -1,0 +1,353 @@
+{% extends "base.html" %}
+{% block title %}Project Details{% endblock %}
+{% block page_title %}Project Details{% endblock %}
+
+{% block header_actions %}
+<a href="/{{ company_name }}/projects" class="btn btn-secondary">
+    <i class="fas fa-arrow-left"></i> Back to Projects
+</a>
+{% endblock %}
+
+{% block content %}
+<div id="project-detail-container">
+    <div class="two-col-layout two-col-layout--300">
+        <!-- Main Content -->
+        <div>
+            <!-- Project Header -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div>
+                            <h2 style="font-size: var(--font-size-xl); margin-bottom: var(--spacing-xs);">
+                                <span class="font-semibold" style="color: var(--color-brand-primary);"
+                                    id="project-key"></span>
+                                <span class="text-secondary" id="project-name"></span>
+                            </h2>
+                            <p class="text-tertiary" id="project-description"></p>
+                        </div>
+                        <div style="display: flex; gap: var(--spacing-sm);">
+                            <a href="/{{ company_name }}/projects/{{ project_id }}/analytics"
+                                class="btn btn-outline-primary btn-sm">
+                                <i class="fas fa-chart-line"></i> Analytics
+                            </a>
+                            <span id="project-status-badge"></span>
+                        </div>
+                    </div>
+
+                    <div id="project-extension-alert" class="alert alert-warning mb-3 d-none">
+                        <i class="fas fa-exclamation-triangle"></i> Extended until <span
+                            id="project-extension-date"></span>
+                    </div>
+
+                    <div class="three-col-metrics"
+                        style="padding-top: var(--spacing-lg); border-top: 1px solid var(--color-border-light);">
+                        <div>
+                            <div class="text-tertiary text-sm mb-1">Total Tickets</div>
+                            <div class="font-semibold" style="font-size: var(--font-size-lg);"
+                                id="project-tickets-count">0</div>
+                        </div>
+                        <div>
+                            <div class="text-tertiary text-sm mb-1">Lead</div>
+                            <div class="font-medium" id="project-lead">-</div>
+                        </div>
+                        <div>
+                            <div class="text-tertiary text-sm mb-1">Created</div>
+                            <div class="font-medium text-sm" id="project-created">-</div>
+                        </div>
+                    </div>
+
+                    <div class="three-col-metrics"
+                        style="padding-top: var(--spacing-md); border-top: 1px solid var(--color-border-light); margin-top: var(--spacing-md);">
+                        <div>
+                            <div class="text-tertiary text-sm mb-1">Start Date</div>
+                            <div class="font-medium text-sm" id="project-start">-</div>
+                        </div>
+                        <div>
+                            <div class="text-tertiary text-sm mb-1">End Date</div>
+                            <div class="font-medium text-sm" id="project-end">-</div>
+                        </div>
+                        <div>
+                            <div class="text-tertiary text-sm mb-1">Extension</div>
+                            <div class="font-medium text-sm" id="project-extension">-</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Project Stats -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title">Statistics</h5>
+                </div>
+                <div class="card-body">
+                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--spacing-lg);">
+                        <div>
+                            <canvas id="statusChart" style="max-height: 250px;"></canvas>
+                        </div>
+                        <div>
+                            <canvas id="priorityChart" style="max-height: 250px;"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Project Tickets -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title">Recent Tickets</h5>
+                    <a href="/{{ company_name }}/tickets?project_id={{ project_id }}" class="btn btn-sm btn-secondary">
+                        View All
+                    </a>
+                </div>
+                <div class="card-body" style="padding: 0;">
+                    <div class="table-container">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Ticket ID</th>
+                                    <th>Subject</th>
+                                    <th>Status</th>
+                                    <th>Priority</th>
+                                    <th>Created</th>
+                                </tr>
+                            </thead>
+                            <tbody id="project-tickets">
+                                <tr>
+                                    <td colspan="5" class="text-center">
+                                        <div class="loading">
+                                            <div class="spinner"></div>
+                                            <span style="margin-left: var(--spacing-sm);">Loading...</span>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div>
+            <!-- Workflow -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title">Workflow</h5>
+                </div>
+                <div class="card-body">
+                    <div id="workflow-info">
+                        <div class="loading">
+                            <div class="spinner"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Stats -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title">Quick Stats</h5>
+                </div>
+                <div class="card-body">
+                    <div id="quick-stats">
+                        <div class="loading">
+                            <div class="spinner"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const projectId = {{ project_id }};
+    let statusChart, priorityChart;
+
+    document.addEventListener('DOMContentLoaded', async () => {
+        await loadProject();
+    });
+
+    async function loadProject() {
+        try {
+            const project = await api.getProject(projectId);
+            const stats = await api.getProjectStats(projectId);
+
+            renderProject(project);
+            try {
+                if (stats) renderStats(stats);
+            } catch (e) {
+                console.error('Error rendering stats:', e);
+                document.getElementById('quick-stats').innerHTML = '<div class="text-tertiary text-center">Stats unavailable</div>';
+            }
+
+            await loadProjectTickets();
+
+            try {
+                renderWorkflow(project);
+            } catch (e) {
+                console.warn('Workflow render failed:', e);
+                document.getElementById('workflow-info').innerHTML = '<div class="text-tertiary text-center">Workflow unavailable</div>';
+            }
+        } catch (error) {
+            showError('Failed to load project: ' + error.message);
+        }
+    }
+
+    function renderProject(project) {
+        document.getElementById('project-key').textContent = project.key || '';
+        document.getElementById('project-name').textContent = project.name || '';
+        document.getElementById('project-description').textContent = project.description || 'No description provided.';
+        document.getElementById('project-status-badge').innerHTML =
+            project.is_active ?
+                '<span class="badge badge-status-resolved">Active</span>' :
+                '<span class="badge" style="background-color: var(--color-bg-tertiary); color: var(--color-text-tertiary);">Inactive</span>';
+        document.getElementById('project-tickets-count').textContent = project.tickets_count || 0;
+        document.getElementById('project-lead').textContent = project.lead_user_name || 'Unassigned';
+        document.getElementById('project-created').textContent = formatDate(project.created_at);
+        document.getElementById('project-start').textContent = formatDate(project.start_date);
+        document.getElementById('project-end').textContent = formatDate(project.end_date);
+        document.getElementById('project-extension').textContent = project.extension_date ? formatDate(project.extension_date) : '-';
+
+        if (project.extension_date) {
+            document.getElementById('project-extension-alert').classList.remove('d-none');
+            document.getElementById('project-extension-date').textContent = formatDate(project.extension_date);
+        }
+    }
+
+    function renderStats(stats) {
+        // Status Chart
+        if (stats.by_status) {
+            const ctx = document.getElementById('statusChart');
+            if (ctx && statusChart) statusChart.destroy();
+
+            statusChart = new Chart(ctx.getContext('2d'), {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(stats.by_status).map(formatStatus),
+                    datasets: [{
+                        data: Object.values(stats.by_status),
+                        backgroundColor: ['#ffab00', '#0052cc', '#ff5630', '#36b37e']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: { position: 'bottom' }
+                    }
+                }
+            });
+        }
+
+        // Priority Chart
+        if (stats.by_priority) {
+            const ctx = document.getElementById('priorityChart');
+            if (ctx && priorityChart) priorityChart.destroy();
+
+            priorityChart = new Chart(ctx.getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: Object.keys(stats.by_priority).map(formatPriority),
+                    datasets: [{
+                        data: Object.values(stats.by_priority),
+                        backgroundColor: ['#36b37e', '#ffab00', '#ff5630', '#de350b']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    scales: {
+                        y: { beginAtZero: true, ticks: { stepSize: 1 } }
+                    },
+                    plugins: {
+                        legend: { display: false }
+                    }
+                }
+            });
+        }
+
+        // Quick Stats
+        if (stats.by_status) {
+            document.getElementById('quick-stats').innerHTML = `
+            <div style="display: flex; flex-direction: column; gap: var(--spacing-md);">
+                <div>
+                    <div class="text-tertiary text-sm mb-1">Open</div>
+                    <div class="font-semibold">${stats.by_status.open || 0}</div>
+                </div>
+                <div>
+                    <div class="text-tertiary text-sm mb-1">In Progress</div>
+                    <div class="font-semibold">${stats.by_status.in_progress || 0}</div>
+                </div>
+                <div>
+                    <div class="text-tertiary text-sm mb-1">Resolved</div>
+                    <div class="font-semibold">${stats.by_status.resolved || 0}</div>
+                </div>
+                <div>
+                    <div class="text-tertiary text-sm mb-1">Closed</div>
+                    <div class="font-semibold">${stats.by_status.closed || 0}</div>
+                </div>
+            </div>
+        `;
+        }
+    }
+
+    async function loadProjectTickets() {
+        const tbody = document.getElementById('project-tickets');
+        try {
+            const response = await api.getTickets({ project_id: projectId, limit: 5 });
+            const tickets = response.tickets || response || [];
+
+            if (tickets.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="text-center text-tertiary">No tickets yet</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = tickets.map(t => `
+            <tr onclick="window.location.href='/' + window.api.getCompanyName() + '/tickets/' + t.id" style="cursor: pointer;">
+                <td><span class="font-medium text-primary">#${t.id}</span></td>
+                <td>${t.subject}</td>
+                <td><span class="badge badge-status-${t.status.replace('_', '-')}">${formatStatus(t.status)}</span></td>
+                <td><span class="badge badge-priority-${t.priority}">${formatPriority(t.priority)}</span></td>
+                <td class="text-tertiary">${formatDate(t.created_at)}</td>
+            </tr>
+        `).join('');
+        } catch (error) {
+            console.error('Failed to load tickets:', error);
+            tbody.innerHTML = '<tr><td colspan="5" class="text-center text-danger">Failed to load tickets</td></tr>';
+        }
+    }
+
+    async function renderWorkflow(project) {
+        try {
+            const workflow = await api.getProjectWorkflow(projectId);
+            document.getElementById('workflow-info').innerHTML = `
+            <div>
+                <div class="text-tertiary text-sm mb-2">States</div>
+                <div style="display: flex; flex-wrap: wrap; gap: var(--spacing-xs);">
+                    ${workflow.states.map(s => `<span class="badge badge-status-${s}">${formatStatus(s)}</span>`).join('')}
+                </div>
+            </div>
+        `;
+        } catch (error) {
+            document.getElementById('workflow-info').innerHTML = '<p class="text-tertiary text-sm">Workflow not available</p>';
+        }
+    }
+
+    function formatStatus(status) {
+        return status.split('_').map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(' ');
+    }
+
+    function formatPriority(priority) {
+        return priority.charAt(0).toUpperCase() + priority.slice(1);
+    }
+
+    function formatDate(dateString) {
+        if (!dateString) return '-';
+        const date = new Date(dateString);
+        return date.toLocaleDateString();
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,13 @@
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /api/
+Disallow: /platform/admin/
+Disallow: /*/admin/
+Disallow: /static/admin/
+
+# Sitemap
+Sitemap: https://trackmytickets.in/sitemap.xml
+
+# Crawl delay (be polite to search engines)
+Crawl-delay: 1

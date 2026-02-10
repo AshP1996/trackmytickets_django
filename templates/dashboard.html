@@ -1,0 +1,311 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Ticket Management System{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block content %}
+<!-- Statistics Cards -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-label">Total Tickets</div>
+        <div class="stat-value" id="total-tickets">-</div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-label">Open Tickets</div>
+        <div class="stat-value" id="open-tickets">-</div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-label">In Progress</div>
+        <div class="stat-value" id="in-progress-tickets">-</div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-label">Assigned to Me</div>
+        <div class="stat-value" id="my-assigned">-</div>
+    </div>
+</div>
+
+<!-- Charts Row -->
+<div
+    style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: var(--spacing-lg); margin-bottom: var(--spacing-xl);">
+    <div class="card">
+        <div class="card-header">
+            <h5 class="card-title">Tickets by Status</h5>
+        </div>
+        <div class="card-body">
+            <canvas id="statusChart" style="max-height: 300px;"></canvas>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h5 class="card-title">Tickets by Priority</h5>
+        </div>
+        <div class="card-body">
+            <canvas id="priorityChart" style="max-height: 300px;"></canvas>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Tickets -->
+<div class="card">
+    <div class="card-header">
+        <h5 class="card-title">Recent Tickets</h5>
+        <a href="/{{ company_name }}/tickets" class="btn btn-sm btn-secondary">
+            View All
+        </a>
+    </div>
+    <div class="card-body">
+        <div class="table-container">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Ticket ID</th>
+                        <th>Subject</th>
+                        <th>Status</th>
+                        <th>Priority</th>
+                        <th>Project</th>
+                        <th>Created</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="recent-tickets">
+                    <!-- Skeleton loaders will be inserted here -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let statusChart, priorityChart;
+
+    async function loadDashboard() {
+        // Show skeleton loaders for recent tickets
+        const tbody = document.getElementById('recent-tickets');
+        tbody.innerHTML = Array(5).fill(0).map(() => `
+            <tr>
+                <td><div class="skeleton skeleton-text short"></div></td>
+                <td><div class="skeleton skeleton-text medium"></div></td>
+                <td><div class="skeleton skeleton-badge"></div></td>
+                <td><div class="skeleton skeleton-badge"></div></td>
+                <td><div class="skeleton skeleton-text short"></div></td>
+                <td><div class="skeleton skeleton-text short"></div></td>
+                <td><div class="skeleton skeleton-badge"></div></td>
+            </tr>
+        `).join('');
+
+        try {
+            // Load stats
+            const stats = await api.getTicketStats();
+            console.log('Stats API response:', stats); // Debug log
+
+            // Update cards
+            document.getElementById('total-tickets').textContent = stats.total || 0;
+            document.getElementById('open-tickets').textContent = (stats.status_counts && stats.status_counts.open) || 0;
+            document.getElementById('in-progress-tickets').textContent =
+                ((stats.status_counts && stats.status_counts.in_progress) || 0) +
+                ((stats.status_counts && stats.status_counts.inprocess) || 0);
+            document.getElementById('my-assigned').textContent = stats.my_assigned || 0;
+
+            // Load recent tickets
+            const ticketsResponse = await api.getTickets({ page: 1, per_page: 10 });
+            console.log('Tickets API response:', ticketsResponse); // Debug log
+
+            // Small delay for smooth transition
+            await new Promise(resolve => setTimeout(resolve, 300));
+
+            // Handle both paginated and non-paginated responses
+            // Handle both paginated and non-paginated responses
+            const tickets = ticketsResponse.results || ticketsResponse.tickets || (Array.isArray(ticketsResponse) ? ticketsResponse : []);
+            renderRecentTickets(tickets);
+
+            // Render charts
+            if (stats.status_counts) {
+                renderStatusChart(stats.status_counts);
+            }
+            if (stats.priority_counts) {
+                renderPriorityChart(stats.priority_counts);
+            }
+
+        } catch (error) {
+            console.error('Error loading dashboard:', error);
+            const msg = error.message || 'Unknown error';
+
+            if (msg.includes('403') || msg.toLowerCase().includes('authentication') || msg.toLowerCase().includes('permission')) {
+                showError('Authentication error. Please log in again.');
+                setTimeout(() => {
+                    // Force logout if session is invalid
+                    window.location.href = `/${window.api.getCompanyName()}/login`;
+                }, 2000);
+            } else {
+                showError('Failed to load dashboard: ' + msg);
+            }
+        }
+    }
+
+    function renderRecentTickets(tickets) {
+        const tbody = document.getElementById('recent-tickets');
+
+        if (tickets.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="7" class="text-center text-tertiary">No tickets found</td></tr>';
+            return;
+        }
+
+        // Fade transition
+        tbody.style.opacity = '0';
+        tbody.innerHTML = tickets.map(ticket => `
+            <tr onclick="window.location.href='/' + window.api.getCompanyName() + '/tickets/' + ticket.id" style="cursor: pointer;">
+                <td><span class="font-semibold">${ticket.ticket_id || ticket.id}</span></td>
+                <td>
+                    <div>${truncate(ticket.subject || '', 50)}</div>
+                    <small class="text-tertiary">${ticket.sender_email || ''}</small>
+                </td>
+                <td><span class="badge badge-status-${getStatusClass(ticket.status)}">${formatStatus(ticket.status)}</span></td>
+                <td><span class="badge badge-priority-${ticket.priority || 'low'}">${formatPriority(ticket.priority || 'low')}</span></td>
+                <td><span class="text-secondary">${ticket.project_key || '-'}</span></td>
+                <td><span class="text-tertiary text-sm">${formatDate(ticket.created_at)}</span></td>
+                <td>
+                    <a href="/${window.api.getCompanyName()}/tickets/${ticket.id}" class="btn btn-sm btn-secondary" onclick="event.stopPropagation();">
+                        <i class="fas fa-eye"></i>
+                    </a>
+                </td>
+            </tr>
+        `).join('');
+
+        // Fade in with stagger
+        requestAnimationFrame(() => {
+            tbody.style.transition = 'opacity 200ms ease-out';
+            tbody.style.opacity = '1';
+
+            const rows = tbody.querySelectorAll('tr');
+            rows.forEach((row, index) => {
+                row.style.opacity = '0';
+                row.style.transform = 'translateY(10px)';
+                setTimeout(() => {
+                    row.style.transition = 'opacity 200ms ease-out, transform 200ms ease-out';
+                    row.style.opacity = '1';
+                    row.style.transform = 'translateY(0)';
+                }, index * 30);
+            });
+        });
+    }
+
+    function renderStatusChart(statusCounts) {
+        const ctx = document.getElementById('statusChart');
+        if (!ctx) return;
+
+        if (statusChart) statusChart.destroy();
+
+        const labels = Object.keys(statusCounts).map(formatStatus);
+        const data = Object.values(statusCounts);
+        const colors = {
+            'open': '#ffab00',
+            'in_progress': '#0052cc',
+            'inprocess': '#0052cc',
+            'waiting': '#ff5630',
+            'resolved': '#36b37e',
+            'closed': '#36b37e'
+        };
+
+        statusChart = new Chart(ctx.getContext('2d'), {
+            type: 'doughnut',
+            data: {
+                labels: labels,
+                datasets: [{
+                    data: data,
+                    backgroundColor: Object.keys(statusCounts).map(s => colors[s] || '#6b778c')
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            font: {
+                                size: 12
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    function renderPriorityChart(priorityCounts) {
+        const ctx = document.getElementById('priorityChart');
+        if (!ctx) return;
+
+        if (priorityChart) priorityChart.destroy();
+
+        priorityChart = new Chart(ctx.getContext('2d'), {
+            type: 'bar',
+            data: {
+                labels: Object.keys(priorityCounts).map(formatPriority),
+                datasets: [{
+                    label: 'Tickets',
+                    data: Object.values(priorityCounts),
+                    backgroundColor: ['#36b37e', '#ffab00', '#ff5630', '#de350b']
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            stepSize: 1
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                }
+            }
+        });
+    }
+
+    function getStatusClass(status) {
+        const map = {
+            'open': 'open',
+            'in_progress': 'in-progress',
+            'inprocess': 'in-progress',
+            'waiting': 'waiting',
+            'resolved': 'resolved',
+            'closed': 'closed'
+        };
+        return map[status] || 'open';
+    }
+
+    function formatStatus(status) {
+        return status.split('_').map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(' ');
+    }
+
+    function formatPriority(priority) {
+        return priority.charAt(0).toUpperCase() + priority.slice(1);
+    }
+
+    function formatDate(dateString) {
+        if (!dateString) return '-';
+        const date = new Date(dateString);
+        return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    }
+
+    function truncate(str, length) {
+        if (!str) return '';
+        return str.length > length ? str.substring(0, length) + '...' : str;
+    }
+
+    // Load dashboard on page load
+    document.addEventListener('DOMContentLoaded', loadDashboard);
+</script>
+{% endblock %}

@@ -1,0 +1,625 @@
+/**
+ * Professional Animations System
+ * 
+ * Enterprise-grade animations that improve clarity and perceived performance.
+ * All animations are subtle, purposeful, and enhance UX without being distracting.
+ */
+
+/* ============================================
+   ANIMATION TOKENS
+   ============================================ */
+:root {
+    --animation-fast: 150ms ease-out;
+    --animation-base: 200ms ease-out;
+    --animation-slow: 300ms ease-out;
+    --animation-slower: 400ms ease-out;
+    
+    --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+    --ease-out: cubic-bezier(0, 0, 0.2, 1);
+    --ease-in: cubic-bezier(0.4, 0, 1, 1);
+}
+
+/* ============================================
+   SKELETON LOADERS
+   ============================================ */
+.skeleton {
+    background: linear-gradient(
+        90deg,
+        var(--color-bg-secondary) 0%,
+        var(--color-bg-tertiary) 50%,
+        var(--color-bg-secondary) 100%
+    );
+    background-size: 200% 100%;
+    animation: skeleton-loading 1.5s ease-in-out infinite;
+    border-radius: var(--radius-md);
+}
+
+.skeleton-text {
+    height: 1em;
+    margin-bottom: var(--spacing-xs);
+}
+
+.skeleton-text:last-child {
+    margin-bottom: 0;
+}
+
+.skeleton-text.short {
+    width: 60%;
+}
+
+.skeleton-text.medium {
+    width: 80%;
+}
+
+.skeleton-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+}
+
+.skeleton-badge {
+    width: 60px;
+    height: 20px;
+    border-radius: var(--radius-sm);
+}
+
+.skeleton-card {
+    padding: var(--spacing-lg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+}
+
+@keyframes skeleton-loading {
+    0% {
+        background-position: 200% 0;
+    }
+    100% {
+        background-position: -200% 0;
+    }
+}
+
+/* Table Row Skeleton */
+.skeleton-row {
+    display: grid;
+    grid-template-columns: 120px 1fr 100px 100px 120px 150px 120px 80px;
+    gap: var(--spacing-md);
+    padding: var(--spacing-md);
+    border-bottom: 1px solid var(--color-border-light);
+}
+
+.skeleton-row-cell {
+    height: 16px;
+}
+
+/* ============================================
+   STATUS CHANGE TRANSITIONS
+   ============================================ */
+.badge {
+    transition: background-color var(--animation-base), 
+                color var(--animation-base),
+                transform var(--animation-fast);
+}
+
+.badge-status-open,
+.badge-status-in-progress,
+.badge-status-waiting,
+.badge-status-resolved,
+.badge-status-closed {
+    transition: all var(--animation-base);
+}
+
+/* Smooth status change animation */
+.status-transition {
+    animation: status-pulse var(--animation-slow) ease-out;
+}
+
+@keyframes status-pulse {
+    0% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    50% {
+        transform: scale(1.05);
+        opacity: 0.9;
+    }
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+/* ============================================
+   MODAL ANIMATIONS
+   ============================================ */
+.modal-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(23, 43, 77, 0.4);
+    backdrop-filter: blur(4px);
+    z-index: 1000;
+    opacity: 0;
+    animation: fade-in var(--animation-base) ease-out forwards;
+}
+
+.modal-backdrop.closing {
+    animation: fade-out var(--animation-base) ease-out forwards;
+}
+
+.modal {
+    /* Reset to Bootstrap default behavior */
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 1055;
+    display: none;
+    width: 100%;
+    height: 100%;
+    overflow-x: hidden;
+    overflow-y: auto;
+    outline: 0;
+    background-color: transparent;
+    opacity: 1; /* Bootstrap handles display, we handle content animation */
+    /* Remove conflicting custom styles */
+    transform: none;
+    box-shadow: none;
+    border-radius: 0;
+    max-width: none;
+    max-height: none;
+    animation: none;
+}
+
+.modal-dialog {
+    animation: modal-open var(--animation-base) var(--ease-out) forwards;
+}
+
+.modal.closing .modal-dialog {
+    animation: modal-close var(--animation-base) var(--ease-in) forwards;
+}
+
+.modal-content {
+    background-color: var(--color-bg-primary);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-xl);
+    border: none;
+}
+
+
+
+@keyframes fade-in {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes fade-out {
+    from {
+        opacity: 1;
+    }
+    to {
+        opacity: 0;
+    }
+}
+
+@keyframes modal-open {
+    from {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+@keyframes modal-close {
+    from {
+        opacity: 1;
+        transform: scale(1);
+    }
+    to {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+}
+
+/* ============================================
+   PAGE TRANSITIONS
+   ============================================ */
+.app-content {
+    animation: page-fade-in var(--animation-base) ease-out;
+}
+
+@keyframes page-fade-in {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Card entrance animation */
+.card {
+    animation: card-entrance var(--animation-slow) var(--ease-out);
+}
+
+@keyframes card-entrance {
+    from {
+        opacity: 0;
+        transform: translateY(12px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Stagger card animations */
+.card:nth-child(1) { animation-delay: 0ms; }
+.card:nth-child(2) { animation-delay: 50ms; }
+.card:nth-child(3) { animation-delay: 100ms; }
+.card:nth-child(4) { animation-delay: 150ms; }
+.card:nth-child(5) { animation-delay: 200ms; }
+.card:nth-child(6) { animation-delay: 250ms; }
+
+/* ============================================
+   SUCCESS / ERROR FEEDBACK
+   ============================================ */
+.alert {
+    animation: alert-slide-in var(--animation-base) var(--ease-out);
+    transform-origin: top center;
+}
+
+.alert.closing {
+    animation: alert-slide-out var(--animation-base) var(--ease-in) forwards;
+}
+
+@keyframes alert-slide-in {
+    from {
+        opacity: 0;
+        transform: translateY(-20px) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+@keyframes alert-slide-out {
+    from {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+    to {
+        opacity: 0;
+        transform: translateY(-20px) scale(0.95);
+    }
+}
+
+/* Success checkmark animation */
+.success-checkmark {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background-color: var(--color-status-resolved);
+    position: relative;
+    animation: checkmark-pop var(--animation-base) var(--ease-out);
+}
+
+.success-checkmark::after {
+    content: '';
+    position: absolute;
+    left: 6px;
+    top: 2px;
+    width: 6px;
+    height: 12px;
+    border: solid white;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+}
+
+@keyframes checkmark-pop {
+    0% {
+        transform: scale(0);
+    }
+    50% {
+        transform: scale(1.2);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+/* Error X animation */
+.error-x {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background-color: var(--color-status-waiting);
+    position: relative;
+    animation: error-pop var(--animation-base) var(--ease-out);
+}
+
+.error-x::before,
+.error-x::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 10px;
+    height: 2px;
+    background-color: white;
+    transform: translate(-50%, -50%) rotate(45deg);
+}
+
+.error-x::after {
+    transform: translate(-50%, -50%) rotate(-45deg);
+}
+
+@keyframes error-pop {
+    0% {
+        transform: scale(0);
+    }
+    50% {
+        transform: scale(1.2);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+/* ============================================
+   BUTTON INTERACTIONS
+   ============================================ */
+.btn {
+    transition: all var(--animation-fast);
+    position: relative;
+    overflow: hidden;
+}
+
+.btn::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.3);
+    transform: translate(-50%, -50%);
+    transition: width var(--animation-base), height var(--animation-base);
+}
+
+.btn:active::before {
+    width: 300px;
+    height: 300px;
+}
+
+.btn:active {
+    transform: scale(0.98);
+}
+
+/* Loading button state */
+.btn.loading {
+    pointer-events: none;
+    opacity: 0.7;
+}
+
+.btn.loading::after {
+    content: '';
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    margin-left: var(--spacing-xs);
+    border: 2px solid currentColor;
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* ============================================
+   TABLE ROW INTERACTIONS
+   ============================================ */
+.table tbody tr {
+    transition: background-color var(--animation-fast),
+                transform var(--animation-fast);
+}
+
+.table tbody tr:hover {
+    transform: translateX(2px);
+}
+
+.table tbody tr:active {
+    transform: translateX(0);
+}
+
+/* ============================================
+   FORM INTERACTIONS
+   ============================================ */
+.form-control:focus,
+.form-select:focus {
+    transition: border-color var(--animation-base),
+                box-shadow var(--animation-base);
+}
+
+/* Input validation states */
+.form-control.valid {
+    border-color: var(--color-status-resolved);
+    animation: input-valid var(--animation-base);
+}
+
+.form-control.invalid {
+    border-color: var(--color-status-waiting);
+    animation: input-invalid var(--animation-base);
+}
+
+@keyframes input-valid {
+    0%, 100% {
+        border-color: var(--color-status-resolved);
+    }
+    50% {
+        border-color: var(--color-status-resolved);
+        box-shadow: 0 0 0 3px rgba(54, 179, 126, 0.1);
+    }
+}
+
+@keyframes input-invalid {
+    0%, 100% {
+        border-color: var(--color-status-waiting);
+    }
+    50% {
+        transform: translateX(-2px);
+    }
+}
+
+/* ============================================
+   COMMENT ENTRANCE
+   ============================================ */
+.comment-item,
+.history-item {
+    animation: comment-slide-in var(--animation-base) var(--ease-out);
+}
+
+@keyframes comment-slide-in {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ============================================
+   STAT CARD HOVER
+   ============================================ */
+.stat-card {
+    transition: transform var(--animation-base),
+                box-shadow var(--animation-base);
+}
+
+.stat-card:hover {
+    transform: translateY(-4px);
+}
+
+/* ============================================
+   SMOOTH SCROLLING
+   ============================================ */
+html {
+    scroll-behavior: smooth;
+}
+
+/* ============================================
+   REDUCE MOTION (ACCESSIBILITY)
+   ============================================ */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+    
+    html {
+        scroll-behavior: auto;
+    }
+}
+
+/* ============================================
+   LOADING STATES
+   ============================================ */
+.loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(2px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    opacity: 0;
+    animation: fade-in var(--animation-base) forwards;
+}
+
+.loading-overlay.closing {
+    animation: fade-out var(--animation-base) forwards;
+}
+
+/* ============================================
+   TOAST NOTIFICATIONS
+   ============================================ */
+.toast {
+    position: fixed;
+    bottom: var(--spacing-lg);
+    right: var(--spacing-lg);
+    background-color: var(--color-bg-primary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-lg);
+    padding: var(--spacing-md) var(--spacing-lg);
+    min-width: 300px;
+    max-width: 400px;
+    z-index: 10000;
+    opacity: 0;
+    transform: translateY(20px);
+    animation: toast-slide-in var(--animation-base) var(--ease-out) forwards;
+}
+
+.toast.closing {
+    animation: toast-slide-out var(--animation-base) var(--ease-in) forwards;
+}
+
+.toast.success {
+    border-left: 4px solid var(--color-status-resolved);
+}
+
+.toast.error {
+    border-left: 4px solid var(--color-status-waiting);
+}
+
+.toast.info {
+    border-left: 4px solid var(--color-status-in-progress);
+}
+
+@keyframes toast-slide-in {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes toast-slide-out {
+    from {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    to {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+}

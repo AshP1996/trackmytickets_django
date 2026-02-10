@@ -1,0 +1,261 @@
+{% extends "base.html" %}
+{% block title %}Project Analytics{% endblock %}
+{% block page_title %}Project Analytics{% endblock %}
+
+{% block header_actions %}
+<a href="/{{ company_name }}/projects/{{ project_id }}" class="btn btn-secondary">
+    <i class="fas fa-arrow-left"></i> Back to Project
+</a>
+{% endblock %}
+
+{% block content %}
+<div id="analytics-container">
+    <div class="d-flex justify-content-center" id="loading-state">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+    </div>
+
+    <div id="analytics-content" style="display: none;">
+        <!-- Project Header & Timeline -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h2 class="card-title h4 mb-0" id="project-name"></h2>
+                    <span class="badge bg-primary" id="completion-badge"></span>
+                </div>
+
+                <!-- Timeline -->
+                <div class="mb-2">
+                    <div class="d-flex justify-content-between text-sm text-tertiary mb-1">
+                        <span id="start-date">-</span>
+                        <span id="end-date">-</span>
+                    </div>
+                    <div class="progress" style="height: 10px;">
+                        <div class="progress-bar bg-success" role="progressbar" id="timeline-progress"
+                            style="width: 0%"></div>
+                    </div>
+                    <div class="text-center mt-1 text-sm text-tertiary" id="timeline-text"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- Daily Progress Chart -->
+            <div class="col-md-8 mb-4">
+                <div class="card h-100">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">Daily Progress (Last 30 Days)</h5>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="dailyProgressChart" style="height: 300px; width: 100%;"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Team Overview -->
+            <div class="col-md-4 mb-4">
+                <div class="card h-100">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">Team Stats</h5>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="agentPerformanceChart" style="height: 300px; width: 100%;"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Detailed Agent Stats -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Team Performance Details</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width: 25%;">Agent</th>
+                                <th style="width: 15%;">Department</th>
+                                <th class="text-center" style="width: 10%;">Assigned</th>
+                                <th class="text-center" style="width: 10%;">Resolved</th>
+                                <th style="width: 25%;">Completion</th>
+                                <th class="text-end" style="width: 10%;">Avg. Time</th>
+                                <th class="text-end" style="width: 5%;">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="agent-stats-body">
+                            <!-- Populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const projectId = {{ project_id }};
+    let dailyChart, agentChart;
+
+    document.addEventListener('DOMContentLoaded', async () => {
+        await loadAnalytics();
+    });
+
+    async function loadAnalytics() {
+        try {
+            const data = await api.request(`/api/projects/${projectId}/analytics`);
+            renderAnalytics(data);
+            const loader = document.getElementById('loading-state');
+            loader.classList.remove('d-flex');
+            loader.style.display = 'none';
+            document.getElementById('analytics-content').style.display = 'block';
+        } catch (error) {
+            showError('Failed to load analytics: ' + error.message);
+        }
+    }
+
+    function renderAnalytics(data) {
+        // Project Info
+        document.getElementById('project-name').textContent = data.project.name;
+        document.getElementById('completion-badge').textContent = `${data.project.completion_percentage}% Complete`;
+
+        // Timeline
+        const start = data.project.start_date ? new Date(data.project.start_date) : null;
+        const end = data.project.end_date ? new Date(data.project.end_date) : null;
+
+        document.getElementById('start-date').textContent = start ? start.toLocaleDateString() : 'Start TBD';
+        document.getElementById('end-date').textContent = end ? end.toLocaleDateString() : 'End TBD';
+
+        if (start && end) {
+            const totalDuration = end - start;
+            const elapsed = new Date() - start;
+            let progress = 0;
+            if (elapsed > 0) {
+                progress = Math.min(100, (elapsed / totalDuration) * 100);
+            }
+            document.getElementById('timeline-progress').style.width = `${progress}%`;
+
+            // Color indication
+            const today = new Date();
+            if (today > end) {
+                document.getElementById('timeline-progress').classList.remove('bg-success');
+                document.getElementById('timeline-progress').classList.add('bg-danger');
+                document.getElementById('timeline-text').textContent = 'Project Overdue';
+                document.getElementById('timeline-text').classList.add('text-danger');
+            } else {
+                const daysLeft = Math.ceil((end - today) / (1000 * 60 * 60 * 24));
+                document.getElementById('timeline-text').textContent = `${daysLeft} days remaining`;
+            }
+        } else {
+            document.getElementById('timeline-text').textContent = 'Dates not set';
+        }
+
+        // Daily Progress Chart
+        const ctxDaily = document.getElementById('dailyProgressChart').getContext('2d');
+        dailyChart = new Chart(ctxDaily, {
+            type: 'line',
+            data: {
+                labels: data.daily_progress.labels,
+                datasets: [{
+                    label: 'Tickets Resolved',
+                    data: data.daily_progress.data,
+                    borderColor: '#0052cc',
+                    backgroundColor: 'rgba(0, 82, 204, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    y: { beginAtZero: true, ticks: { stepSize: 1 } }
+                },
+                animation: {
+                    duration: 2000,
+                    easing: 'easeOutQuart'
+                }
+            }
+        });
+
+        // Agent Performance Chart (Bar)
+        const ctxAgent = document.getElementById('agentPerformanceChart').getContext('2d');
+        const agentNames = data.team_stats.map(s => s.name);
+        const resolvedCounts = data.team_stats.map(s => s.resolved);
+
+        agentChart = new Chart(ctxAgent, {
+            type: 'bar',
+            data: {
+                labels: agentNames,
+                datasets: [{
+                    label: 'Resolved',
+                    data: resolvedCounts,
+                    backgroundColor: '#36b37e'
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    y: { beginAtZero: true, ticks: { stepSize: 1 } }
+                },
+                animation: {
+                    delay: (context) => {
+                        let delay = 0;
+                        if (context.type === 'data' && context.mode === 'default' && !context.dropped) {
+                            delay = context.dataIndex * 300 + context.datasetIndex * 100;
+                        }
+                        return delay;
+                    },
+                    duration: 2000,
+                    easing: 'easeOutQuart'
+                }
+            }
+        });
+
+        // Agent Table
+        const tbody = document.getElementById('agent-stats-body');
+        tbody.innerHTML = data.team_stats.map(agent => `
+            <tr>
+                <td>
+                    <div class="d-flex align-items-center">
+                        <div class="avatar-circle sm bg-primary text-white me-2">
+                            ${agent.name.charAt(0).toUpperCase()}
+                        </div>
+                        <span class="font-medium">${agent.name}</span>
+                    </div>
+                </td>
+                <td class="text-secondary">${agent.department || '-'}</td>
+                <td class="text-center font-semibold">${agent.assigned}</td>
+                <td class="text-center font-semibold text-success">${agent.resolved}</td>
+                <td>
+                    <div class="progress" style="height: 6px; margin-top: 8px;">
+                        <div class="progress-bar bg-success" role="progressbar" 
+                             style="width: ${agent.assigned > 0 ? (agent.resolved / agent.assigned * 100) : 0}%">
+                        </div>
+                    </div>
+                </td>
+                <td class="text-end">${agent.avg_time_hours}h</td>
+                <td class="text-end">
+                    ${renderPerformanceBadge(agent.avg_time_hours)}
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    function renderPerformanceBadge(hours) {
+        if (hours < 12) return '<span class="badge bg-success">Excellent</span>';
+        if (hours < 24) return '<span class="badge bg-info">Good</span>';
+        if (hours < 48) return '<span class="badge bg-warning text-dark">Average</span>';
+        return '<span class="badge bg-danger">Slow</span>';
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,19 @@
+[Unit]
+Description=gunicorn daemon for TrackMyTickets
+Requires=gunicorn.socket
+After=network.target
+
+[Service]
+User=www-data
+Group=www-data
+WorkingDirectory=/var/www/trackmytickets/ticket_system_django
+EnvironmentFile=/var/www/trackmytickets/.env
+ExecStart=/var/www/trackmytickets/venv/bin/gunicorn \
+          --access-logfile /var/www/trackmytickets/logs/gunicorn-access.log \
+          --error-logfile /var/www/trackmytickets/logs/gunicorn-error.log \
+          --workers 3 \
+          --bind unix:/run/gunicorn.sock \
+          config.wsgi:application
+
+[Install]
+WantedBy=multi-user.target

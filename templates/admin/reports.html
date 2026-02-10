@@ -1,0 +1,212 @@
+{% extends "base.html" %}
+
+{% block title %}Reports - Admin{% endblock %}
+{% block page_title %}Reports{% endblock %}
+
+{% block content %}
+<div class="row mt-4">
+    <div class="col-12">
+        <h2><i class="fas fa-chart-bar"></i> Reports & Analytics</h2>
+        <p class="text-muted">View detailed reports and performance metrics</p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title">Performance Report</h5>
+            </div>
+            <div class="card-body">
+                <div id="performance-report-container">
+                    <div class="loading">
+                        <div class="spinner"></div>
+                        <span style="margin-left: var(--spacing-sm);">Loading performance report...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">Ticket Export</h5>
+                <button class="btn btn-primary btn-sm" onclick="exportTickets()">
+                    <i class="fas fa-download"></i> Export to CSV
+                </button>
+            </div>
+            <div class="card-body">
+                <p class="text-muted">Export all tickets to CSV format for analysis</p>
+                <div class="form-group">
+                    <label class="form-label">Date Range</label>
+                    <div class="d-flex gap-2">
+                        <input type="date" class="form-control" id="export-start-date">
+                        <input type="date" class="form-control" id="export-end-date">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    async function loadPerformanceReport() {
+        try {
+            const report = await api.getPerformanceReport();
+            renderPerformanceReport(report);
+        } catch (error) {
+            showError('Failed to load performance report: ' + error.message);
+            document.getElementById('performance-report-container').innerHTML = 
+                '<p class="text-muted">Error loading report. Please try again.</p>';
+        }
+    }
+
+    function renderPerformanceReport(report) {
+        const container = document.getElementById('performance-report-container');
+        
+        if (!report || Object.keys(report).length === 0) {
+            container.innerHTML = '<p class="text-muted">No performance data available</p>';
+            return;
+        }
+
+        let html = '<div class="row">';
+        
+        // Average Response Time
+        if (report.avg_response_time) {
+            html += `
+                <div class="col-md-4 mb-3">
+                    <div class="card">
+                        <div class="card-body">
+                            <h6 class="text-muted">Average Response Time</h6>
+                            <h3>${formatTime(report.avg_response_time)}</h3>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // Average Resolution Time
+        if (report.avg_resolution_time) {
+            html += `
+                <div class="col-md-4 mb-3">
+                    <div class="card">
+                        <div class="card-body">
+                            <h6 class="text-muted">Average Resolution Time</h6>
+                            <h3>${formatTime(report.avg_resolution_time)}</h3>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // Total Tickets
+        if (report.total_tickets !== undefined) {
+            html += `
+                <div class="col-md-4 mb-3">
+                    <div class="card">
+                        <div class="card-body">
+                            <h6 class="text-muted">Total Tickets</h6>
+                            <h3>${report.total_tickets}</h3>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        html += '</div>';
+        
+        // Ticket Status Breakdown
+        if (report.status_breakdown) {
+            html += `
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <h5>Ticket Status Breakdown</h5>
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Status</th>
+                                        <th>Count</th>
+                                        <th>Percentage</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${Object.entries(report.status_breakdown).map(([status, count]) => `
+                                        <tr>
+                                            <td><span class="badge bg-info">${status}</span></td>
+                                            <td>${count}</td>
+                                            <td>${((count / report.total_tickets) * 100).toFixed(1)}%</td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        container.innerHTML = html;
+    }
+
+    function formatTime(seconds) {
+        if (!seconds) return 'N/A';
+        const hours = Math.floor(seconds / 3600);
+        const minutes = Math.floor((seconds % 3600) / 60);
+        if (hours > 0) {
+            return `${hours}h ${minutes}m`;
+        }
+        return `${minutes}m`;
+    }
+
+    async function exportTickets() {
+        const startDate = document.getElementById('export-start-date').value;
+        const endDate = document.getElementById('export-end-date').value;
+        
+        try {
+            let url = '/api/admin/tickets/export';
+            const params = new URLSearchParams();
+            if (startDate) params.append('start_date', startDate);
+            if (endDate) params.append('end_date', endDate);
+            if (params.toString()) url += '?' + params.toString();
+            
+            const token = localStorage.getItem('access_token');
+            const response = await fetch(url, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            
+            if (!response.ok) {
+                throw new Error('Export failed');
+            }
+            
+            const blob = await response.blob();
+            const downloadUrl = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = downloadUrl;
+            a.download = `tickets_export_${new Date().toISOString().split('T')[0]}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(downloadUrl);
+            
+            showSuccess('Tickets exported successfully');
+        } catch (error) {
+            showError('Failed to export tickets: ' + error.message);
+        }
+    }
+
+    // API method should exist in api.js
+
+    document.addEventListener('DOMContentLoaded', function() {
+        loadPerformanceReport();
+    });
+</script>
+{% endblock %}

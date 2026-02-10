@@ -1,0 +1,376 @@
+{% extends "base.html" %}
+
+{% block title %}Notifications{% endblock %}
+{% block page_title %}Notifications{% endblock %}
+
+{% block header_actions %}
+<button class="btn btn-secondary" onclick="markAllRead()" id="mark-all-btn">
+    <i class="fas fa-check-double"></i> Mark all as read
+</button>
+{% endblock %}
+
+{% block content %}
+<style>
+    /* Notifications Page Specific Styles */
+    .notification-list {
+        display: flex;
+        flex-direction: column;
+        gap: var(--spacing-md);
+    }
+
+    .notification-card {
+        display: flex;
+        align-items: flex-start;
+        padding: var(--spacing-md);
+        background-color: var(--color-bg-primary);
+        border: 1px solid var(--color-border-light);
+        border-radius: var(--radius-lg);
+        transition: all var(--transition-base);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .notification-card:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-md);
+        border-color: var(--color-border);
+    }
+
+    .notification-card.unread {
+        background-color: #f7faff;
+        /* Very subtle blue tint */
+        border-left: 4px solid var(--color-brand-primary);
+    }
+
+    .notification-card.read {
+        border-left: 4px solid transparent;
+        /* Keep layout consistent */
+        opacity: 0.9;
+    }
+
+    .notification-icon-wrapper {
+        flex-shrink: 0;
+        margin-right: var(--spacing-md);
+    }
+
+    .notification-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.2rem;
+        transition: transform var(--transition-fast);
+        background: #f4f5f7;
+        color: var(--color-text-secondary);
+    }
+
+    .notification-card:hover .notification-icon {
+        transform: scale(1.05);
+    }
+
+    /* Icon Themes */
+    .icon-theme-assigned {
+        background-color: #deebff;
+        color: #0052cc;
+    }
+
+    .icon-theme-comment {
+        background-color: #e3fcef;
+        color: #006644;
+    }
+
+    .icon-theme-status {
+        background-color: #fff0b3;
+        color: #172b4d;
+    }
+
+    /* Dark text on yellow */
+    .icon-theme-generic {
+        background-color: #eae6ff;
+        color: #403294;
+    }
+
+    .notification-content {
+        flex: 1;
+        min-width: 0;
+        /* Text truncation fix */
+    }
+
+    .notification-text {
+        color: var(--color-text-primary);
+        font-size: var(--font-size-base);
+        line-height: var(--line-height-normal);
+        margin-bottom: var(--spacing-xs);
+    }
+
+    .notification-meta {
+        display: flex;
+        align-items: center;
+        gap: var(--spacing-md);
+        color: var(--color-text-tertiary);
+        font-size: var(--font-size-xs);
+    }
+
+    .notification-actions {
+        display: flex;
+        align-items: center;
+        gap: var(--spacing-sm);
+        margin-left: var(--spacing-md);
+        opacity: 0;
+        /* Hidden by default */
+        transition: opacity var(--transition-fast);
+    }
+
+    .notification-card:hover .notification-actions {
+        opacity: 1;
+    }
+
+    /* Mobile tweaks */
+    @media (max-width: 768px) {
+        .notification-actions {
+            opacity: 1;
+        }
+
+        /* Always show on mobile */
+    }
+
+    /* Animation for new items */
+    @keyframes slideIn {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .animate-in {
+        animation: slideIn 0.3s ease-out forwards;
+    }
+</style>
+
+<div class="row justify-content-center">
+    <div class="col-lg-10">
+        <div id="notifications-container" class="notification-list">
+            <!-- Loading State -->
+            <div class="text-center p-5">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pagination -->
+        <div class="mt-4 d-flex justify-content-center">
+            <nav aria-label="Page navigation">
+                <ul class="pagination" id="pagination"></ul>
+            </nav>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let currentPage = 1;
+    const perPage = 20;
+
+    document.addEventListener('DOMContentLoaded', () => {
+        loadNotifications();
+    });
+
+    async function loadNotifications(page = 1) {
+        currentPage = page;
+        const container = document.getElementById('notifications-container');
+
+        // Simple fade out if content exists
+        if (container.children.length > 0 && !container.querySelector('.spinner-border')) {
+            container.style.opacity = '0.5';
+        }
+
+        try {
+            const data = await api.request(`/api/notifications/?page=${page}&per_page=${perPage}`);
+            // Handle DRF pagination format (results) or direct array
+            const notifications = data.results || (Array.isArray(data) ? data : []);
+
+            if (notifications.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-5">
+                        <div class="mb-3">
+                            <i class="fas fa-bell-slash fa-3x text-tertiary" style="opacity: 0.3;"></i>
+                        </div>
+                        <h4 class="text-secondary mb-2">All caught up!</h4>
+                        <p class="text-tertiary">No new notifications to display.</p>
+                    </div>
+                `;
+                container.style.opacity = '1';
+                document.getElementById('mark-all-btn').style.display = 'none';
+                document.getElementById('pagination').innerHTML = ''; // Clear pagination
+                return;
+            }
+
+            document.getElementById('mark-all-btn').style.display = 'inline-flex';
+
+            const html = notifications.map((n, index) => {
+                const iconClass = getIconTheme(n.type);
+                const icon = getIcon(n.type);
+                const statusClass = n.is_read ? 'read' : 'unread';
+                const delay = index * 50; // Stagger animation
+
+                return `
+                <div class="notification-card ${statusClass} animate-in" style="animation-delay: ${delay}ms">
+                    <div class="notification-icon-wrapper">
+                        <div class="notification-icon ${iconClass}">
+                            <i class="fas ${icon}"></i>
+                        </div>
+                    </div>
+                    
+                    <div class="notification-content">
+                        <div class="notification-text ${!n.is_read ? 'font-medium' : ''}">
+                            ${n.message}
+                        </div>
+                        <div class="notification-meta">
+                            <span><i class="far fa-clock me-1"></i> ${formatTimeAgo(n.created_at)}</span>
+                            ${n.actor_name ? `<span>• &nbsp;By ${n.actor_name}</span>` : ''}
+                        </div>
+                    </div>
+
+                    <div class="notification-actions">
+                         ${n.link ? `
+                            <a href="${n.link}" class="btn btn-sm btn-outline-secondary" title="View details">
+                                View
+                            </a>
+                        ` : ''}
+                        
+                        ${!n.is_read ? `
+                            <button class="btn btn-sm btn-light text-secondary" onclick="markRead(${n.id}, this)" title="Mark as read">
+                                <i class="fas fa-check"></i>
+                            </button>
+                        ` : ''}
+                    </div>
+                </div>
+                `;
+            }).join('');
+
+            container.innerHTML = html;
+            container.style.opacity = '1';
+
+            // Handle pagination - DRF returns count, not total
+            const total = data.count || notifications.length;
+            const pages = Math.ceil(total / perPage) || 1;
+            renderPagination(total, pages, page);
+
+            // Update Global badge if function exists
+            const unreadCount = notifications.filter(n => !n.is_read).length;
+            if (typeof updateNotificationBadge === 'function') {
+                updateNotificationBadge(unreadCount);
+            }
+
+        } catch (error) {
+            console.error(error);
+            container.innerHTML = `
+                <div class="alert alert-error">
+                    <i class="fas fa-exclamation-circle me-2"></i> Failed to load notifications: ${error.message}
+                </div>`;
+            container.style.opacity = '1';
+        }
+    }
+
+    function getIcon(type) {
+        const icons = {
+            'assigned': 'fa-user-tag',
+            'comment': 'fa-comment-alt',
+            'status_change': 'fa-exchange-alt',
+            'generic': 'fa-bell'
+        };
+        return icons[type] || 'fa-bell';
+    }
+
+    function getIconTheme(type) {
+        const themes = {
+            'assigned': 'icon-theme-assigned',
+            'comment': 'icon-theme-comment',
+            'status_change': 'icon-theme-status',
+            'generic': 'icon-theme-generic'
+        };
+        return themes[type] || 'icon-theme-generic';
+    }
+
+    function formatTimeAgo(dateString) {
+        if (!dateString) return '';
+        const date = new Date(dateString);
+        const now = new Date();
+        const seconds = Math.floor((now - date) / 1000);
+
+        if (seconds < 60) return 'Just now';
+
+        const minutes = Math.floor(seconds / 60);
+        if (minutes < 60) return `${minutes}m ago`;
+
+        const hours = Math.floor(minutes / 60);
+        if (hours < 24) return `${hours}h ago`;
+
+        const days = Math.floor(hours / 24);
+        if (days < 7) return `${days}d ago`;
+
+        return date.toLocaleDateString();
+    }
+
+    async function markRead(id, btn) {
+        try {
+            // Optimistic UI update
+            const card = btn.closest('.notification-card');
+            card.classList.remove('unread');
+            card.classList.add('read');
+            btn.remove(); // Remove the check button
+
+            await api.request(`/api/notifications/${id}/mark_read/`, { method: 'POST' });
+        } catch (error) {
+            console.error('Failed to mark as read', error);
+            // Revert on failure would be complex, just show toast
+            showError('Failed to mark as read');
+        }
+    }
+
+    async function markAllRead() {
+        if (!confirm('Mark all notifications as read?')) return;
+        try {
+            await api.request('/api/notifications/mark_all_read/', { method: 'POST' });
+            loadNotifications(1);
+            showSuccess('All marked as read');
+        } catch (error) {
+            showError('Failed to mark all as read');
+        }
+    }
+
+    // Pagination (Updated to match design system style)
+    function renderPagination(total, pages, current) {
+        const nav = document.getElementById('pagination');
+        if (pages <= 1) {
+            nav.innerHTML = '';
+            return;
+        }
+
+        nav.innerHTML = `
+            <li class="page-item ${current === 1 ? 'disabled' : ''}">
+                <button class="page-link" onclick="loadNotifications(${current - 1})">
+                    <i class="fas fa-chevron-left"></i> Previous
+                </button>
+            </li>
+            <li class="page-item disabled">
+                <span class="page-link border-0 text-muted">Page ${current} of ${pages}</span>
+            </li>
+            <li class="page-item ${current === pages ? 'disabled' : ''}">
+                <button class="page-link" onclick="loadNotifications(${current + 1})">
+                    Next <i class="fas fa-chevron-right"></i>
+                </button>
+            </li>
+        `;
+    }
+</script>
+{% endblock %}

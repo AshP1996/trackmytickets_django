@@ -1,0 +1,302 @@
+{% extends "base.html" %}
+
+{% block title %}Ticket Assignment - Department Head{% endblock %}
+
+{% block content %}
+<div class="row mt-4">
+    <div class="col-12">
+        <h2><i class="fas fa-tasks"></i> Ticket Assignment</h2>
+        <p class="text-muted">Assign and reassign tickets to department employees</p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <ul class="nav nav-tabs mb-3" id="assignmentTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="unassigned-tab" data-bs-toggle="tab" data-bs-target="#unassigned" type="button" role="tab">
+                            Unassigned Tickets
+                            <span class="badge bg-danger ms-2" id="unassigned-badge">0</span>
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="reopened-tab" data-bs-toggle="tab" data-bs-target="#reopened" type="button" role="tab">
+                            Reopened Tickets
+                            <span class="badge bg-warning ms-2" id="reopened-badge">0</span>
+                        </button>
+                    </li>
+                </ul>
+                
+                <div class="tab-content" id="assignmentTabContent">
+                    <div class="tab-pane fade show active" id="unassigned" role="tabpanel">
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Ticket ID</th>
+                                        <th>Subject</th>
+                                        <th>Priority</th>
+                                        <th>Created</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="unassigned-tickets-table">
+                                    <tr><td colspan="5" class="text-center">Loading...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <div class="tab-pane fade" id="reopened" role="tabpanel">
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Ticket ID</th>
+                                        <th>Subject</th>
+                                        <th>Priority</th>
+                                        <th>Currently Assigned</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="reopened-tickets-table">
+                                    <tr><td colspan="5" class="text-center">Loading...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Assign Modal -->
+<div class="modal fade" id="assignModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Assign Ticket</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="assign-ticket-id">
+                <div class="mb-3">
+                    <label class="form-label">Select Employee</label>
+                    <select class="form-select" id="assign-employee-select">
+                        <option value="">Loading employees...</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="performAssign()">Assign</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Reassign Modal -->
+<div class="modal fade" id="reassignModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Reassign Ticket</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="reassign-ticket-id">
+                <div class="mb-3">
+                    <label class="form-label">Select Employee</label>
+                    <select class="form-select" id="reassign-employee-select">
+                        <option value="">Loading employees...</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-warning" onclick="performReassign()">Reassign</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let employees = [];
+    let tickets = [];
+
+    async function loadData() {
+        try {
+            // Load employees
+            employees = await api.getDepartmentEmployees();
+            
+            // Load tickets
+            const response = await api.getDepartmentTickets();
+            tickets = response.tickets || [];
+            
+            renderUnassigned();
+            renderReopened();
+        } catch (error) {
+            showError('Failed to load data: ' + error.message);
+        }
+    }
+
+    function renderUnassigned() {
+        const unassigned = tickets.filter(t => !t.assigned_to);
+        const tbody = document.getElementById('unassigned-tickets-table');
+        document.getElementById('unassigned-badge').textContent = unassigned.length;
+        
+        if (unassigned.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">No unassigned tickets</td></tr>';
+            return;
+        }
+        
+        const companyName = window.api.getCompanyName();
+        tbody.innerHTML = unassigned.map(t => `
+            <tr>
+                <td><a href="/${companyName}/tickets/${t.id}">${t.ticket_id}</a></td>
+                <td>${t.subject}</td>
+                <td><span class="badge bg-${getPriorityColor(t.priority)}">${t.priority}</span></td>
+                <td>${new Date(t.created_at).toLocaleDateString()}</td>
+                <td>
+                    <button class="btn btn-sm btn-primary" onclick="openAssignModal(${t.id})">
+                        <i class="fas fa-user-plus"></i> Assign
+                    </button>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    function renderReopened() {
+        const reopened = tickets.filter(t => t.status === 'reopened' || t.status === 'reopen');
+        const tbody = document.getElementById('reopened-tickets-table');
+        document.getElementById('reopened-badge').textContent = reopened.length;
+        
+        if (reopened.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">No reopened tickets</td></tr>';
+            return;
+        }
+        
+        const companyName = window.api.getCompanyName();
+        tbody.innerHTML = reopened.map(t => `
+            <tr>
+                <td><a href="/${companyName}/tickets/${t.id}">${t.ticket_id}</a></td>
+                <td>${t.subject}</td>
+                <td><span class="badge bg-${getPriorityColor(t.priority)}">${t.priority}</span></td>
+                <td>${t.assigned_to_name || 'Unassigned'}</td>
+                <td>
+                    <button class="btn btn-sm btn-warning" onclick="openReassignModal(${t.id})">
+                        <i class="fas fa-exchange-alt"></i> Reassign
+                    </button>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    function getPriorityColor(priority) {
+        const colors = {
+            'low': 'success',
+            'medium': 'warning',
+            'high': 'danger',
+            'critical': 'danger'
+        };
+        return colors[priority] || 'secondary';
+    }
+
+    function openAssignModal(ticketId) {
+        document.getElementById('assign-ticket-id').value = ticketId;
+        const select = document.getElementById('assign-employee-select');
+        select.innerHTML = employees.map(e => 
+            `<option value="${e.id}">${e.full_name} (${e.email})</option>`
+        ).join('');
+        const modal = new bootstrap.Modal(document.getElementById('assignModal'));
+        modal.show();
+    }
+
+    function openReassignModal(ticketId) {
+        document.getElementById('reassign-ticket-id').value = ticketId;
+        const select = document.getElementById('reassign-employee-select');
+        select.innerHTML = employees.map(e => 
+            `<option value="${e.id}">${e.full_name} (${e.email})</option>`
+        ).join('');
+        const modal = new bootstrap.Modal(document.getElementById('reassignModal'));
+        modal.show();
+    }
+
+    async function performAssign() {
+        const ticketId = document.getElementById('assign-ticket-id').value;
+        const employeeId = document.getElementById('assign-employee-select').value;
+        
+        if (!employeeId) {
+            showError('Please select an employee');
+            return;
+        }
+        
+        try {
+            await api.assignTicket(ticketId, employeeId);
+            showSuccess('Ticket assigned successfully');
+            bootstrap.Modal.getInstance(document.getElementById('assignModal')).hide();
+            loadData();
+        } catch (error) {
+            showError('Failed to assign ticket: ' + error.message);
+        }
+    }
+
+    async function performReassign() {
+        const ticketId = document.getElementById('reassign-ticket-id').value;
+        const employeeId = document.getElementById('reassign-employee-select').value;
+        
+        if (!employeeId) {
+            showError('Please select an employee');
+            return;
+        }
+        
+        try {
+            await api.reassignTicket(ticketId, employeeId);
+            showSuccess('Ticket reassigned successfully');
+            bootstrap.Modal.getInstance(document.getElementById('reassignModal')).hide();
+            loadData();
+        } catch (error) {
+            showError('Failed to reassign ticket: ' + error.message);
+        }
+    }
+
+    // Check if API methods exist, if not add them
+    if (typeof api !== 'undefined') {
+        if (!api.getDepartmentEmployees) {
+            api.getDepartmentEmployees = async function() {
+                return this.request('/api/head/employees', { method: 'GET' });
+            };
+        }
+        if (!api.getDepartmentTickets) {
+            api.getDepartmentTickets = async function() {
+                return this.request('/api/head/tickets', { method: 'GET' });
+            };
+        }
+        if (!api.assignTicket) {
+            api.assignTicket = async function(ticketId, employeeId) {
+                return this.request(`/api/head/tickets/${ticketId}/assign`, {
+                    method: 'POST',
+                    body: JSON.stringify({ employee_id: employeeId })
+                });
+            };
+        }
+        if (!api.reassignTicket) {
+            api.reassignTicket = async function(ticketId, employeeId) {
+                return this.request(`/api/head/tickets/${ticketId}/reassign`, {
+                    method: 'POST',
+                    body: JSON.stringify({ employee_id: employeeId })
+                });
+            };
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        loadData();
+    });
+</script>
+{% endblock %}

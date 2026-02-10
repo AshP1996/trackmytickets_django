@@ -1,0 +1,568 @@
+{% extends "base.html" %}
+
+{% block title %}Department Head Dashboard{% endblock %}
+
+{% block content %}
+<style>
+    /* ================= GENERAL ================= */
+    .dashboard-title {
+        font-weight: 700;
+        font-size: 2rem;
+        letter-spacing: 0.5px;
+        margin-bottom: 0.5rem;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        animation: fadeInDown 0.7s;
+    }
+
+    .soft-card {
+        border: none;
+        border-radius: 18px;
+        background: linear-gradient(135deg, #f8fafc 0%, #eaf1fb 100%);
+        box-shadow: 0 6px 24px rgba(0, 0, 0, 0.07);
+        transition: box-shadow 0.2s, transform 0.2s;
+        animation: fadeUp 0.6s;
+    }
+
+    .soft-card:hover {
+        box-shadow: 0 12px 32px rgba(0, 0, 0, 0.13);
+        transform: translateY(-2px) scale(1.02);
+    }
+
+    .soft-stat {
+        border-left: 5px solid;
+        min-height: 90px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 18px 20px;
+        margin-bottom: 0;
+        background: #fff;
+        border-radius: 14px;
+        box-shadow: 0 2px 8px rgba(13, 110, 253, 0.04);
+        animation: fadeUp 0.7s;
+    }
+
+    .soft-stat h6 {
+        font-size: 14px;
+        color: #666;
+        margin-bottom: 4px;
+        font-weight: 500;
+        letter-spacing: 0.2px;
+    }
+
+    .soft-stat h3 {
+        font-weight: 700;
+        margin: 0;
+        font-size: 1.7rem;
+        color: #0d6efd;
+    }
+
+    .soft-stat i {
+        margin-left: 10px;
+        opacity: 0.85;
+    }
+
+    /* ================= TABLE ================= */
+    .table {
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        animation: fadeUp 0.7s;
+    }
+
+    .table thead {
+        background: #f5f7fb;
+        font-size: 14px;
+        font-weight: 600;
+        letter-spacing: 0.1px;
+    }
+
+    .table td,
+    .table th {
+        vertical-align: middle;
+        font-size: 15px;
+        padding: 10px 12px;
+        border-bottom: 1px solid #eef0f4;
+    }
+
+    .table-hover tbody tr:hover {
+        background: #f0f6ff;
+        transition: background 0.2s;
+    }
+
+    /* ================= EMPLOYEE ================= */
+    .employee-card {
+        border-radius: 14px;
+        background: linear-gradient(135deg, #f8fafc 0%, #eaf1fb 100%);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        animation: fadeUp 0.7s;
+        transition: box-shadow 0.2s, transform 0.2s;
+    }
+
+    .employee-card:hover {
+        box-shadow: 0 8px 24px rgba(13, 110, 253, 0.10);
+        transform: translateY(-2px) scale(1.01);
+    }
+
+    .employee-card h6 {
+        font-weight: 600;
+        font-size: 1.1rem;
+        margin-bottom: 6px;
+        color: #0d6efd;
+    }
+
+    .employee-card p {
+        font-size: 13px;
+        margin-bottom: 4px;
+        color: #444;
+    }
+
+    /* ================= TABS ================= */
+    .nav-pills {
+        gap: 8px;
+        margin-bottom: 1.5rem;
+    }
+
+    .nav-pills .nav-link {
+        border-radius: 30px;
+        padding: 8px 22px;
+        font-size: 15px;
+        font-weight: 500;
+        transition: background 0.2s, color 0.2s;
+        box-shadow: 0 1px 4px rgba(13, 110, 253, 0.04);
+        animation: fadeInLeft 0.7s;
+    }
+
+    .nav-pills .nav-link.active {
+        background: linear-gradient(90deg, #0d6efd 60%, #6ea8fe 100%);
+        color: #fff;
+        box-shadow: 0 2px 8px rgba(13, 110, 253, 0.10);
+    }
+
+    .nav-pills .nav-link:not(.active):hover {
+        background: #eaf1fb;
+        color: #0d6efd;
+    }
+
+    /* ================= BADGE ================= */
+    .badge {
+        font-size: 13px;
+        padding: 4px 10px;
+        border-radius: 12px;
+        font-weight: 500;
+    }
+
+    /* ================= MODAL ================= */
+    .modal-content {
+        border-radius: 16px;
+        box-shadow: 0 8px 32px rgba(13, 110, 253, 0.10);
+        animation: fadeUp 0.5s;
+    }
+
+    .modal-header {
+        border-bottom: none;
+        background: #f5f7fb;
+        border-radius: 16px 16px 0 0;
+    }
+
+    .modal-footer {
+        border-top: none;
+        background: #f5f7fb;
+        border-radius: 0 0 16px 16px;
+    }
+
+    /* ====== ANIMATIONS ====== */
+    @keyframes fadeUp {
+        from {
+            opacity: 0;
+            transform: translateY(18px);
+        }
+
+        to {
+            opacity: 1;
+            transform: none;
+        }
+    }
+
+    @keyframes fadeInDown {
+        from {
+            opacity: 0;
+            transform: translateY(-18px);
+        }
+
+        to {
+            opacity: 1;
+            transform: none;
+        }
+    }
+
+    @keyframes fadeInLeft {
+        from {
+            opacity: 0;
+            transform: translateX(-18px);
+        }
+
+        to {
+            opacity: 1;
+            transform: none;
+        }
+    }
+</style>
+
+<div class="container mt-4">
+
+    <!-- ================= HEADER ================= -->
+    <div class="mb-4">
+        <h4 class="dashboard-title">
+            <i class="fas fa-users-cog text-primary"></i>
+            Department Head Dashboard
+        </h4>
+        <p class="text-muted mb-0">
+            Managing department:
+            <span id="dept-name" class="fw-semibold"></span>
+        </p>
+    </div>
+
+    <!-- ================= STATS ================= -->
+    <div class="row g-3 mb-4">
+        <!-- Total Tickets -->
+        <div class="col-md-2">
+            <div class="soft-card soft-stat p-3 border-primary">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <h6>Total</h6>
+                        <h3 id="stat-total">0</h3>
+                    </div>
+                    <i class="fas fa-ticket-alt text-primary fa-lg"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Open -->
+        <div class="col-md-2">
+            <div class="soft-card soft-stat p-3 border-warning">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <h6>Open</h6>
+                        <h3 id="stat-open">0</h3>
+                    </div>
+                    <i class="fas fa-folder-open text-warning fa-lg"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- In Process -->
+        <div class="col-md-2">
+            <div class="soft-card soft-stat p-3 border-info">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <h6>In Process</h6>
+                        <h3 id="stat-inprocess">0</h3>
+                    </div>
+                    <i class="fas fa-spinner text-info fa-lg"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Reopened -->
+        <div class="col-md-2">
+            <div class="soft-card soft-stat p-3 border-danger">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <h6>Reopened</h6>
+                        <h3 id="stat-reopen">0</h3>
+                    </div>
+                    <i class="fas fa-redo text-danger fa-lg"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Closed -->
+        <div class="col-md-2">
+            <div class="soft-card soft-stat p-3 border-success">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <h6>Closed</h6>
+                        <h3 id="stat-closed">0</h3>
+                    </div>
+                    <i class="fas fa-check-circle text-success fa-lg"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Unassigned -->
+        <div class="col-md-2">
+            <div class="soft-card soft-stat p-3 border-secondary">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <h6>Unassigned</h6>
+                        <h3 id="stat-unassigned">0</h3>
+                    </div>
+                    <i class="fas fa-user-slash text-secondary fa-lg"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= TABS ================= -->
+    <ul class="nav nav-pills mb-3 gap-2">
+        <li class="nav-item">
+            <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#unassigned">
+                Unassigned
+                <span class="badge bg-danger ms-1" id="unassigned-count">0</span>
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#reopened">
+                Reopened
+                <span class="badge bg-warning ms-1" id="reopened-count">0</span>
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#alltickets">
+                All Tickets
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#employees">
+                Employees
+            </button>
+        </li>
+    </ul>
+
+    <div class="tab-content">
+
+        <!-- ================= UNASSIGNED ================= -->
+        <div class="tab-pane fade show active" id="unassigned">
+            <div class="soft-card p-3">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Subject</th>
+                            <th>Priority</th>
+                            <th>Created</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody id="unassigned-tickets"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- ================= REOPENED ================= -->
+        <div class="tab-pane fade" id="reopened">
+            <div class="soft-card p-3">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Subject</th>
+                            <th>Priority</th>
+                            <th>Assigned</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody id="reopened-tickets"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- ================= ALL ================= -->
+        <div class="tab-pane fade" id="alltickets">
+            <div class="soft-card p-3">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Subject</th>
+                            <th>Status</th>
+                            <th>Priority</th>
+                            <th>Assigned</th>
+                            <th>Created</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody id="all-tickets"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- ================= EMPLOYEES ================= -->
+        <div class="tab-pane fade" id="employees">
+            <div class="row" id="employee-performance"></div>
+        </div>
+
+    </div>
+</div>
+
+<!-- ================= ASSIGN MODAL ================= -->
+<div class="modal fade" id="assignModal">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h6 class="mb-0">Assign Ticket</h6>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="assign-ticket-id">
+                <select id="assign-employee" class="form-select"></select>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                <button class="btn btn-primary" onclick="assignTicket()">Assign</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ================= REASSIGN MODAL ================= -->
+<div class="modal fade" id="reassignModal">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h6 class="mb-0">Reassign Ticket</h6>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="reassign-ticket-id">
+                <select id="reassign-employee" class="form-select"></select>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                <button class="btn btn-warning" onclick="reassignTicket()">Reassign</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let employees = [];
+    let assignModal, reassignModal;
+
+    const isReopened = s => ['reopen', 'reopened'].includes((s || '').toLowerCase());
+    const priorityColor = p => ({ low: 'success', medium: 'warning', high: 'danger' })[p] || 'secondary';
+    const statusColor = s => ({ open: 'warning', inprocess: 'info', closed: 'success', reopen: 'secondary' })[s] || 'secondary';
+
+    async function loadDashboard() {
+        const user = await api.getCurrentUser();
+        document.getElementById('dept-name').textContent = user.department || '';
+
+        const stats = await api.getDepartmentStats();
+        ['total', 'open', 'inprocess', 'closed', 'reopen', 'unassigned']
+            .forEach(k => document.getElementById(`stat-${k}`).textContent = stats.department_stats[k] || 0);
+
+        document.getElementById('unassigned-count').textContent = stats.department_stats.unassigned || 0;
+        document.getElementById('reopened-count').textContent = stats.department_stats.reopen || 0;
+
+        employees = await api.getDepartmentEmployees();
+        const data = await api.getDepartmentTickets();
+        const tickets = data.tickets || [];
+
+        loadUnassigned(tickets);
+        loadReopened(tickets);
+        loadAll(tickets);
+        renderEmployees(stats.employee_performance || []);
+    }
+
+    function loadUnassigned(tickets) {
+        document.getElementById('unassigned-tickets').innerHTML =
+            tickets.filter(t => !t.assigned_to).map(t => `
+<tr>
+<td>${t.ticket_id}</td>
+<td>${t.subject}</td>
+<td><span class="badge bg-${priorityColor(t.priority)}">${t.priority}</span></td>
+<td>${new Date(t.created_at).toLocaleString()}</td>
+<td>
+<button class="btn btn-sm btn-outline-primary" onclick="openAssign(${t.id})">
+Assign
+</button>
+</td>
+</tr>`).join('') || `<tr><td colspan="5" class="text-center text-muted">No tickets</td></tr>`;
+    }
+
+    function loadReopened(tickets) {
+        document.getElementById('reopened-tickets').innerHTML =
+            tickets.filter(t => isReopened(t.status)).map(t => `
+<tr>
+<td>${t.ticket_id}</td>
+<td>${t.subject}</td>
+<td><span class="badge bg-${priorityColor(t.priority)}">${t.priority}</span></td>
+<td>${t.assigned_to_name || 'N/A'}</td>
+<td>
+<button class="btn btn-sm btn-outline-warning" onclick="openReassign(${t.id})">
+Reassign
+</button>
+</td>
+</tr>`).join('') || `<tr><td colspan="5" class="text-center text-muted">No reopened tickets</td></tr>`;
+    }
+
+    function loadAll(tickets) {
+        const company = api.getCompanyName();
+        document.getElementById('all-tickets').innerHTML =
+            tickets.map(t => `
+<tr>
+<td>${t.ticket_id}</td>
+<td>${t.subject}</td>
+<td><span class="badge bg-${statusColor(t.status)}">${t.status}</span></td>
+<td><span class="badge bg-${priorityColor(t.priority)}">${t.priority}</span></td>
+<td>${t.assigned_to_name || 'Unassigned'}</td>
+<td>${new Date(t.created_at).toLocaleString()}</td>
+<td>
+<a href="/${company}/tickets/${t.id}" class="btn btn-sm btn-outline-info">View</a>
+</td>
+</tr>`).join('');
+    }
+
+    function renderEmployees(data) {
+        document.getElementById('employee-performance').innerHTML =
+            data.map(p => `
+<div class="col-md-4 mb-3">
+<div class="soft-card p-3 employee-card">
+<h6>${p.employee.full_name}</h6>
+<p>Assigned: ${p.assigned}</p>
+<p>In Process: ${p.inprocess}</p>
+<p>Closed: ${p.closed}</p>
+</div>
+</div>`).join('');
+    }
+
+    function openAssign(id) {
+        document.getElementById('assign-ticket-id').value = id;
+        document.getElementById('assign-employee').innerHTML =
+            employees.map(e => `<option value="${e.id}">${e.full_name}</option>`).join('');
+        assignModal = new bootstrap.Modal(document.getElementById('assignModal'));
+        assignModal.show();
+    }
+
+    function openReassign(id) {
+        document.getElementById('reassign-ticket-id').value = id;
+        document.getElementById('reassign-employee').innerHTML =
+            employees.map(e => `<option value="${e.id}">${e.full_name}</option>`).join('');
+        reassignModal = new bootstrap.Modal(document.getElementById('reassignModal'));
+        reassignModal.show();
+    }
+
+    async function assignTicket() {
+        await api.assignTicket(
+            document.getElementById('assign-ticket-id').value,
+            document.getElementById('assign-employee').value
+        );
+        assignModal.hide();
+        loadDashboard();
+    }
+
+    async function reassignTicket() {
+        await api.reassignTicket(
+            document.getElementById('reassign-ticket-id').value,
+            document.getElementById('reassign-employee').value
+        );
+        reassignModal.hide();
+        loadDashboard();
+    }
+
+    document.addEventListener('DOMContentLoaded', loadDashboard);
+</script>
+{% endblock %}

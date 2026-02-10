@@ -1,0 +1,534 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard - Ticket Management System{% endblock %}
+{% block page_title %}Admin Dashboard{% endblock %}
+
+{% block content %}
+<style>
+    :root {
+        --glass-bg: rgba(255, 255, 255, 0.7);
+        --glass-border: rgba(255, 255, 255, 0.5);
+        --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
+        --card-border-radius: 16px;
+        --accent-color: #4f46e5;
+        --success-color: #10b981;
+        --warning-color: #f59e0b;
+        --danger-color: #ef4444;
+        --text-primary: #1e293b;
+        --text-secondary: #64748b;
+    }
+
+    .dashboard-container {
+        display: grid;
+        gap: 1.5rem;
+        padding-bottom: 2rem;
+    }
+
+    /* Stats Grid */
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 1.5rem;
+    }
+
+    .glass-card {
+        background: var(--glass-bg);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid var(--glass-border);
+        border-radius: var(--card-border-radius);
+        box-shadow: var(--glass-shadow);
+        padding: 1.5rem;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .glass-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 12px 40px 0 rgba(31, 38, 135, 0.15);
+    }
+
+    .stat-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+    }
+
+    .stat-title {
+        color: var(--text-secondary);
+        font-size: 0.875rem;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    .stat-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+    }
+
+    .stat-value {
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        line-height: 1.2;
+    }
+
+    .stat-footer {
+        margin-top: 0.75rem;
+        font-size: 0.875rem;
+        color: var(--text-secondary);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    /* Charts Section */
+    .charts-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+        gap: 1.5rem;
+    }
+
+    .chart-container {
+        position: relative;
+        height: 300px;
+        width: 100%;
+    }
+
+    /* Recent Table */
+    .recent-table-card {
+        overflow: hidden;
+    }
+
+    .table th {
+        background: rgba(248, 250, 252, 0.5);
+        color: var(--text-secondary);
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 0.75rem;
+        letter-spacing: 0.05em;
+        padding: 1rem;
+    }
+
+    .table td {
+        padding: 1rem;
+        vertical-align: middle;
+        border-bottom: 1px solid rgba(226, 232, 240, 0.6);
+    }
+
+    .table tr:last-child td {
+        border-bottom: none;
+    }
+
+    .status-badge {
+        padding: 0.25rem 0.75rem;
+        border-radius: 9999px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: capitalize;
+    }
+
+    .top-bar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+    }
+
+    .refresh-btn {
+        background: white;
+        border: 1px solid var(--glass-border);
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.2s;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    }
+
+    .refresh-btn:hover {
+        background: #f8fafc;
+        transform: translateY(-1px);
+    }
+
+    .refresh-btn.spinning i {
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        100% {
+            transform: rotate(360deg);
+        }
+    }
+</style>
+
+<div class="dashboard-container">
+    <!-- Header Actions -->
+    <div class="top-bar">
+        <div>
+            <h2 style="font-size: 1.5rem; font-weight: 700; color: var(--text-primary);">Overview</h2>
+            <p style="color: var(--text-secondary); margin-top: 0.25rem;">Real-time platform insights</p>
+        </div>
+        <button class="refresh-btn" onclick="loadAdminDashboard()" id="refreshBtn">
+            <i class="fas fa-sync-alt"></i>
+            <span>Refresh Data</span>
+        </button>
+    </div>
+
+    <!-- Key Metrics Row 1 -->
+    <div class="stats-grid">
+        <!-- Total Tickets -->
+        <div class="glass-card">
+            <div class="stat-header">
+                <span class="stat-title">Total Tickets</span>
+                <div class="stat-icon" style="background: rgba(79, 70, 229, 0.1); color: var(--accent-color);">
+                    <i class="fas fa-ticket-alt"></i>
+                </div>
+            </div>
+            <div class="stat-value" id="total-tickets">-</div>
+            <div class="stat-footer">
+                <span class="text-success"><i class="fas fa-arrow-up"></i> <span id="open-tickets-val">-</span></span>
+                <span>Open currently</span>
+            </div>
+        </div>
+
+        <!-- SLA Breaches -->
+        <div class="glass-card">
+            <div class="stat-header">
+                <span class="stat-title">SLA Breaches</span>
+                <div class="stat-icon" style="background: rgba(239, 68, 68, 0.1); color: var(--danger-color);">
+                    <i class="fas fa-exclamation-circle"></i>
+                </div>
+            </div>
+            <div class="stat-value" id="sla-breaches">-</div>
+            <div class="stat-footer">
+                <span class="text-danger" id="sla-text">Open > 24h</span>
+            </div>
+        </div>
+
+        <!-- Avg Resolution Time -->
+        <div class="glass-card">
+            <div class="stat-header">
+                <span class="stat-title">Avg Resolution</span>
+                <div class="stat-icon" style="background: rgba(16, 185, 129, 0.1); color: var(--success-color);">
+                    <i class="fas fa-clock"></i>
+                </div>
+            </div>
+            <div class="stat-value"><span id="avg-resolution">-</span><span
+                    style="font-size: 1rem; color: var(--text-secondary); font-weight: 500;"> hrs</span></div>
+            <div class="stat-footer">
+                <span>Performance metric</span>
+            </div>
+        </div>
+
+        <!-- Active Users -->
+        <div class="glass-card">
+            <div class="stat-header">
+                <span class="stat-title">Active Users</span>
+                <div class="stat-icon" style="background: rgba(245, 158, 11, 0.1); color: var(--warning-color);">
+                    <i class="fas fa-users"></i>
+                </div>
+            </div>
+            <div class="stat-value" id="active-users">-</div>
+            <div class="stat-footer">
+                <span>Last 24 hours</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Row 1 -->
+    <div class="charts-grid">
+        <!-- Ticket Trends (Line) -->
+        <div class="glass-card" style="grid-column: span 2;">
+            <div class="stat-header">
+                <span class="stat-title">Ticket Trends (Last 7 Days)</span>
+            </div>
+            <div class="chart-container">
+                <canvas id="trendChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Row 2 -->
+    <div class="charts-grid">
+        <div class="glass-card">
+            <div class="stat-header">
+                <span class="stat-title">By Status</span>
+            </div>
+            <div class="chart-container">
+                <canvas id="statusChart"></canvas>
+            </div>
+        </div>
+
+        <div class="glass-card">
+            <div class="stat-header">
+                <span class="stat-title">By Priority</span>
+            </div>
+            <div class="chart-container">
+                <canvas id="priorityChart"></canvas>
+            </div>
+        </div>
+
+        <div class="glass-card">
+            <div class="stat-header">
+                <span class="stat-title">By Department</span>
+            </div>
+            <div class="chart-container">
+                <canvas id="departmentChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Activity -->
+    <div class="glass-card recent-table-card">
+        <div class="stat-header">
+            <span class="stat-title">Recent Tickets</span>
+            <a href="/{{ company_name }}/tickets" class="btn btn-sm btn-primary"
+                style="background: var(--accent-color); color: white; border: none;">View All</a>
+        </div>
+        <div class="table-responsive">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Subject</th>
+                        <th>Status</th>
+                        <th>Priority</th>
+                        <th>Assigned To</th>
+                        <th>Created</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody id="recent-tickets">
+                    <!-- Loaded dynamically -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    let statusChart, priorityChart, trendChart, departmentChart;
+
+    async function loadAdminDashboard() {
+        const btn = document.getElementById('refreshBtn');
+        btn.classList.add('spinning');
+
+        try {
+            const dashboard = await api.getAdminDashboard();
+
+            // Update Metrics
+            updateElement('total-tickets', dashboard.total_tickets);
+            updateElement('open-tickets-val', dashboard.open_tickets);
+            updateElement('sla-breaches', dashboard.sla_breaches);
+            updateElement('avg-resolution', dashboard.avg_resolution_hours);
+            updateElement('active-users', dashboard.active_users);
+
+            // Styling for SLA
+            const slaVal = document.getElementById('sla-breaches');
+            if (dashboard.sla_breaches > 0) {
+                slaVal.style.color = 'var(--danger-color)';
+            } else {
+                slaVal.style.color = 'var(--text-primary)';
+            }
+
+            // Render Charts
+            renderTrendChart(dashboard.ticket_trends);
+            renderStatusChart(dashboard.status_distribution);
+            renderPriorityChart(dashboard.priority_distribution);
+            renderDepartmentChart(dashboard.department_distribution);
+
+            // Recent Tickets (Separate Call)
+            const ticketsResponse = await api.getTickets({ page: 1, per_page: 5 });
+            const tickets = ticketsResponse.results || ticketsResponse.tickets || (Array.isArray(ticketsResponse) ? ticketsResponse : []);
+            renderRecentTickets(tickets);
+
+        } catch (error) {
+            console.error(error);
+            // Non-intrusive toast could go here
+        } finally {
+            setTimeout(() => btn.classList.remove('spinning'), 500);
+        }
+    }
+
+    function updateElement(id, value) {
+        const el = document.getElementById(id);
+        if (el) el.textContent = value || 0;
+    }
+
+    function renderTrendChart(data) {
+        const ctx = document.getElementById('trendChart');
+        if (!ctx) return;
+        if (trendChart) trendChart.destroy();
+
+        const labels = Object.keys(data);
+        const values = Object.values(data);
+
+        trendChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'New Tickets',
+                    data: values,
+                    borderColor: '#4f46e5',
+                    backgroundColor: 'rgba(79, 70, 229, 0.1)',
+                    tension: 0.4,
+                    fill: true,
+                    pointRadius: 4,
+                    pointHoverRadius: 6
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)' } },
+                    x: { grid: { display: false } }
+                }
+            }
+        });
+    }
+
+    function renderStatusChart(data) {
+        const ctx = document.getElementById('statusChart');
+        if (!ctx) return;
+        if (statusChart) statusChart.destroy();
+
+        statusChart = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: Object.keys(data).map(formatString),
+                datasets: [{
+                    data: Object.values(data),
+                    backgroundColor: ['#f59e0b', '#3b82f6', '#10b981', '#ef4444', '#6b778c'],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '70%',
+                plugins: {
+                    legend: { position: 'right', labels: { boxWidth: 12 } }
+                }
+            }
+        });
+    }
+
+    function renderPriorityChart(data) {
+        const ctx = document.getElementById('priorityChart');
+        if (!ctx) return;
+        if (priorityChart) priorityChart.destroy();
+
+        priorityChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: Object.keys(data).map(formatString),
+                datasets: [{
+                    label: 'Count',
+                    data: Object.values(data),
+                    backgroundColor: ['#10b981', '#f59e0b', '#ef4444', '#7f1d1d'],
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { beginAtZero: true, grid: { display: false } },
+                    x: { grid: { display: false } }
+                }
+            }
+        });
+    }
+
+    function renderDepartmentChart(data) {
+        const ctx = document.getElementById('departmentChart');
+        if (!ctx) return;
+        if (departmentChart) departmentChart.destroy();
+
+        departmentChart = new Chart(ctx, {
+            type: 'polarArea',
+            data: {
+                labels: Object.keys(data),
+                datasets: [{
+                    data: Object.values(data),
+                    backgroundColor: [
+                        'rgba(59, 130, 246, 0.5)',
+                        'rgba(16, 185, 129, 0.5)',
+                        'rgba(245, 158, 11, 0.5)',
+                        'rgba(239, 68, 68, 0.5)',
+                        'rgba(107, 114, 128, 0.5)'
+                    ]
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { position: 'right' } }
+            }
+        });
+    }
+
+    function renderRecentTickets(tickets) {
+        const tbody = document.getElementById('recent-tickets');
+        if (tickets.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="7" class="text-center text-secondary py-4">No recent tickets</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = tickets.map(t => `
+            <tr style="cursor: pointer; transition: background 0.2s;" onclick="window.location.href='/' + window.api.getCompanyName() + '/tickets/${t.id}'" onmouseover="this.style.background='rgba(248,250,252,0.8)'" onmouseout="this.style.background='transparent'">
+                <td style="font-weight: 600; color: var(--accent-color);">${t.ticket_id || t.id}</td>
+                <td style="font-weight: 500;">${truncate(t.subject, 40)}</td>
+                <td><span class="status-badge" style="background: ${getStatusColor(t.status)}15; color: ${getStatusColor(t.status)}">${formatString(t.status)}</span></td>
+                <td><span style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase;">${t.priority}</span></td>
+                <td>
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <div style="width: 24px; height: 24px; background: #e2e8f0; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.65rem; color: #64748b;">
+                            ${(t.assigned_to_name || '?').charAt(0)}
+                        </div>
+                        <span style="font-size: 0.875rem;">${t.assigned_to_name || 'Unassigned'}</span>
+                    </div>
+                </td>
+                <td style="color: var(--text-secondary); font-size: 0.875rem;">${new Date(t.created_at).toLocaleDateString()}</td>
+                <td><i class="fas fa-chevron-right" style="color: #cbd5e1;"></i></td>
+            </tr>
+        `).join('');
+    }
+
+    // Helpers
+    function formatString(str) {
+        return str.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+    }
+
+    function truncate(str, n) {
+        return (str.length > n) ? str.substr(0, n - 1) + '&hellip;' : str;
+    }
+
+    function getStatusColor(status) {
+        const colors = { open: '#f59e0b', in_progress: '#3b82f6', resolved: '#10b981', closed: '#6b778c' };
+        return colors[status] || '#6b778c';
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        loadAdminDashboard();
+        // Auto refresh every 60s
+        setInterval(loadAdminDashboard, 60000);
+    });
+</script>
+{% endblock %}

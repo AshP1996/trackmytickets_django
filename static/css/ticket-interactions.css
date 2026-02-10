@@ -1,0 +1,199 @@
+/**
+ * Ticket Interaction Enhancements
+ * 
+ * Styles for inline editing, mentions, and activity timeline
+ */
+
+/* Inline Editing Hover States */
+#ticket-subject:hover,
+#ticket-description:hover {
+    background-color: var(--color-bg-hover) !important;
+}
+
+#ticket-subject:focus,
+#ticket-description:focus {
+    outline: 2px solid var(--color-brand-primary);
+    outline-offset: 2px;
+}
+
+/* Mention Suggestions */
+#mention-suggestions {
+    font-family: var(--font-family-base);
+}
+
+.mention-item {
+    transition: background-color var(--animation-fast);
+}
+
+.mention-item:hover,
+.mention-item.active {
+    background-color: var(--color-bg-hover) !important;
+}
+
+.mention-item:last-child {
+    border-bottom: none !important;
+}
+
+/* Activity Timeline Enhancements */
+.timeline-item {
+    position: relative;
+}
+
+.timeline-item::before {
+    content: '';
+    position: absolute;
+    left: 15px;
+    top: 40px;
+    bottom: 0;
+    width: 2px;
+    background-color: var(--color-border-light);
+}
+
+.timeline-item:last-child::before {
+    display: none;
+}
+
+.timeline-icon {
+    position: relative;
+    z-index: 1;
+    transition: transform var(--animation-fast);
+}
+
+.timeline-item:hover .timeline-icon {
+    transform: scale(1.1);
+}
+
+.timeline-content {
+    transition: padding-left var(--animation-fast);
+}
+
+.timeline-item:hover .timeline-content {
+    padding-left: calc(var(--spacing-md) + 4px);
+    border-left-color: var(--color-brand-primary);
+}
+
+.timeline-details {
+    animation: slide-in var(--animation-base);
+}
+
+@keyframes slide-in {
+    from {
+        opacity: 0;
+        transform: translateX(-8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/* Draft Indicator */
+#draft-indicator {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    animation: fade-in var(--animation-base);
+}
+
+#draft-indicator i {
+    font-size: 10px;
+}
+
+/* Enhanced Status Badges */
+.badge-status-open,
+.badge-status-in-progress,
+.badge-status-waiting,
+.badge-status-resolved,
+.badge-status-closed {
+    position: relative;
+    transition: all var(--animation-base);
+}
+
+.badge-status-open:hover,
+.badge-status-in-progress:hover,
+.badge-status-waiting:hover,
+.badge-status-resolved:hover,
+.badge-status-closed:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-sm);
+}
+
+/* Priority Badge Icons */
+.badge-priority-low,
+.badge-priority-medium,
+.badge-priority-high,
+.badge-priority-critical {
+    position: relative;
+}
+
+/* Comment Mentions */
+.comment-item {
+    position: relative;
+}
+
+.comment-mention {
+    background-color: var(--color-brand-primary);
+    color: white;
+    padding: 2px 6px;
+    border-radius: var(--radius-sm);
+    font-weight: var(--font-weight-medium);
+    font-size: var(--font-size-xs);
+    margin: 0 2px;
+}
+
+/* Inline Editor Styles */
+.inline-editor-input {
+    width: 100%;
+    border: 2px solid var(--color-brand-primary);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-sm) var(--spacing-md);
+    font-size: inherit;
+    font-family: inherit;
+    font-weight: inherit;
+    background-color: var(--color-bg-primary);
+    transition: all var(--animation-fast);
+}
+
+.inline-editor-input:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(0, 82, 204, 0.1);
+}
+
+.inline-editor-textarea {
+    min-height: 100px;
+    resize: vertical;
+}
+
+/* Activity Timeline Date Header */
+.timeline-date {
+    position: sticky;
+    top: 0;
+    background-color: var(--color-bg-primary);
+    z-index: 10;
+    padding-top: var(--spacing-sm);
+    margin-top: var(--spacing-sm);
+}
+
+/* Smooth Scrolling for Timeline */
+#activity-timeline {
+    scroll-behavior: smooth;
+}
+
+/* Loading State for Timeline */
+#activity-timeline .loading {
+    padding: var(--spacing-xl);
+    text-align: center;
+}
+
+/* Empty State */
+.timeline-empty {
+    text-align: center;
+    padding: var(--spacing-xl);
+    color: var(--color-text-tertiary);
+}
+
+.timeline-empty i {
+    font-size: var(--font-size-2xl);
+    margin-bottom: var(--spacing-md);
+    opacity: 0.5;
+}
