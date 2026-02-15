@@ -9,11 +9,18 @@ bind = "0.0.0.0:8000"
 backlog = 2048
 
 # Worker processes
-workers = multiprocessing.cpu_count() * 2 + 1
-worker_class = "sync"
+# Worker processes
+# Formula: (2 x CPUs) + 1 is recommendation, but with threads we can be more conservative
+workers = 3  # Assuming 1-2 core environment, safe default
+worker_class = "gthread"
+threads = 4
 worker_connections = 1000
 timeout = 30
 keepalive = 2
+
+# Memory leak prevention
+max_requests = 1000
+max_requests_jitter = 50
 
 # Logging
 accesslog = "/app/logs/gunicorn_access.log"

@@ -8,7 +8,7 @@ from apps.tickets.models import Ticket
 # ============================================================================
 class Comment(models.Model):
     ticket = models.ForeignKey(Ticket, on_delete=models.CASCADE, related_name='comments')
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='comments')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='comments', db_constraint=False)
     comment = models.TextField()
     is_internal = models.BooleanField(default=False)
     created_at = models.DateTimeField(default=timezone.now)

@@ -53,7 +53,8 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'apps.core.middleware.TenantMiddleware',
+    'apps.core.middleware.tenant.TenantMiddleware',
+    'apps.core.middleware.rate_limit.RateLimitMiddleware',
 ]
 
 ROOT_URLCONF = 'config.urls'
@@ -85,6 +86,9 @@ DATABASES = {
         'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
+
+# Database Router
+DATABASE_ROUTERS = ['apps.core.routers.TenantDatabaseRouter']
 
 # Password validation
 # https://docs.djangoproject.com/en/5.0/ref/settings/#auth-password-validators
@@ -125,8 +129,10 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'uploads'
 
-# Default primary key field type
-# https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
+# Encryption Key for BYODB Credentials
+# In production, this should be set in environment variables
+DB_CREDENTIALS_ENCRYPTION_KEY = os.environ.get('DB_CREDENTIALS_ENCRYPTION_KEY', 'WNMe9TXZfx5FPR9GintlzTudZJV0I94gp-mYS8oKYRA=')
+
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
@@ -164,3 +170,12 @@ DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', EMAIL_HOST_USER)
 
 # JWT Configuration
 JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY', SECRET_KEY)
+
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(days=1),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
+    'ROTATE_REFRESH_TOKENS': False,
+    'BLACKLIST_AFTER_ROTATION': True,
+    'SIGNING_KEY': JWT_SECRET_KEY,
+    'AUTH_HEADER_TYPES': ('Bearer',),
+}

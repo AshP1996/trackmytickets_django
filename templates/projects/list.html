@@ -69,7 +69,7 @@
 
                     <div class="form-group mb-3">
                         <label class="form-label">Lead User</label>
-                        <select class="form-select" id="project-lead" name="lead_user_id">
+                        <select class="form-select" id="project-lead" name="lead_user">
                             <option value="">Unassigned</option>
                         </select>
                         <small class="form-text text-tertiary">Optional: Assign a project lead (manager)</small>
@@ -155,7 +155,7 @@
             // This allows managers to assign other users as project leads
             try {
                 const usersData = await api.getUsers();
-                allUsers = usersData.users || usersData || [];
+                allUsers = usersData.results || usersData.users || usersData || [];
 
                 // Add users to the dropdown
                 allUsers.forEach(user => {
@@ -358,23 +358,28 @@
         keyInput.classList.add('bg-light');
 
         form.elements['description'].value = project.description || '';
-        form.elements['lead_user_id'].value = project.lead_user_id || '';
+        form.elements['lead_user'].value = project.lead_user || '';
 
         if (project.start_date) form.elements['start_date'].value = project.start_date.split('T')[0];
         if (project.end_date) form.elements['end_date'].value = project.end_date.split('T')[0];
         if (project.extension_date) form.elements['extension_date'].value = project.extension_date.split('T')[0];
     }
 
-    async function deleteProject(id) {
-        if (!confirm('Are you sure you want to delete this project? This cannot be undone.')) return;
-
-        try {
-            await api.deleteProject(id);
-            showSuccess('Project deleted successfully');
-            loadProjects();
-        } catch (error) {
-            showError(error.message);
-        }
+    function deleteProject(id) {
+        window.showConfirm(
+            'Delete Project',
+            'Are you sure you want to delete this project? This cannot be undone.',
+            async () => {
+                try {
+                    await api.deleteProject(id);
+                    showSuccess('Project deleted successfully');
+                    loadProjects();
+                } catch (error) {
+                    showError(error.message);
+                }
+            },
+            true // isDestructive
+        );
     }
 
     async function handleProjectSubmit(event) {
@@ -385,7 +390,7 @@
         const data = {
             name: formData.get('name'),
             description: formData.get('description'),
-            lead_user_id: formData.get('lead_user_id') || null,
+            lead_user: formData.get('lead_user') || null,
             start_date: formData.get('start_date') || null,
             end_date: formData.get('end_date') || null,
             extension_date: formData.get('extension_date') || null
@@ -482,14 +487,14 @@
                     name: formData.get('name'),
                     key: formData.get('key'),
                     description: formData.get('description') || '',
-                    lead_user_id: formData.get('lead_user_id') || null,
+                    lead_user: formData.get('lead_user') || null,
                     start_date: formData.get('start_date') || null,
                     end_date: formData.get('end_date') || null,
                     extension_date: formData.get('extension_date') || null
                 };
 
-                if (projectData.lead_user_id) {
-                    projectData.lead_user_id = parseInt(projectData.lead_user_id);
+                if (projectData.lead_user) {
+                    projectData.lead_user = parseInt(projectData.lead_user);
                 }
 
                 console.log('Creating project with data:', projectData);

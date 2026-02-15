@@ -281,6 +281,15 @@ class AdminDashboardView(APIView):
             if key in trend_data:
                 trend_data[key] = item['count']
 
+        # Plan Details
+        limits = org.get_limits()
+        plan_details = {
+            'name': org.plan,
+            'max_users': limits.get('max_users', 30),
+            'enabled_connectors': limits.get('enabled_connectors', []),
+            'cluster_id': org.cluster_id
+        }
+
         return Response({
              'total_tickets': total_tickets,
              'open_tickets': open_tickets,
@@ -294,5 +303,6 @@ class AdminDashboardView(APIView):
              'status_distribution': status_data,
              'priority_distribution': priority_data,
              'department_distribution': dept_data,
-             'ticket_trends': trend_data
+             'ticket_trends': trend_data,
+             'plan_details': plan_details
         })

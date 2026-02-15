@@ -56,7 +56,7 @@ class Organization(models.Model):
     
     # Cluster-style SaaS fields
     cluster_id = models.CharField(max_length=50, null=True, blank=True, db_index=True)
-    plan = models.CharField(max_length=20, default='free')
+    plan = models.CharField(max_length=20, default='starter_trial')
     limits = models.TextField(null=True, blank=True) # JSON string
     
     # Organization-specific settings
@@ -81,25 +81,23 @@ class Organization(models.Model):
         self.save()
 
     @staticmethod
-    def get_default_limits(plan='free'):
+    def get_default_limits(plan='starter_trial'):
         defaults = {
-            'free': {
+            'starter_trial': {
                 'max_tickets_per_month': 100,
+                'max_users': 30,
                 'enabled_connectors': ['email'],
                 'max_storage_mb': 100
             },
-            'pro': {
-                'max_tickets_per_month': 1000,
-                'enabled_connectors': ['email', 'api', 'webhook'],
-                'max_storage_mb': 1000
-            },
-            'enterprise': {
+            'growth_cluster': {
                 'max_tickets_per_month': -1,  # Unlimited
-                'enabled_connectors': ['email', 'api', 'webhook', 'slack', 'microsoft_teams'],
-                'max_storage_mb': -1  # Unlimited
+                'max_users': 200,
+                'enabled_connectors': ['email', 'api', 'webhook'],
+                'max_storage_mb': 1000,
+                'has_dedicated_db': True
             }
         }
-        return defaults.get(plan, defaults['free'])
+        return defaults.get(plan, defaults['starter_trial'])
 
 # ============================================================================
 # USER MANAGER

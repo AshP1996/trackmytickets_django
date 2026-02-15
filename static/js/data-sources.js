@@ -415,28 +415,38 @@ async function toggleDataSource(sourceId, isActive) {
 }
 
 async function deleteDataSource(sourceId) {
-    if (!confirm('Are you sure you want to delete this data source? All mappings will be deleted.')) return;
-
-    try {
-        await api.deleteDataSource(sourceId);
-        showSuccess('Data source deleted successfully');
-        loadDataSources();
-    } catch (error) {
-        showError('Failed to delete data source: ' + error.message);
-    }
+    window.showConfirm(
+        'Delete Data Source',
+        'Are you sure you want to delete this data source? All mappings will be deleted.',
+        async () => {
+            try {
+                await api.deleteDataSource(sourceId);
+                showSuccess('Data source deleted successfully');
+                loadDataSources();
+            } catch (error) {
+                showError('Failed to delete data source: ' + error.message);
+            }
+        },
+        true // isDestructive
+    );
 }
 
 async function deleteMapping(mappingId) {
-    if (!confirm('Are you sure you want to delete this mapping?')) return;
-
-    try {
-        await api.deleteMapping(mappingId);
-        showSuccess('Mapping deleted successfully');
-        manageMappings(currentSourceId);
-        loadDataSources();
-    } catch (error) {
-        showError('Failed to delete mapping: ' + error.message);
-    }
+    window.showConfirm(
+        'Delete Mapping',
+        'Are you sure you want to delete this mapping?',
+        async () => {
+            try {
+                await api.deleteMapping(mappingId);
+                showSuccess('Mapping deleted successfully');
+                manageMappings(currentSourceId);
+                loadDataSources();
+            } catch (error) {
+                showError('Failed to delete mapping: ' + error.message);
+            }
+        },
+        true // isDestructive
+    );
 }
 
 // Event listeners

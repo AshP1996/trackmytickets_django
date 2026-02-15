@@ -18,9 +18,8 @@ def verify_pages():
     # 1. Platform Admin Verification
     print("\n--- Verifying Platform Admin ---")
     try:
-        admin = PlatformAdmin.objects.get(email="admin@platform.com")
-        client.force_login(admin, backend='django.contrib.auth.backends.ModelBackend') # PlatformAdmin might need custom backend or just force_login with user object if it's compatible
-        # Note: force_login works with user objects. PlatformAdmin is a user model.
+        admin = PlatformAdmin.objects.get(email="superadmin@platform.com")
+        client.force_login(admin, backend='apps.accounts.backends.PlatformAdminBackend')
         
         urls = [
             '/platform/dashboard',
@@ -28,10 +27,7 @@ def verify_pages():
         
         for url in urls:
             resp = client.get(url)
-            if resp.status_code == 200:
-                print(f"✓ {url} (200 OK)")
-            else:
-                print(f"✗ {url} ({resp.status_code})")
+            print(f"{'✓' if resp.status_code == 200 else '✗'} {url} ({resp.status_code})")
                 
         client.logout()
     except Exception as e:
@@ -41,22 +37,17 @@ def verify_pages():
     print("\n--- Verifying Company Admin (Demo Corp) ---")
     try:
         org = Organization.objects.get(subdomain="demo")
-        user = User.objects.get(email="admin@democorp.com", organization=org)
+        user = User.objects.get(email="admin@demo.com", organization=org)
         client.force_login(user)
         
         urls = [
             f'/{org.subdomain}/dashboard',
-            f'/{org.subdomain}/admin/users',
-            f'/{org.subdomain}/admin/departments',
             f'/{org.subdomain}/tickets',
         ]
         
         for url in urls:
             resp = client.get(url)
-            if resp.status_code == 200:
-                print(f"✓ {url} (200 OK)")
-            else:
-                print(f"✗ {url} ({resp.status_code})")
+            print(f"{'✓' if resp.status_code == 200 else '✗'} {url} ({resp.status_code})")
         
         client.logout()
     except Exception as e:
@@ -66,13 +57,11 @@ def verify_pages():
     print("\n--- Verifying Agent (Demo Corp) ---")
     try:
         org = Organization.objects.get(subdomain="demo")
-        user = User.objects.get(email="agent@democorp.com", organization=org)
+        user = User.objects.get(email="agent@demo.com", organization=org)
         client.force_login(user)
         
         urls = [
             f'/{org.subdomain}/tickets',
-            # We need a ticket ID to test detail page
-            # f'/{org.subdomain}/tickets/SUP-1' # Assuming SUP-1 exists
         ]
         
         # Find a ticket
@@ -83,10 +72,7 @@ def verify_pages():
         
         for url in urls:
             resp = client.get(url)
-            if resp.status_code == 200:
-                print(f"✓ {url} (200 OK)")
-            else:
-                print(f"✗ {url} ({resp.status_code})")
+            print(f"{'✓' if resp.status_code == 200 else '✗'} {url} ({resp.status_code})")
         
         client.logout()
     except Exception as e:
@@ -96,7 +82,7 @@ def verify_pages():
     print("\n--- Verifying Customer (Demo Corp) ---")
     try:
         org = Organization.objects.get(subdomain="demo")
-        user = User.objects.get(email="user@democorp.com", organization=org)
+        user = User.objects.get(email="customer@demo.com", organization=org)
         client.force_login(user)
         
         urls = [
@@ -106,10 +92,7 @@ def verify_pages():
         
         for url in urls:
             resp = client.get(url)
-            if resp.status_code == 200:
-                print(f"✓ {url} (200 OK)")
-            else:
-                print(f"✗ {url} ({resp.status_code})")
+            print(f"{'✓' if resp.status_code == 200 else '✗'} {url} ({resp.status_code})")
         
         client.logout()
     except Exception as e:

@@ -10,8 +10,8 @@ import re
 class Project(models.Model):
     name = models.CharField(max_length=200)
     key = models.CharField(max_length=10) # SUP, ENG
-    organization = models.ForeignKey(Organization, on_delete=models.CASCADE, related_name='projects')
-    lead_user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='led_projects')
+    organization = models.ForeignKey(Organization, on_delete=models.CASCADE, related_name='projects', db_constraint=False)
+    lead_user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='led_projects', db_constraint=False)
     description = models.CharField(max_length=200, null=True, blank=True)
     is_active = models.BooleanField(default=True)
     start_date = models.DateTimeField(null=True, blank=True)
@@ -22,6 +22,11 @@ class Project(models.Model):
 
     class Meta:
         db_table = 'projects'
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['organization']),
+            models.Index(fields=['created_at']),
+        ]
         constraints = [
             models.UniqueConstraint(fields=['key', 'organization'], name='uq_project_key_org')
         ]
@@ -49,21 +54,21 @@ class Workflow(models.Model):
 class Ticket(models.Model):
     ticket_id = models.CharField(max_length=20) # SUP-123
     project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='tickets')
-    organization = models.ForeignKey(Organization, on_delete=models.CASCADE, related_name='tickets')
+    organization = models.ForeignKey(Organization, on_delete=models.CASCADE, related_name='tickets', db_constraint=False)
     subject = models.CharField(max_length=200)
     description = models.TextField(null=True, blank=True)
     
     status = models.CharField(max_length=20, default='open', db_index=True)
     priority = models.CharField(max_length=20, default='medium', db_index=True)
     
-    department = models.ForeignKey(Department, on_delete=models.SET_NULL, null=True, blank=True, related_name='tickets')
+    department = models.ForeignKey(Department, on_delete=models.SET_NULL, null=True, blank=True, related_name='tickets', db_constraint=False)
     # department_str for backward compatibility if needed, but we should rely on FK
     department_name = models.CharField(max_length=50, null=True, blank=True) 
     
     sender_email = models.CharField(max_length=120)
     sender_name = models.CharField(max_length=100, null=True, blank=True)
     
-    assigned_to = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='assigned_tickets')
+    assigned_to = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='assigned_tickets', db_constraint=False)
     
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
@@ -115,7 +120,7 @@ class Ticket(models.Model):
 # ============================================================================
 class TicketHistory(models.Model):
     ticket = models.ForeignKey(Ticket, on_delete=models.CASCADE, related_name='history')
-    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='ticket_actions')
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='ticket_actions', db_constraint=False)
     action = models.CharField(max_length=50)
     old_value = models.CharField(max_length=200, null=True, blank=True)
     new_value = models.CharField(max_length=200, null=True, blank=True)

@@ -338,14 +338,19 @@
     }
 
     async function markAllRead() {
-        if (!confirm('Mark all notifications as read?')) return;
-        try {
-            await api.request('/api/notifications/mark_all_read/', { method: 'POST' });
-            loadNotifications(1);
-            showSuccess('All marked as read');
-        } catch (error) {
-            showError('Failed to mark all as read');
-        }
+        window.showConfirm(
+            'Mark All Read',
+            'Mark all notifications as read?',
+            async () => {
+                try {
+                    await api.request('/api/notifications/mark_all_read/', { method: 'POST' });
+                    loadNotifications(1);
+                    showSuccess('All marked as read');
+                } catch (error) {
+                    showError('Failed to mark all as read');
+                }
+            }
+        );
     }
 
     // Pagination (Updated to match design system style)

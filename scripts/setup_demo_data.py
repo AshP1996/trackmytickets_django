@@ -56,6 +56,36 @@ def setup_demo_data():
         else:
             print("[EXISTS] Org User: admin@demo.com")
 
+        # 4. Create Agent User
+        if not User.objects.filter(email='agent@demo.com', organization=org).exists():
+            user = User(
+                email='agent@demo.com', 
+                organization=org, 
+                full_name='Demo Agent',
+                role='agent',
+                is_active=True
+            )
+            user.set_password('password123')
+            user.save()
+            print("[CREATED] Org User: agent@demo.com / password123")
+        else:
+            print("[EXISTS] Org User: agent@demo.com")
+
+        # 5. Create Customer User
+        if not User.objects.filter(email='customer@demo.com', organization=org).exists():
+            user = User(
+                email='customer@demo.com', 
+                organization=org, 
+                full_name='Demo Customer',
+                role='customer',
+                is_active=True
+            )
+            user.set_password('password123')
+            user.save()
+            print("[CREATED] Org User: customer@demo.com / password123")
+        else:
+            print("[EXISTS] Org User: customer@demo.com")
+
     except Exception as e:
         print(f"[ERROR] Organization/User: {e}")
 

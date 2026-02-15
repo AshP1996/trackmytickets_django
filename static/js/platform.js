@@ -211,7 +211,7 @@ async function loadOrganizations() {
 
         // Get base URL for generating access URLs
         const baseUrl = window.location.origin;
-        
+
         container.innerHTML = `
             <table class="table" style="margin: 0;">
                 <thead>
@@ -227,9 +227,9 @@ async function loadOrganizations() {
                 </thead>
                 <tbody>
                     ${orgs.map(org => {
-                        const loginUrl = `${baseUrl}/${org.subdomain}/login`;
-                        const dashboardUrl = `${baseUrl}/${org.subdomain}/dashboard`;
-                        return `
+            const loginUrl = `${baseUrl}/${org.subdomain}/login`;
+            const dashboardUrl = `${baseUrl}/${org.subdomain}/dashboard`;
+            return `
                         <tr>
                             <td>
                                 <div class="font-semibold">${org.name || 'N/A'}</div>
@@ -251,7 +251,8 @@ async function loadOrganizations() {
                                 </div>
                             </td>
                             <td>
-                                <span class="badge ${org.plan === 'enterprise' ? 'badge-status-resolved' : org.plan === 'pro' ? 'badge-status-in-progress' : ''}">${org.plan || 'free'}</span>
+                                <span class="badge ${org.plan === 'growth_cluster' ? 'badge-status-resolved' : 'badge-status-in-progress'}">${org.plan === 'growth_cluster' ? 'Growth Cluster' : 'Starter Trial'}</span>
+                                ${org.has_external_db ? '<span class="badge" style="background-color: var(--color-brand-secondary); margin-left: 4px;" title="External Database Connected"><i class="fas fa-database"></i> BYODB</span>' : ''}
                             </td>
                             <td>
                                 ${org.is_active ? '<span class="badge badge-status-resolved">Active</span>' : '<span class="badge" style="background-color: var(--color-bg-tertiary);">Suspended</span>'}
@@ -269,13 +270,13 @@ async function loadOrganizations() {
                                         <i class="fas fa-eye"></i>
                                     </button>
                                     ${org.is_active ?
-                `<button class="btn btn-sm btn-warning" onclick="window.suspendOrganization(${org.id}, true)" title="Suspend" type="button">
+                    `<button class="btn btn-sm btn-warning" onclick="window.suspendOrganization(${org.id}, true)" title="Suspend" type="button">
                                             <i class="fas fa-pause"></i>
                                         </button>` :
-                `<button class="btn btn-sm btn-success" onclick="window.suspendOrganization(${org.id}, false)" title="Activate" type="button">
+                    `<button class="btn btn-sm btn-success" onclick="window.suspendOrganization(${org.id}, false)" title="Activate" type="button">
                                             <i class="fas fa-play"></i>
                                         </button>`
-            }
+                }
                                     <button class="btn btn-sm btn-danger" onclick="window.deleteOrganization(${org.id})" title="Delete" type="button">
                                         <i class="fas fa-trash"></i>
                                     </button>
@@ -283,7 +284,7 @@ async function loadOrganizations() {
                             </td>
                         </tr>
                     `;
-                    }).join('')}
+        }).join('')}
                 </tbody>
             </table>
         `;
@@ -314,11 +315,11 @@ async function createOrganization(data) {
         submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating...';
 
         const result = await platformAPI.createOrganization(data);
-        
+
         // Close create modal
         bootstrap.Modal.getInstance(document.getElementById('createOrgModal')).hide();
         document.getElementById('create-org-form').reset();
-        
+
         // Prepare organization details for display
         // Use window.location.origin to ensure path-based URLs (no subdomains)
         const companyName = result.subdomain || data.subdomain;
@@ -326,7 +327,7 @@ async function createOrganization(data) {
         const dashboardUrl = result.access_url || `${window.location.origin}/${companyName}/dashboard`;
         const adminEmail = result.admin_user?.email || data.admin_email;
         const adminPassword = result.admin_user?.password || data.admin_password;
-        
+
         // Display success modal with all details
         const detailsHtml = `
             <div class="mb-4">
@@ -390,13 +391,13 @@ async function createOrganization(data) {
                 </div>
             </div>
         `;
-        
+
         // Populate and show success modal
         document.getElementById('org-created-details').innerHTML = detailsHtml;
-        
+
         // Setup copy credentials button
         const copyBtn = document.getElementById('copy-credentials-btn');
-        copyBtn.onclick = function() {
+        copyBtn.onclick = function () {
             const credentialsText = `Organization: ${result.organization?.name || data.name}
 Subdomain: ${result.subdomain || data.subdomain}
 Login URL: ${loginUrl}
@@ -405,7 +406,7 @@ Dashboard URL: ${dashboardUrl}
 Admin Credentials:
 Email: ${adminEmail}
 Password: ${adminPassword}`;
-            
+
             navigator.clipboard.writeText(credentialsText).then(() => {
                 copyBtn.innerHTML = '<i class="fas fa-check"></i> Copied!';
                 setTimeout(() => {
@@ -425,14 +426,14 @@ Password: ${adminPassword}`;
                 }, 2000);
             });
         };
-        
+
         // Show success modal
         const successModal = new bootstrap.Modal(document.getElementById('orgCreatedModal'));
         successModal.show();
-        
+
         // Also show toast notification
         showSuccess(`Organization "${result.organization?.name || data.name}" created successfully!`);
-        
+
         // Refresh organizations list and stats
         loadOrganizations();
         loadPlatformStats();
@@ -453,38 +454,39 @@ Password: ${adminPassword}`;
 }
 
 async function suspendOrganization(orgId, suspend) {
-    if (!confirm(`Are you sure you want to ${suspend ? 'suspend' : 'activate'} this organization?`)) {
-        return;
-    }
-
-    try {
-        await platformAPI.suspendOrganization(orgId, suspend);
-        showSuccess(`Organization ${suspend ? 'suspended' : 'activated'} successfully`);
-        loadOrganizations();
-        loadPlatformStats();
-    } catch (error) {
-        showError('Failed to update organization: ' + error.message);
-    }
+    window.showConfirm(
+        suspend ? 'Suspend Organization' : 'Activate Organization',
+        `Are you sure you want to ${suspend ? 'suspend' : 'activate'} this organization?`,
+        async () => {
+            try {
+                await platformAPI.suspendOrganization(orgId, suspend);
+                showSuccess(`Organization ${suspend ? 'suspended' : 'activated'} successfully`);
+                loadOrganizations();
+                loadPlatformStats();
+            } catch (error) {
+                showError('Failed to update organization: ' + error.message);
+            }
+        },
+        suspend // isDestructive only if suspending
+    );
 }
 
 async function deleteOrganization(orgId) {
-    if (!confirm('Are you sure you want to delete this organization? This action cannot be undone and will delete all associated data!')) {
-        return;
-    }
-
-    const confirmText = prompt('Type "DELETE" to confirm:');
-    if (confirmText !== 'DELETE') {
-        return;
-    }
-
-    try {
-        await platformAPI.deleteOrganization(orgId);
-        showSuccess('Organization deleted successfully');
-        loadOrganizations();
-        loadPlatformStats();
-    } catch (error) {
-        showError('Failed to delete organization: ' + error.message);
-    }
+    window.showConfirm(
+        'Delete Organization',
+        'Are you sure you want to delete this organization? This action cannot be undone and will delete all associated data!',
+        async () => {
+            try {
+                await platformAPI.deleteOrganization(orgId);
+                showSuccess('Organization deleted successfully');
+                loadOrganizations();
+                loadPlatformStats();
+            } catch (error) {
+                showError('Failed to delete organization: ' + error.message);
+            }
+        },
+        true // isDestructive
+    );
 }
 
 async function viewOrganization(orgId) {
@@ -495,15 +497,15 @@ async function viewOrganization(orgId) {
         // API returns organization dict directly (not nested)
         const org = response;
         const stats = response.detailed_stats || response.stats || {};
-        
+
         // Get access URLs (from API response or generate)
         // Use window.location.origin to ensure path-based URLs (no subdomains)
         const loginUrl = response.access_urls?.login || `${window.location.origin}/${org.subdomain}/login`;
         const dashboardUrl = response.access_urls?.dashboard || `${window.location.origin}/${org.subdomain}/dashboard`;
-        
+
         // Get admin user info
         const adminUser = response.admin_user || {};
-        
+
         const details = `
 ═══════════════════════════════════════════════════════
    ORGANIZATION DETAILS
@@ -559,7 +561,7 @@ Projects:
 ═══════════════════════════════════════════════════════
         `.trim();
 
-        alert(details);
+        window.showAlert('Organization Details', details);
     } catch (error) {
         console.error('Error loading organization:', error);
         showError('Failed to load organization details: ' + (error.message || 'Unknown error'));
@@ -667,7 +669,7 @@ Message:
 ${enquiry.message}
         `.trim();
 
-        alert(details);
+        window.showAlert('Enquiry Details', details);
     } catch (error) {
         showError('Failed to load enquiry: ' + error.message);
     }
@@ -723,7 +725,7 @@ document.addEventListener('DOMContentLoaded', async function () {
                 admin_email: formData.get('admin_email'),
                 admin_name: formData.get('admin_name'),
                 admin_password: formData.get('admin_password'),
-                plan: formData.get('plan') || 'free',
+                plan: formData.get('plan') || 'starter_trial',
                 cluster_id: formData.get('cluster_id') || null
             };
             createOrganization(orgData);

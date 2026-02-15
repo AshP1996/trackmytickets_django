@@ -69,7 +69,16 @@ class SQLiteConnector(DatabaseConnector):
         try:
             conn = sqlite3.connect(self.config.get('database'))
             cursor = conn.cursor()
-            cursor.execute(f"PRAGMA table_info({table_name})")
+            # Validate table name to prevent SQL Injection
+            # PRAGMA statements cannot be parameterized for table names in some versions/drivers
+            allowed_tables = self.get_tables()
+            if table_name not in allowed_tables:
+                return []
+            
+            # Quote table name for safety
+            safe_name = table_name.replace('"', '""')
+            quoted_name = f'"{safe_name}"'
+            cursor.execute(f"PRAGMA table_info({quoted_name})")
             columns = []
             for row in cursor.fetchall():
                 columns.append({

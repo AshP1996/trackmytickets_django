@@ -229,23 +229,53 @@
             </div>
         </div>
 
-        <!-- Active Users -->
+        <!-- User Usage -->
         <div class="glass-card">
             <div class="stat-header">
-                <span class="stat-title">Active Users</span>
+                <span class="stat-title">User Usage</span>
                 <div class="stat-icon" style="background: rgba(245, 158, 11, 0.1); color: var(--warning-color);">
                     <i class="fas fa-users"></i>
                 </div>
             </div>
-            <div class="stat-value" id="active-users">-</div>
-            <div class="stat-footer">
-                <span>Last 24 hours</span>
+            <div class="stat-value">
+                <span id="total-users">-</span>
+                <span style="font-size: 1rem; color: var(--text-secondary); font-weight: 500;">/ <span
+                        id="user-limit">-</span></span>
+            </div>
+            <div class="stat-footer" style="display: block;">
+                <div class="progress"
+                    style="height: 6px; border-radius: 3px; background: rgba(0,0,0,0.05); margin-bottom: 0.5rem;">
+                    <div class="progress-bar bg-warning" id="user-usage-bar" role="progressbar" style="width: 0%"></div>
+                </div>
+                <div style="display: flex; justify-content: space-between; font-size: 0.75rem;">
+                    <span><span id="active-users">-</span> active today</span>
+                    <span id="plan-name-display" style="text-transform: capitalize;">-</span>
+                </div>
             </div>
         </div>
     </div>
 
     <!-- Charts Row 1 -->
-    <div class="charts-grid">
+    <div class="stats-grid" style="margin-bottom: 1.5rem;">
+        <!-- Integrations & Notifications -->
+        <div class="glass-card">
+            <div class="stat-header">
+                <span class="stat-title">Integrations & Add-ons</span>
+                <div class="stat-icon" style="background: rgba(139, 92, 246, 0.1); color: #8b5cf6;">
+                    <i class="fas fa-plug"></i>
+                </div>
+            </div>
+            <div id="integrations-container" style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                <!-- Populated by JS -->
+            </div>
+            <div class="mt-3 pt-3 border-top" style="border-color: rgba(0,0,0,0.05) !important;">
+                <div class="d-flex align-items-center gap-2 text-sm text-secondary">
+                    <i class="fas fa-bell"></i>
+                    <span>System Notifications: <span class="text-success">All systems operational</span></span>
+                </div>
+            </div>
+        </div>
+
         <!-- Ticket Trends (Line) -->
         <div class="glass-card" style="grid-column: span 2;">
             <div class="stat-header">
@@ -333,7 +363,55 @@
             updateElement('open-tickets-val', dashboard.open_tickets);
             updateElement('sla-breaches', dashboard.sla_breaches);
             updateElement('avg-resolution', dashboard.avg_resolution_hours);
+
+            // User Usage
+            updateElement('total-users', dashboard.total_users);
             updateElement('active-users', dashboard.active_users);
+
+            if (dashboard.plan_details) {
+                const limit = dashboard.plan_details.max_users;
+                const total = dashboard.total_users;
+                updateElement('user-limit', limit === -1 ? '∞' : limit);
+                updateElement('plan-name-display', dashboard.plan_details.name.replace('_', ' '));
+
+                if (limit !== -1) {
+                    const percent = Math.min((total / limit) * 100, 100);
+                    const bar = document.getElementById('user-usage-bar');
+                    if (bar) {
+                        bar.style.width = `${percent}%`;
+                        if (percent > 90) bar.classList.replace('bg-warning', 'bg-danger');
+                        else if (percent > 70) bar.classList.replace('bg-warning', 'bg-warning'); // Keep warning/primary
+                        else bar.classList.replace('bg-warning', 'bg-success');
+                    }
+                }
+
+                // Integrations
+                const intContainer = document.getElementById('integrations-container');
+                if (intContainer && dashboard.plan_details.enabled_connectors) {
+                    const icons = {
+                        'email': 'fa-envelope',
+                        'api': 'fa-code',
+                        'webhook': 'fa-globe',
+                        'slack': 'fa-slack',
+                        'microsoft_teams': 'fa-microsoft'
+                    };
+
+                    intContainer.innerHTML = dashboard.plan_details.enabled_connectors.map(c => `
+                        <span class="badge bg-white text-dark border d-flex align-items-center gap-2 p-2">
+                            <i class="fas ${icons[c] || 'fa-plug'} text-primary"></i> 
+                            ${formatString(c)}
+                        </span>
+                    `).join('');
+
+                    if (dashboard.plan_details.name === 'starter_trial') {
+                        intContainer.innerHTML += `
+                            <a href="/settings/billing" class="badge bg-light text-primary border p-2 d-flex align-items-center gap-2" style="text-decoration: none; cursor: pointer; border-style: dashed !important;">
+                                <i class="fas fa-plus"></i> Upgrade
+                            </a>
+                        `;
+                    }
+                }
+            }
 
             // Styling for SLA
             const slaVal = document.getElementById('sla-breaches');
@@ -356,7 +434,7 @@
 
         } catch (error) {
             console.error(error);
-            // Non-intrusive toast could go here
+            showError('Failed to load dashboard data: ' + error.message);
         } finally {
             setTimeout(() => btn.classList.remove('spinning'), 500);
         }

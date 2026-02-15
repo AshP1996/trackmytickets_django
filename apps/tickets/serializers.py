@@ -4,9 +4,14 @@ from apps.comments.models import Comment
 from apps.accounts.serializers import UserSerializer
 
 class ProjectSerializer(serializers.ModelSerializer):
+    lead_user_name = serializers.SerializerMethodField()
+
     class Meta:
         model = Project
-        fields = ['id', 'name', 'key', 'description', 'is_active', 'lead_user', 'created_at']
+        fields = ['id', 'name', 'key', 'description', 'is_active', 'lead_user', 'lead_user_name', 'created_at']
+        
+    def get_lead_user_name(self, obj):
+        return obj.lead_user.full_name if obj.lead_user else None
 
 class AttachmentSerializer(serializers.ModelSerializer):
     uploaded_at = serializers.DateTimeField(read_only=True)
@@ -65,6 +70,7 @@ class TicketDetailSerializer(serializers.ModelSerializer):
                   'assigned_to_name', 'sender_email', 'sender_name', 'department',
                   'created_at', 'updated_at', 'comments', 'history', 'attachments',
                   'allowed_transitions']
+        read_only_fields = ['id', 'ticket_id', 'project_key', 'project_name', 'sender_email', 'sender_name', 'created_at', 'updated_at', 'history', 'comments', 'attachments']
                   
     def get_assigned_to_name(self, obj):
         return obj.assigned_to.full_name if obj.assigned_to else None

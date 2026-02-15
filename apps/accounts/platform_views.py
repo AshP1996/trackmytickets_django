@@ -58,18 +58,83 @@ class PlatformMeView(views.APIView):
 class PlatformOrganizationsView(views.APIView):
     permission_classes = [permissions.IsAuthenticated]
     
+    
     def get(self, request):
         """List all organizations"""
         orgs = Organization.objects.all().order_by('-created_at')
-        data = [{
-            'id': org.id,
-            'name': org.name,
-            'subdomain': org.subdomain,
-            'email': org.email,
-            'is_active': org.is_active,
-            'plan': org.plan,
-            'created_at': org.created_at.isoformat(),
-        } for org in orgs]
+        
+        # Pre-fetch active connectivity for efficiency
+        from apps.core.models import ExternalDataSource
+        from apps.core.connectors import get_connector
+        from apps.tickets.models import Ticket, Project
+        
+        external_ds_map = {
+            ds.organization_id: ds 
+            for ds in ExternalDataSource.objects.filter(is_active=True, connection_status='connected')
+        }
+        
+        data = []
+        for org in orgs:
+            # Base stats
+            user_count = org.users.count() # Users are always in (default) DB
+            ticket_count = 0
+            project_count = 0
+            
+            # Check for External Data Source
+            ds = external_ds_map.get(org.id)
+            if ds:
+                try:
+                    # Connect to External DB
+                    password = ds.get_password()
+                    config = {
+                        'host': ds.host,
+                        'port': ds.port,
+                        'database': ds.database,
+                        'username': ds.username,
+                        'password': password
+                    }
+                    connector = get_connector(ds.type, config)
+                    
+                    # Fetch counts
+                    # Fallback to 0 if table doesn't exist (e.g. migration pending)
+                    try:
+                        t_res = connector.fetch_data("SELECT COUNT(*) as count FROM tickets")
+                        if t_res: ticket_count = t_res[0].get('count', 0)
+                        
+                        p_res = connector.fetch_data("SELECT COUNT(*) as count FROM projects")
+                        if p_res: project_count = p_res[0].get('count', 0)
+                    except Exception as e:
+                        print(f"Error fetching stats for Org {org.id} from External DB: {e}")
+                        
+                except Exception as e:
+                    print(f"Error connecting to Org {org.id} External DB: {e}")
+            else:
+                # Default DB
+                # Note: We must explicitly filter by organization even though we are "in" the loop
+                # AND we must use the correct DB alias if the router was somehow confused, 
+                # but Ticket.objects.filter(organization=org) uses Router.db_for_read(Ticket).
+                # Router checks thread local. Thread local is 'default' (reset in middleware).
+                # So this queries default DB.
+                # FILTER: organization=org.
+                ticket_count = Ticket.objects.filter(organization=org).count()
+                project_count = Project.objects.filter(organization=org).count()
+            
+            data.append({
+                'id': org.id,
+                'name': org.name,
+                'subdomain': org.subdomain,
+                'email': org.email,
+                'is_active': org.is_active,
+                'plan': org.plan,
+                'created_at': org.created_at.isoformat(),
+                'has_external_db': bool(ds),
+                'stats': {
+                    'users': user_count,
+                    'tickets': ticket_count,
+                    'projects': project_count
+                }
+            })
+            
         return Response({'organizations': data})
     
     def post(self, request):
@@ -83,6 +148,7 @@ class PlatformOrganizationsView(views.APIView):
         admin_name = request.data.get('admin_name')
         admin_password = request.data.get('admin_password')
         plan = request.data.get('plan', 'free')
+        cluster_id = request.data.get('cluster_id')
         
         if not all([name, subdomain, email, admin_email, admin_name, admin_password]):
             return Response({'error': 'All fields are required'}, status=400)
@@ -97,6 +163,7 @@ class PlatformOrganizationsView(views.APIView):
             subdomain=subdomain,
             email=email,
             plan=plan,
+            cluster_id=cluster_id if cluster_id else None,
             is_active=True
         )
         
@@ -126,16 +193,69 @@ class PlatformStatsView(views.APIView):
         org_count = Organization.objects.count()
         active_org_count = Organization.objects.filter(is_active=True).count()
         
-        # User stats
+        # User stats (Shared model)
         user_count = User.objects.count()
         
-        # Ticket stats
-        ticket_count = Ticket.objects.count()
-        
-        # Enquiry stats
+        # Enquiry stats (Shared model)
         enquiry_count = Enquiry.objects.count()
         unread_enquiry_count = Enquiry.objects.filter(is_read=False).count()
         
+        # Ticket stats (Tenant model - aggregated from all sources)
+        from apps.core.models import ExternalDataSource
+        from apps.core.connectors import get_connector
+        
+        # 1. Get IDs of organizations with active external data sources
+        # We need to be careful: active DS and connected
+        external_ds = ExternalDataSource.objects.filter(is_active=True, connection_status='connected')
+        external_org_ids = external_ds.values_list('organization_id', flat=True)
+        
+        # 2. Count tickets in Default DB (for orgs NOT in external_org_ids)
+        # We can just count all tickets in default DB that belong to these orgs
+        # BUT standard Ticket.objects.count() queries the 'default' DB (via router default behavior)
+        # So filtering by exclude(organization_id__in=...) is correct for the default DB partition
+        default_db_ticket_count = Ticket.objects.exclude(organization_id__in=external_org_ids).count()
+        
+        total_tickets = default_db_ticket_count
+        
+        # 3. Count tickets in External DBs
+        for ds in external_ds:
+            try:
+                # Decrypt password
+                password = ds.get_password()
+                
+                config = {
+                    'host': ds.host,
+                    'port': ds.port,
+                    'database': ds.database,
+                    'username': ds.username,
+                    'password': password
+                }
+                
+                connector = get_connector(ds.type, config)
+                
+                # Check if tickets table exists first? Or just try query
+                # Different DBs might have different schemas if not managed by us.
+                # Assuming standard schema for "Bring Your Own Database" feature implies we manage schema there too 
+                # or user mapped it. 
+                # If mapped, we should check SchemaMapping.
+                # For this task, assuming standard table name 'tickets' or checking existence.
+                
+                # Simple count query
+                # Note: This assumes the table is named 'tickets'.
+                # In a real BYODB scenario, we might fallback to `connector.get_tables()` check.
+                try:
+                    results = connector.fetch_data("SELECT COUNT(*) as count FROM tickets")
+                    if results:
+                        # Result format depends on connector, usually list of dicts or tuples
+                        # fetch_data returns list of dicts
+                        count = results[0].get('count', 0)
+                        total_tickets += count
+                except Exception as e:
+                    print(f"Error counting tickets for DS {ds.id}: {e}")
+                    
+            except Exception as e:
+                print(f"Error connecting to DS {ds.id}: {e}")
+
         return Response({
             'organizations': {
                 'total': org_count,
@@ -145,7 +265,7 @@ class PlatformStatsView(views.APIView):
                 'total': user_count
             },
             'tickets': {
-                'total': ticket_count
+                'total': total_tickets
             },
             'enquiries': {
                 'total': enquiry_count,

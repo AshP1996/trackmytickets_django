@@ -123,11 +123,28 @@
 
     // Logout Helper (Global)
     window.logout = function () {
-        if (confirm('Are you sure you want to log out?')) {
-            window.api.logout();
-            // Redirect to login page of the current company
-            const company = window.api.getCompanyName();
-            window.location.href = `/${company}/login`;
+        // Use the existing logout modal in base.html if available
+        const logoutModal = document.getElementById('logoutModal');
+        if (logoutModal && typeof bootstrap !== 'undefined') {
+            const bsModal = new bootstrap.Modal(logoutModal);
+            bsModal.show();
+        } else {
+            // Fallback to generic confirm if specific modal is missing
+            if (window.showConfirm) {
+                window.showConfirm(
+                    'Confirm Logout',
+                    'Are you sure you want to log out?',
+                    function () {
+                        window.api.logout();
+                        const company = window.api.getCompanyName();
+                        window.location.href = `/${company}/login`;
+                    }
+                );
+            } else if (confirm('Are you sure you want to log out?')) {
+                window.api.logout();
+                const company = window.api.getCompanyName();
+                window.location.href = `/${company}/login`;
+            }
         }
     };
 
