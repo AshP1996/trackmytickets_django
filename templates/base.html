@@ -29,7 +29,7 @@
     {% block extra_css %}{% endblock %}
 </head>
 
-<body>
+<body data-company-name="{{ company_name|default:'' }}">
     {% block navbar %}
     <div class="app-container">
         <!-- Mobile Backdrop -->
@@ -38,7 +38,7 @@
         <aside class="app-sidebar" id="sidebar">
             <div class="sidebar-header">
                 <div class="sidebar-header">
-                    <a href="/{{ company_name|default:'default' }}/dashboard" class="sidebar-logo"
+                    <a href="/{{ company_name }}/dashboard" class="sidebar-logo"
                         style="display: flex; align-items: center; gap: 12px; text-decoration: none;">
                         <img src="{% static 'images/logo.png' %}" alt="TrackMyTicket Logo"
                             style="height: 48px; width: auto; object-fit: contain; display: block;"
@@ -51,49 +51,47 @@
             <nav class="sidebar-nav">
                 <div class="nav-section">
                     <div class="nav-section-title">Main</div>
-                    <a href="/{{ company_name|default:'default' }}/dashboard" class="nav-item" data-route="dashboard">
+                    <a href="/{{ company_name }}/dashboard" class="nav-item" data-route="dashboard">
                         <i class="fas fa-home"></i>
                         <span>Dashboard</span>
                     </a>
-                    <a href="/{{ company_name|default:'default' }}/tickets" class="nav-item" data-route="tickets">
+                    <a href="/{{ company_name }}/tickets" class="nav-item" data-route="tickets">
                         <i class="fas fa-list"></i>
                         <span>Tickets</span>
                     </a>
-                    <a href="/{{ company_name|default:'default' }}/projects" class="nav-item" data-route="projects">
+                    <a href="/{{ company_name }}/projects" class="nav-item" data-route="projects">
                         <i class="fas fa-folder"></i>
                         <span>Projects</span>
+                    </a>
+                    <a href="/{{ company_name }}/knowledge-base" class="nav-item" data-route="knowledge-base">
+                        <i class="fas fa-book"></i>
+                        <span>Knowledge Base</span>
                     </a>
                 </div>
 
                 <div class="nav-section admin-only" style="display: none;">
                     <div class="nav-section-title">Administration</div>
-                    <a href="/{{ company_name|default:'default' }}/admin/dashboard" class="nav-item"
-                        data-route="admin-dashboard">
+                    <a href="/{{ company_name }}/admin/dashboard" class="nav-item" data-route="admin-dashboard">
                         <i class="fas fa-chart-line"></i>
                         <span>Admin Dashboard</span>
                     </a>
-                    <a href="/{{ company_name|default:'default' }}/admin/users" class="nav-item"
-                        data-route="admin-users">
+                    <a href="/{{ company_name }}/admin/users" class="nav-item" data-route="admin-users">
                         <i class="fas fa-users"></i>
                         <span>Users</span>
                     </a>
-                    <a href="/{{ company_name|default:'default' }}/admin/departments" class="nav-item"
-                        data-route="admin-departments">
+                    <a href="/{{ company_name }}/admin/departments" class="nav-item" data-route="admin-departments">
                         <i class="fas fa-building"></i>
                         <span>Departments</span>
                     </a>
-                    <a href="/{{ company_name|default:'default' }}/admin/secrets" class="nav-item"
-                        data-route="admin-secrets">
+                    <a href="/{{ company_name }}/admin/secrets" class="nav-item" data-route="admin-secrets">
                         <i class="fas fa-key"></i>
                         <span>Secrets</span>
                     </a>
-                    <a href="/{{ company_name|default:'default' }}/admin/data-sources" class="nav-item"
-                        data-route="admin-data-sources">
+                    <a href="/{{ company_name }}/admin/data-sources" class="nav-item" data-route="admin-data-sources">
                         <i class="fas fa-database"></i>
                         <span>Data Sources</span>
                     </a>
-                    <a href="/{{ company_name|default:'default' }}/admin/reports" class="nav-item"
-                        data-route="admin-reports">
+                    <a href="/{{ company_name }}/admin/reports" class="nav-item" data-route="admin-reports">
                         <i class="fas fa-file-alt"></i>
                         <span>Reports</span>
                     </a>
@@ -101,7 +99,7 @@
 
                 <div class="nav-section manager-only" style="display: none;">
                     <div class="nav-section-title">Management</div>
-                    <a href="/{{ company_name|default:'default' }}/projects" class="nav-item" data-route="projects">
+                    <a href="/{{ company_name }}/projects" class="nav-item" data-route="projects">
                         <i class="fas fa-folder-open"></i>
                         <span>My Projects</span>
                     </a>
@@ -175,7 +173,7 @@
                         <i class="fas fa-moon"></i>
                     </button> -->
                     <!-- Notification Bell -->
-                    <a href="/{{ company_name|default:'default' }}/notifications" class="text-dark position-relative"
+                    <a href="/{{ company_name }}/notifications" class="text-dark position-relative"
                         style="font-size: 1.2rem; margin-right: 0.5rem;" title="Notifications">
                         <i class="fas fa-bell"></i>
                         <span id="notification-badge"
@@ -277,7 +275,7 @@
     <!-- Custom Scripts -->
     <script src="{% static 'js/utils.js' %}?v=20260205_1"></script>
     <script src="{% static 'js/animations.js' %}?v=20260205_1"></script>
-    <script src="{% static 'js/api.js' %}?v=20260205_2"></script>
+    <script src="{% static 'js/api.js' %}?v=20260309_2"></script>
     <script src="{% static 'js/auth.js' %}?v=20260205_2"></script>
 
     {% block extra_js %}{% endblock %}
@@ -465,6 +463,10 @@
 
         async function checkNotifications() {
             try {
+                // Platform pages have no tenant slug; skip tenant notification polling.
+                if (window.api && typeof window.api.hasTenantContext === 'function' && !window.api.hasTenantContext()) {
+                    return;
+                }
                 const data = await api.request('/api/notifications/unread-count/');
                 updateNotificationBadge(data.count);
             } catch (e) {
@@ -656,16 +658,27 @@
             // Clear tokens and user data
             localStorage.removeItem('access_token');
             localStorage.removeItem('platform_access_token');
+            localStorage.removeItem('refresh_token');
             localStorage.removeItem('user');
 
-            // Get company name for redirect
+            // Get company name from current path
             const pathParts = window.location.pathname.split('/').filter(p => p);
-            const knownRoutes = ['login', 'dashboard', 'tickets', 'admin', 'head', 'projects', 'notifications', 'forgot-password', 'reset-password', 'onboarding', 'register', 'api', 'static', 'platform'];
-            const companyName = pathParts[0] && !knownRoutes.includes(pathParts[0]) ? pathParts[0] : null;
+            const knownRoutes = new Set(['login', 'dashboard', 'tickets', 'admin', 'head', 'projects',
+                'notifications', 'forgot-password', 'reset-password', 'onboarding',
+                'register', 'api', 'static', 'platform']);
 
-            // Redirect to login
-            const loginUrl = companyName ? `/${companyName}/login` : '/login';
-            window.location.href = loginUrl;
+            const firstPart = pathParts[0];
+            const companyName = firstPart && !knownRoutes.has(firstPart) ? firstPart : null;
+
+            // BUG-6 FIX: redirect to correct login URL; platform pages go to /platform/login
+            if (companyName) {
+                window.location.href = `/${companyName}/login`;
+            } else if (window.location.pathname.startsWith('/platform')) {
+                window.location.href = '/platform/login';
+            } else {
+                // Default fallback — redirect to landing page
+                window.location.href = '/';
+            }
         }
     </script>
 

@@ -33,6 +33,9 @@ def driver():
 
 def login(driver, org, email, password="password123"):
     """Helper to login to an organization."""
+    driver.get(BASE_URL)
+    driver.execute_script("window.localStorage.clear(); window.sessionStorage.clear();")
+    driver.delete_all_cookies()
     driver.get(f"{BASE_URL}/{org}/login")
     time.sleep(1)
     

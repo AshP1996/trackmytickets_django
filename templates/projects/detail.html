@@ -204,7 +204,8 @@
             project.is_active ?
                 '<span class="badge badge-status-resolved">Active</span>' :
                 '<span class="badge" style="background-color: var(--color-bg-tertiary); color: var(--color-text-tertiary);">Inactive</span>';
-        document.getElementById('project-tickets-count').textContent = project.tickets_count || 0;
+        // ProjectSerializer exposes `ticket_count`
+        document.getElementById('project-tickets-count').textContent = project.ticket_count || 0;
         document.getElementById('project-lead').textContent = project.lead_user_name || 'Unassigned';
         document.getElementById('project-created').textContent = formatDate(project.created_at);
         document.getElementById('project-start').textContent = formatDate(project.start_date);
@@ -297,8 +298,9 @@
     async function loadProjectTickets() {
         const tbody = document.getElementById('project-tickets');
         try {
-            const response = await api.getTickets({ project_id: projectId, limit: 5 });
-            const tickets = response.tickets || response || [];
+            // Ticket list supports `project` filter param; pagination uses `page_size`
+            const response = await api.getTickets({ project: projectId, page_size: 5 });
+            const tickets = response.results || response.tickets || response || [];
 
             if (tickets.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="5" class="text-center text-tertiary">No tickets yet</td></tr>';
@@ -306,8 +308,8 @@
             }
 
             tbody.innerHTML = tickets.map(t => `
-            <tr onclick="window.location.href='/' + window.api.getCompanyName() + '/tickets/' + t.id" style="cursor: pointer;">
-                <td><span class="font-medium text-primary">#${t.id}</span></td>
+            <tr onclick="window.location.href='/' + window.api.getCompanyName() + '/tickets/' + (t.ticket_id || t.id)" style="cursor: pointer;">
+                <td><span class="font-medium text-primary">${t.ticket_id || ('#' + t.id)}</span></td>
                 <td>${t.subject}</td>
                 <td><span class="badge badge-status-${t.status.replace('_', '-')}">${formatStatus(t.status)}</span></td>
                 <td><span class="badge badge-priority-${t.priority}">${formatPriority(t.priority)}</span></td>

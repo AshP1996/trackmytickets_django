@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+
+{% block title %}Knowledge Base - TrackMyTicket{% endblock %}
+{% block page_title %}Knowledge Base{% endblock %}
+
+{% block content %}
+<!-- Search -->
+<div class="card mb-4">
+    <div class="card-body">
+        <div class="d-flex gap-3 align-items-end flex-wrap">
+            <div class="flex-grow-1">
+                <input type="text" class="form-control" id="kb-search" placeholder="Search articles..." oninput="debounceSearch()">
+            </div>
+            <select class="form-select" id="kb-category-filter" style="max-width: 250px;" onchange="loadArticles()">
+                <option value="">All Categories</option>
+            </select>
+        </div>
+    </div>
+</div>
+
+<!-- Categories -->
+<div id="categories-section" class="mb-4">
+    <h5 class="mb-3">Categories</h5>
+    <div id="categories-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: var(--spacing-md);">
+        <div class="text-center text-tertiary">Loading categories...</div>
+    </div>
+</div>
+
+<!-- Articles -->
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="card-title mb-0">Articles</h5>
+        <span id="article-count" class="text-tertiary text-sm"></span>
+    </div>
+    <div class="card-body" style="padding: 0;">
+        <div id="articles-list">
+            <div class="text-center text-tertiary" style="padding: 2rem;">Loading articles...</div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let searchTimeout;
+
+    async function loadCategories() {
+        try {
+            const data = await api.getKBCategories();
+            const categories = data.results || data || [];
+
+            // Populate filter dropdown
+            const filterSelect = document.getElementById('kb-category-filter');
+            categories.forEach(cat => {
+                const option = document.createElement('option');
+                option.value = cat.id;
+                option.textContent = `${cat.name} (${cat.article_count || 0})`;
+                filterSelect.appendChild(option);
+            });
+
+            // Render category cards
+            const grid = document.getElementById('categories-grid');
+            if (categories.length === 0) {
+                grid.innerHTML = '<div class="text-center text-tertiary">No categories yet</div>';
+                return;
+            }
+
+            grid.innerHTML = categories.map(cat => `
+                <div class="card" style="cursor: pointer;" onclick="filterByCategory(${cat.id})">
+                    <div class="card-body">
+                        <h6 class="mb-1">${cat.name}</h6>
+                        <p class="text-tertiary text-sm mb-0">${cat.description || ''}</p>
+                        <span class="badge" style="background-color: var(--color-bg-secondary); color: var(--color-text-primary); margin-top: 8px;">
+                            ${cat.article_count || 0} articles
+                        </span>
+                    </div>
+                </div>
+            `).join('');
+        } catch (err) {
+            console.error('Failed to load categories:', err);
+        }
+    }
+
+    async function loadArticles() {
+        const search = document.getElementById('kb-search').value.trim();
+        const category = document.getElementById('kb-category-filter').value;
+        const params = {};
+        if (search) params.search = search;
+        if (category) params.category = category;
+
+        try {
+            const data = await api.getKBArticles(params);
+            const articles = data.results || data || [];
+            const list = document.getElementById('articles-list');
+            const countEl = document.getElementById('article-count');
+            countEl.textContent = `${articles.length} article(s)`;
+
+            if (articles.length === 0) {
+                list.innerHTML = '<div class="text-center text-tertiary" style="padding: 2rem;">No articles found</div>';
+                return;
+            }
+
+            list.innerHTML = articles.map(a => `
+                <a href="/${window.api.getCompanyName()}/knowledge-base/${a.id}" style="display: block; padding: 1rem 1.25rem; border-bottom: 1px solid var(--color-border-light); text-decoration: none; color: inherit; transition: background 0.15s;"
+                   onmouseover="this.style.backgroundColor='var(--color-bg-hover)'" onmouseout="this.style.backgroundColor='transparent'">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h6 class="mb-1" style="color: var(--color-brand-primary);">
+                                ${a.is_pinned ? '<i class="fas fa-thumbtack text-warning"></i> ' : ''}${a.title}
+                            </h6>
+                            <p class="text-sm text-tertiary mb-1">${a.excerpt || ''}</p>
+                            <div class="d-flex gap-2 align-items-center text-xs text-tertiary">
+                                ${a.category_name ? `<span><i class="fas fa-folder"></i> ${a.category_name}</span>` : ''}
+                                <span><i class="fas fa-user"></i> ${a.author_name || 'Unknown'}</span>
+                                <span><i class="fas fa-eye"></i> ${a.views_count || 0} views</span>
+                                <span><i class="fas fa-thumbs-up"></i> ${a.helpful_count || 0}</span>
+                                ${a.published_at ? `<span>${formatDate(a.published_at)}</span>` : ''}
+                            </div>
+                        </div>
+                        <span class="badge badge-status-${a.status === 'published' ? 'resolved' : 'open'}">${a.status}</span>
+                    </div>
+                </a>
+            `).join('');
+        } catch (err) {
+            console.error('Failed to load articles:', err);
+            document.getElementById('articles-list').innerHTML = '<div class="text-center text-tertiary" style="padding: 2rem;">Error loading articles</div>';
+        }
+    }
+
+    function filterByCategory(catId) {
+        document.getElementById('kb-category-filter').value = catId;
+        loadArticles();
+    }
+
+    function debounceSearch() {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(loadArticles, 300);
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        loadCategories();
+        loadArticles();
+    });
+</script>
+{% endblock %}

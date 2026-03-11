@@ -1,0 +1,232 @@
+{
+  "timestamp": "2026-03-06 16:31:33",
+  "total": 37,
+  "passed": 37,
+  "failed": 0,
+  "warned": 0,
+  "score_pct": 100,
+  "results": [
+    {
+      "phase": "HEALTH",
+      "test": "Server health check",
+      "status": "PASS",
+      "detail": "DB=ok"
+    },
+    {
+      "phase": "SETUP",
+      "test": "Organization exists",
+      "status": "PASS",
+      "detail": "id=74"
+    },
+    {
+      "phase": "SETUP",
+      "test": "Admin user exists",
+      "status": "PASS",
+      "detail": "id=90"
+    },
+    {
+      "phase": "AUTH",
+      "test": "Admin login",
+      "status": "PASS",
+      "detail": "user_id=90, org=AuditTestOrg"
+    },
+    {
+      "phase": "AUTH",
+      "test": "JWT contains org_id",
+      "status": "PASS",
+      "detail": "org_id=74"
+    },
+    {
+      "phase": "DEPT",
+      "test": "Create 'Engineering'",
+      "status": "PASS",
+      "detail": "id=37"
+    },
+    {
+      "phase": "DEPT",
+      "test": "Create 'Support'",
+      "status": "PASS",
+      "detail": "id=38"
+    },
+    {
+      "phase": "DEPT",
+      "test": "Create 'QA'",
+      "status": "PASS",
+      "detail": "id=39"
+    },
+    {
+      "phase": "DEPT",
+      "test": "List departments",
+      "status": "PASS",
+      "detail": "count=20"
+    },
+    {
+      "phase": "USER",
+      "test": "'Audit Manager' already exists",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "phase": "USER",
+      "test": "'Agent One' already exists",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "phase": "USER",
+      "test": "'Agent Two' already exists",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "phase": "USER",
+      "test": "List users",
+      "status": "PASS",
+      "detail": "count=20"
+    },
+    {
+      "phase": "USER",
+      "test": "Me endpoint",
+      "status": "PASS",
+      "detail": "email=admin@audit-test.com, role=admin"
+    },
+    {
+      "phase": "PROJECT",
+      "test": "'Audit Platform' already exists",
+      "status": "PASS",
+      "detail": "id=45"
+    },
+    {
+      "phase": "PROJECT",
+      "test": "'Bug Tracker' already exists",
+      "status": "PASS",
+      "detail": "id=46"
+    },
+    {
+      "phase": "PROJECT",
+      "test": "List projects",
+      "status": "PASS",
+      "detail": "count=5"
+    },
+    {
+      "phase": "TICKET",
+      "test": "Create 'Audit Test - Login Bug...'",
+      "status": "PASS",
+      "detail": "id=108, ticket_id=APT-4"
+    },
+    {
+      "phase": "TICKET",
+      "test": "Create 'Audit Test - Dashboard Slow...'",
+      "status": "PASS",
+      "detail": "id=109, ticket_id=APT-5"
+    },
+    {
+      "phase": "TICKET",
+      "test": "Create 'Audit Test - New Feature...'",
+      "status": "PASS",
+      "detail": "id=110, ticket_id=APT-6"
+    },
+    {
+      "phase": "TICKET",
+      "test": "List tickets",
+      "status": "PASS",
+      "detail": "count=6"
+    },
+    {
+      "phase": "COMMENT",
+      "test": "Comment #1 on APT-4",
+      "status": "PASS",
+      "detail": "id=25, internal=False"
+    },
+    {
+      "phase": "COMMENT",
+      "test": "Comment #2 on APT-4",
+      "status": "PASS",
+      "detail": "id=26, internal=True"
+    },
+    {
+      "phase": "COMMENT",
+      "test": "Comment #3 on APT-4",
+      "status": "PASS",
+      "detail": "id=27, internal=False"
+    },
+    {
+      "phase": "UPDATE",
+      "test": "Status\u2192in_progress on APT-4",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "phase": "UPDATE",
+      "test": "Ticket detail for APT-4",
+      "status": "PASS",
+      "detail": "status=in_progress, comments=3"
+    },
+    {
+      "phase": "DASH",
+      "test": "Dashboard API",
+      "status": "PASS",
+      "detail": "keys=['total_tickets', 'open_tickets', 'in_progress_tickets', 'resolved_tickets', 'closed_tickets']"
+    },
+    {
+      "phase": "DASH",
+      "test": "Ticket stats present",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "phase": "DB",
+      "test": "Users with org_id=74",
+      "status": "PASS",
+      "detail": "count=4"
+    },
+    {
+      "phase": "DB",
+      "test": "Departments with org_id=74",
+      "status": "PASS",
+      "detail": "count=12"
+    },
+    {
+      "phase": "DB",
+      "test": "Projects with org_id=74",
+      "status": "PASS",
+      "detail": "count=5"
+    },
+    {
+      "phase": "DB",
+      "test": "Tickets with org_id=74",
+      "status": "PASS",
+      "detail": "count=6"
+    },
+    {
+      "phase": "DB",
+      "test": "Comments for org_id=74",
+      "status": "PASS",
+      "detail": "count=6"
+    },
+    {
+      "phase": "DB",
+      "test": "Organization in primary DB",
+      "status": "PASS",
+      "detail": "name=AuditTestOrg, subdomain=audit-test"
+    },
+    {
+      "phase": "ISO",
+      "test": "Blocked from test users",
+      "status": "PASS",
+      "detail": "status=403"
+    },
+    {
+      "phase": "ISO",
+      "test": "Blocked from testverify users",
+      "status": "PASS",
+      "detail": "status=403"
+    },
+    {
+      "phase": "ISO",
+      "test": "Blocked from techflow users",
+      "status": "PASS",
+      "detail": "status=403"
+    }
+  ]
+}

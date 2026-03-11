@@ -27,6 +27,27 @@
     </div>
 </div>
 
+<!-- Second Stats Row -->
+<div id="extra-stats-row"
+    style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: var(--spacing-md); margin-bottom: var(--spacing-xl);">
+    <div class="stat-card" style="border-left: 4px solid #36b37e;">
+        <div class="stat-label">SLA On Track</div>
+        <div class="stat-value" id="sla-on-track" style="color: #36b37e;">-</div>
+    </div>
+    <div class="stat-card" style="border-left: 4px solid #de350b;">
+        <div class="stat-label">SLA Breached</div>
+        <div class="stat-value" id="sla-breached" style="color: #de350b;">-</div>
+    </div>
+    <div class="stat-card" style="border-left: 4px solid #ff5630;">
+        <div class="stat-label">Overdue</div>
+        <div class="stat-value" id="overdue-tickets" style="color: #ff5630;">-</div>
+    </div>
+    <div class="stat-card" style="border-left: 4px solid #6b778c;">
+        <div class="stat-label">Unassigned</div>
+        <div class="stat-value" id="unassigned-tickets" style="color: #6b778c;">-</div>
+    </div>
+</div>
+
 <!-- Charts Row -->
 <div
     style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: var(--spacing-lg); margin-bottom: var(--spacing-xl);">
@@ -45,6 +66,70 @@
         </div>
         <div class="card-body">
             <canvas id="priorityChart" style="max-height: 300px;"></canvas>
+        </div>
+    </div>
+</div>
+
+<!-- Trend + Type Charts Row -->
+<div
+    style="display: grid; grid-template-columns: 2fr 1fr; gap: var(--spacing-lg); margin-bottom: var(--spacing-xl);">
+    <div class="card">
+        <div class="card-header">
+            <h5 class="card-title">Ticket Trend (Last 14 Days)</h5>
+        </div>
+        <div class="card-body">
+            <canvas id="trendChart" style="max-height: 250px;"></canvas>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h5 class="card-title">By Type</h5>
+        </div>
+        <div class="card-body">
+            <canvas id="typeChart" style="max-height: 250px;"></canvas>
+        </div>
+    </div>
+</div>
+
+<!-- Agent Performance + Activity Feed Row -->
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--spacing-lg); margin-bottom: var(--spacing-xl);">
+
+    <!-- Agent Performance Leaderboard -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="card-title">Agent Performance</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-container">
+                <table class="table" id="agent-table">
+                    <thead>
+                        <tr>
+                            <th>Agent</th>
+                            <th>Assigned</th>
+                            <th>Resolved</th>
+                            <th>Avg Resolution</th>
+                        </tr>
+                    </thead>
+                    <tbody id="agent-tbody">
+                        <tr>
+                            <td colspan="4" class="text-center text-tertiary">Loading...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Activity Feed -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="card-title">Recent Activity</h5>
+        </div>
+        <div class="card-body">
+            <div id="activity-feed" style="max-height: 400px; overflow-y: auto;">
+                <div class="text-center text-tertiary">Loading...</div>
+            </div>
         </div>
     </div>
 </div>
@@ -82,7 +167,7 @@
 
 {% block extra_js %}
 <script>
-    let statusChart, priorityChart;
+    let statusChart, priorityChart, trendChart, typeChart;
 
     async function loadDashboard() {
         // Show skeleton loaders for recent tickets
@@ -102,9 +187,8 @@
         try {
             // Load stats
             const stats = await api.getTicketStats();
-            console.log('Stats API response:', stats); // Debug log
 
-            // Update cards
+            // Update stat cards
             document.getElementById('total-tickets').textContent = stats.total || 0;
             document.getElementById('open-tickets').textContent = (stats.status_counts && stats.status_counts.open) || 0;
             document.getElementById('in-progress-tickets').textContent =
@@ -112,25 +196,31 @@
                 ((stats.status_counts && stats.status_counts.inprocess) || 0);
             document.getElementById('my-assigned').textContent = stats.my_assigned || 0;
 
+            // SLA summary
+            if (stats.sla) {
+                document.getElementById('sla-on-track').textContent = stats.sla.on_track || 0;
+                document.getElementById('sla-breached').textContent = stats.sla.breached || 0;
+            }
+
+            // Overdue & Unassigned
+            document.getElementById('overdue-tickets').textContent = stats.overdue || 0;
+            document.getElementById('unassigned-tickets').textContent = stats.unassigned || 0;
+
+            // Render charts
+            if (stats.status_counts) renderStatusChart(stats.status_counts);
+            if (stats.priority_counts) renderPriorityChart(stats.priority_counts);
+            if (stats.trend) renderTrendChart(stats.trend);
+            if (stats.type_counts) renderTypeChart(stats.type_counts);
+            if (stats.agent_performance) renderAgentPerformance(stats.agent_performance);
+
             // Load recent tickets
             const ticketsResponse = await api.getTickets({ page: 1, per_page: 10 });
-            console.log('Tickets API response:', ticketsResponse); // Debug log
-
-            // Small delay for smooth transition
             await new Promise(resolve => setTimeout(resolve, 300));
-
-            // Handle both paginated and non-paginated responses
-            // Handle both paginated and non-paginated responses
             const tickets = ticketsResponse.results || ticketsResponse.tickets || (Array.isArray(ticketsResponse) ? ticketsResponse : []);
             renderRecentTickets(tickets);
 
-            // Render charts
-            if (stats.status_counts) {
-                renderStatusChart(stats.status_counts);
-            }
-            if (stats.priority_counts) {
-                renderPriorityChart(stats.priority_counts);
-            }
+            // Load activity feed
+            loadActivityFeed();
 
         } catch (error) {
             console.error('Error loading dashboard:', error);
@@ -139,13 +229,186 @@
             if (msg.includes('403') || msg.toLowerCase().includes('authentication') || msg.toLowerCase().includes('permission')) {
                 showError('Authentication error. Please log in again.');
                 setTimeout(() => {
-                    // Force logout if session is invalid
                     window.location.href = `/${window.api.getCompanyName()}/login`;
                 }, 2000);
             } else {
                 showError('Failed to load dashboard: ' + msg);
             }
         }
+    }
+
+    async function loadActivityFeed() {
+        try {
+            const response = await api.getRecentActivity(30);
+            const feedEl = document.getElementById('activity-feed');
+
+            if (!response || response.length === 0) {
+                feedEl.innerHTML = '<div class="text-center text-tertiary" style="padding: 2rem;">No recent activity</div>';
+                return;
+            }
+
+            feedEl.innerHTML = response.map(item => {
+                const icon = getActionIcon(item.action);
+                const timeAgo = getTimeAgo(item.created_at);
+                return `
+                    <div style="display: flex; align-items: flex-start; padding: 0.75rem 0; border-bottom: 1px solid var(--color-border-light);">
+                        <div style="width: 32px; height: 32px; border-radius: 50%; background: var(--color-bg-secondary); display: flex; align-items: center; justify-content: center; margin-right: 0.75rem; flex-shrink: 0;">
+                            <i class="fas ${icon}" style="font-size: 0.75rem; color: var(--color-text-secondary);"></i>
+                        </div>
+                        <div style="flex: 1; min-width: 0;">
+                            <div style="font-size: 0.875rem;">
+                                <strong>${item.user_name}</strong> ${formatAction(item.action)}
+                                <a href="/${window.api.getCompanyName()}/tickets/${item.ticket_id}" style="font-weight: 600;">${item.ticket_id}</a>
+                            </div>
+                            ${item.new_value ? `<div style="font-size: 0.75rem; color: var(--color-text-tertiary);">${item.new_value}</div>` : ''}
+                            <div style="font-size: 0.7rem; color: var(--color-text-tertiary); margin-top: 0.25rem;">${timeAgo}</div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        } catch (err) {
+            console.error('Activity feed error:', err);
+            document.getElementById('activity-feed').innerHTML = '<div class="text-center text-tertiary">Could not load activity</div>';
+        }
+    }
+
+    function getActionIcon(action) {
+        const icons = {
+            'created': 'fa-plus-circle',
+            'status_changed': 'fa-exchange-alt',
+            'priority_changed': 'fa-exclamation-triangle',
+            'assigned': 'fa-user-plus',
+            'reassigned': 'fa-user-edit',
+            'unassigned': 'fa-user-minus',
+            'added_comment': 'fa-comment',
+            'merged': 'fa-compress-arrows-alt',
+        };
+        return icons[action] || 'fa-circle';
+    }
+
+    function formatAction(action) {
+        const map = {
+            'created': 'created ticket',
+            'status_changed': 'changed status on',
+            'priority_changed': 'changed priority on',
+            'assigned': 'was assigned to',
+            'reassigned': 'was reassigned on',
+            'unassigned': 'was unassigned from',
+            'added_comment': 'commented on',
+            'merged': 'merged tickets on',
+        };
+        return map[action] || action.replace(/_/g, ' ');
+    }
+
+    function getTimeAgo(dateString) {
+        const now = new Date();
+        const date = new Date(dateString);
+        const seconds = Math.floor((now - date) / 1000);
+
+        if (seconds < 60) return 'just now';
+        if (seconds < 3600) return Math.floor(seconds / 60) + 'm ago';
+        if (seconds < 86400) return Math.floor(seconds / 3600) + 'h ago';
+        if (seconds < 604800) return Math.floor(seconds / 86400) + 'd ago';
+        return date.toLocaleDateString();
+    }
+
+    function renderAgentPerformance(agents) {
+        const tbody = document.getElementById('agent-tbody');
+        if (!agents || agents.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="4" class="text-center text-tertiary">No agent data yet</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = agents.map((a, i) => `
+            <tr>
+                <td>
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="badge" style="background-color: ${i < 3 ? '#ffab00' : 'var(--color-bg-secondary)'}; color: ${i < 3 ? '#fff' : 'var(--color-text-primary)'}; width: 22px; height: 22px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 0.7rem;">${i + 1}</span>
+                        <strong>${a.name}</strong>
+                    </div>
+                </td>
+                <td>${a.total}</td>
+                <td><span style="color: #36b37e; font-weight: 600;">${a.resolved}</span></td>
+                <td>${a.avg_resolution_hours ? a.avg_resolution_hours + 'h' : '-'}</td>
+            </tr>
+        `).join('');
+    }
+
+    function renderTrendChart(trendData) {
+        const ctx = document.getElementById('trendChart');
+        if (!ctx || !trendData) return;
+
+        if (trendChart) trendChart.destroy();
+
+        const labels = Object.keys(trendData).map(d => {
+            const date = new Date(d);
+            return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        });
+        const data = Object.values(trendData);
+
+        trendChart = new Chart(ctx.getContext('2d'), {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Tickets Created',
+                    data: data,
+                    borderColor: '#0052cc',
+                    backgroundColor: 'rgba(0, 82, 204, 0.1)',
+                    fill: true,
+                    tension: 0.4,
+                    pointRadius: 3,
+                    pointHoverRadius: 6,
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                scales: {
+                    y: { beginAtZero: true, ticks: { stepSize: 1 } }
+                },
+                plugins: { legend: { display: false } }
+            }
+        });
+    }
+
+    function renderTypeChart(typeCounts) {
+        const ctx = document.getElementById('typeChart');
+        if (!ctx || !typeCounts || Object.keys(typeCounts).length === 0) return;
+
+        if (typeChart) typeChart.destroy();
+
+        const typeLabels = Object.keys(typeCounts).map(t =>
+            t.split('_').map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(' ')
+        );
+        const typeColors = {
+            'issue': '#0052cc',
+            'bug': '#de350b',
+            'feature_request': '#36b37e',
+            'question': '#ffab00',
+            'task': '#6b778c'
+        };
+
+        typeChart = new Chart(ctx.getContext('2d'), {
+            type: 'doughnut',
+            data: {
+                labels: typeLabels,
+                datasets: [{
+                    data: Object.values(typeCounts),
+                    backgroundColor: Object.keys(typeCounts).map(t => typeColors[t] || '#6b778c')
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: { font: { size: 11 } }
+                    }
+                }
+            }
+        });
     }
 
     function renderRecentTickets(tickets) {
@@ -156,10 +419,9 @@
             return;
         }
 
-        // Fade transition
         tbody.style.opacity = '0';
         tbody.innerHTML = tickets.map(ticket => `
-            <tr onclick="window.location.href='/' + window.api.getCompanyName() + '/tickets/' + ticket.id" style="cursor: pointer;">
+            <tr onclick="window.location.href='/' + window.api.getCompanyName() + '/tickets/' + '${ticket.ticket_id || ticket.id}'" style="cursor: pointer;">
                 <td><span class="font-semibold">${ticket.ticket_id || ticket.id}</span></td>
                 <td>
                     <div>${truncate(ticket.subject || '', 50)}</div>
@@ -170,14 +432,13 @@
                 <td><span class="text-secondary">${ticket.project_key || '-'}</span></td>
                 <td><span class="text-tertiary text-sm">${formatDate(ticket.created_at)}</span></td>
                 <td>
-                    <a href="/${window.api.getCompanyName()}/tickets/${ticket.id}" class="btn btn-sm btn-secondary" onclick="event.stopPropagation();">
+                    <a href="/${window.api.getCompanyName()}/tickets/${ticket.ticket_id || ticket.id}" class="btn btn-sm btn-secondary" onclick="event.stopPropagation();">
                         <i class="fas fa-eye"></i>
                     </a>
                 </td>
             </tr>
         `).join('');
 
-        // Fade in with stagger
         requestAnimationFrame(() => {
             tbody.style.transition = 'opacity 200ms ease-out';
             tbody.style.opacity = '1';
@@ -227,11 +488,7 @@
                 plugins: {
                     legend: {
                         position: 'bottom',
-                        labels: {
-                            font: {
-                                size: 12
-                            }
-                        }
+                        labels: { font: { size: 12 } }
                     }
                 }
             }
@@ -258,51 +515,11 @@
                 responsive: true,
                 maintainAspectRatio: true,
                 scales: {
-                    y: {
-                        beginAtZero: true,
-                        ticks: {
-                            stepSize: 1
-                        }
-                    }
+                    y: { beginAtZero: true, ticks: { stepSize: 1 } }
                 },
-                plugins: {
-                    legend: {
-                        display: false
-                    }
-                }
+                plugins: { legend: { display: false } }
             }
         });
-    }
-
-    function getStatusClass(status) {
-        const map = {
-            'open': 'open',
-            'in_progress': 'in-progress',
-            'inprocess': 'in-progress',
-            'waiting': 'waiting',
-            'resolved': 'resolved',
-            'closed': 'closed'
-        };
-        return map[status] || 'open';
-    }
-
-    function formatStatus(status) {
-        return status.split('_').map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(' ');
-    }
-
-    function formatPriority(priority) {
-        return priority.charAt(0).toUpperCase() + priority.slice(1);
-    }
-
-    function formatDate(dateString) {
-        if (!dateString) return '-';
-        const date = new Date(dateString);
-        return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    }
-
-    function truncate(str, length) {
-        if (!str) return '';
-        return str.length > length ? str.substring(0, length) + '...' : str;
     }
 
     // Load dashboard on page load

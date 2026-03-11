@@ -4,10 +4,14 @@
 {% block page_title %}Tickets{% endblock %}
 
 {% block header_actions %}
-<a href="/{{ company_name }}/tickets/create" class="btn btn-primary">
-    <i class="fas fa-plus"></i>
-    New Ticket
-</a>
+<div class="d-flex gap-2">
+    <button class="btn btn-secondary" onclick="exportCSV()" title="Export filtered tickets as CSV">
+        <i class="fas fa-file-csv"></i> Export
+    </button>
+    <a href="/{{ company_name }}/tickets/create" class="btn btn-primary">
+        <i class="fas fa-plus"></i> New Ticket
+    </a>
+</div>
 {% endblock %}
 
 {% block content %}
@@ -15,7 +19,7 @@
 <div class="card mb-4">
     <div class="card-body">
         <form id="filter-form"
-            style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--spacing-md); align-items: end;">
+            style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: var(--spacing-md); align-items: end;">
             <div class="form-group" style="margin-bottom: 0;">
                 <label class="form-label">Search</label>
                 <input type="text" class="form-control" id="search" placeholder="Search tickets...">
@@ -39,6 +43,18 @@
                 </select>
             </div>
 
+            <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label">Type</label>
+                <select class="form-select" id="type-filter">
+                    <option value="">All Types</option>
+                    <option value="issue">Issue</option>
+                    <option value="bug">Bug</option>
+                    <option value="feature_request">Feature Request</option>
+                    <option value="question">Question</option>
+                    <option value="task">Task</option>
+                </select>
+            </div>
+
             <div class="form-group" id="department-filter-container" style="margin-bottom: 0;">
                 <label class="form-label">Department</label>
                 <select class="form-select" id="department-filter">
@@ -50,6 +66,21 @@
                 <label class="form-label">Project</label>
                 <select class="form-select" id="project-filter">
                     <option value="">All Projects</option>
+                </select>
+            </div>
+
+            <div class="form-group" id="tag-filter-container" style="margin-bottom: 0;">
+                <label class="form-label">Tag</label>
+                <select class="form-select" id="tag-filter">
+                    <option value="">All Tags</option>
+                </select>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label">SLA</label>
+                <select class="form-select" id="sla-filter">
+                    <option value="">Any SLA</option>
+                    <option value="breached">SLA Breached</option>
                 </select>
             </div>
 
@@ -68,6 +99,35 @@
     </div>
 </div>
 
+<!-- Bulk Actions Toolbar (hidden by default) -->
+<div id="bulk-toolbar" class="card mb-3" style="display: none;">
+    <div class="card-body d-flex align-items-center gap-3 flex-wrap"
+        style="padding: var(--spacing-sm) var(--spacing-md); background-color: var(--color-brand-primary); color: #fff; border-radius: var(--radius-md);">
+        <span id="bulk-count" class="font-semibold">0 selected</span>
+        <div class="d-flex gap-2 flex-wrap">
+            <select class="form-select form-select-sm" id="bulk-assign-to"
+                style="width: 180px; color: var(--color-text-primary);">
+                <option value="">Assign to...</option>
+            </select>
+            <button class="btn btn-sm btn-light" onclick="bulkAssign()"><i class="fas fa-user-plus"></i> Assign</button>
+            <select class="form-select form-select-sm" id="bulk-priority"
+                style="width: 130px; color: var(--color-text-primary);">
+                <option value="">Priority...</option>
+                <option value="low">Low</option>
+                <option value="medium">Medium</option>
+                <option value="high">High</option>
+                <option value="critical">Critical</option>
+            </select>
+            <button class="btn btn-sm btn-light" onclick="bulkChangePriority()"><i
+                    class="fas fa-exclamation-triangle"></i> Set Priority</button>
+            <button class="btn btn-sm btn-warning" onclick="bulkClose()"><i class="fas fa-times-circle"></i>
+                Close</button>
+        </div>
+        <button class="btn btn-sm btn-outline-light ms-auto" onclick="clearSelection()"><i class="fas fa-times"></i>
+            Clear</button>
+    </div>
+</div>
+
 <!-- Tickets Table -->
 <div class="card">
     <div class="card-body" style="padding: 0;">
@@ -75,14 +135,18 @@
             <table class="table">
                 <thead>
                     <tr>
+                        <th style="width: 40px;">
+                            <input type="checkbox" id="select-all" title="Select all" onchange="toggleSelectAll(this)">
+                        </th>
                         <th>Ticket ID</th>
                         <th>Subject</th>
                         <th>Status</th>
                         <th>Priority</th>
+                        <th>Type</th>
                         <th>Project</th>
                         <th>Assigned To</th>
+                        <th>SLA</th>
                         <th>Created</th>
-                        <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody id="tickets-table">
@@ -93,11 +157,21 @@
     </div>
 
     <!-- Pagination -->
-    <div class="card-footer">
+    <div class="card-footer d-flex justify-content-between align-items-center">
+        <div class="d-flex align-items-center gap-2">
+            <span class="text-secondary text-sm">Rows per page:</span>
+            <select class="form-select form-select-sm" style="width: auto;" onchange="changePageSize(this.value)">
+                <option value="10">10</option>
+                <option value="20" selected>20</option>
+                <option value="50">50</option>
+                <option value="100">100</option>
+            </select>
+        </div>
         <nav aria-label="Tickets pagination">
             <ul class="pagination justify-content-center mb-0" id="pagination" style="gap: var(--spacing-xs);">
             </ul>
         </nav>
+        <div style="width: 100px;"></div> <!-- Spacer for centering -->
     </div>
 </div>
 {% endblock %}
@@ -105,28 +179,30 @@
 {% block extra_js %}
 <script>
     let currentPage = 1;
+    let pageSize = 20;
     let currentFilters = {};
     let currentUser = null;
+    let selectedTickets = new Set();
 
     async function loadTickets(page = 1) {
         const tbody = document.getElementById('tickets-table');
 
-        // Show skeleton loaders
+        // Show skeleton loaders (adjust count based on pageSize)
         tbody.innerHTML = '';
-        for (let i = 0; i < 5; i++) {
+        const skeletonCount = Math.min(pageSize, 5); // Don't show too many skeletons
+        for (let i = 0; i < skeletonCount; i++) {
             const row = document.createElement('tr');
             row.innerHTML = `
+                <td></td>
                 <td><div class="skeleton skeleton-text short"></div></td>
-                <td>
-                    <div class="skeleton skeleton-text medium mb-1"></div>
-                    <div class="skeleton skeleton-text" style="width: 40%;"></div>
-                </td>
+                <td><div class="skeleton skeleton-text medium mb-1"></div></td>
                 <td><div class="skeleton skeleton-badge"></div></td>
                 <td><div class="skeleton skeleton-badge"></div></td>
                 <td><div class="skeleton skeleton-text short"></div></td>
                 <td><div class="skeleton skeleton-text short"></div></td>
                 <td><div class="skeleton skeleton-text short"></div></td>
                 <td><div class="skeleton skeleton-badge"></div></td>
+                <td><div class="skeleton skeleton-text short"></div></td>
             `;
             tbody.appendChild(row);
         }
@@ -137,73 +213,89 @@
 
             const params = {
                 page: page,
-                per_page: 20,
+                page_size: pageSize,
                 ...currentFilters
             };
 
-            let data;
-
-            // Use appropriate endpoint based on role (new role system: admin, manager, agent)
-            // All roles use the same endpoint - permissions are handled server-side
-            data = await api.getTickets(params);
-
-            console.log('Tickets API response:', data); // Debug log
+            const data = await api.getTickets(params);
 
             // Small delay for smooth transition
             await new Promise(resolve => setTimeout(resolve, 300));
 
             // Handle both paginated and non-paginated responses
             const tickets = data.results || data.tickets || (Array.isArray(data) ? data : []);
-            const totalPages = data.pages || data.total_pages || 1;
+
+            // Calculate total pages based on count if available
+            let totalPages = 1;
+            if (data.count) {
+                totalPages = Math.ceil(data.count / pageSize);
+            } else if (data.total_pages) {
+                totalPages = data.total_pages;
+            } else if (data.pages) {
+                totalPages = data.pages;
+            }
 
             renderTickets(tickets);
+
+            // Update pagination controls
             renderPagination(totalPages, page);
 
         } catch (error) {
             console.error('Error loading tickets:', error);
             showError('Failed to load tickets: ' + (error.message || 'Unknown error'));
-            // Show empty state on error
             const tbody = document.getElementById('tickets-table');
-            tbody.innerHTML = '<tr><td colspan="8" class="text-center text-tertiary">Error loading tickets. Please refresh the page.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="10" class="text-center text-tertiary">Error loading tickets. Please refresh the page.</td></tr>';
         }
+    }
+
+    function changePageSize(size) {
+        pageSize = parseInt(size);
+        loadTickets(1);
     }
 
     function renderTickets(tickets) {
         const tbody = document.getElementById('tickets-table');
 
         if (tickets.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="8" class="text-center text-tertiary">No tickets found</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="10" class="text-center text-tertiary">No tickets found</td></tr>';
             return;
         }
 
         // Clear and fade in new content
         tbody.style.opacity = '0';
-        tbody.innerHTML = tickets.map(ticket => `
-            <tr onclick="window.location.href='/' + window.api.getCompanyName() + '/tickets/' + ticket.id" style="cursor: pointer;">
-                <td><span class="font-semibold">${ticket.ticket_id || ticket.id}</span></td>
-                <td>
-                    <div>${truncate(ticket.subject || '', 60)}</div>
-                    <small class="text-tertiary">${ticket.sender_email || ''}</small>
+        tbody.innerHTML = tickets.map(ticket => {
+            const slaHtml = getSLABadge(ticket.sla_status);
+            const tagsHtml = (ticket.tags || []).map(t =>
+                `<span class="badge" style="background-color: ${t.color || '#6b778c'}; color: #fff; font-size: 0.65rem; padding: 2px 6px; margin-right: 2px;">${t.name}</span>`
+            ).join('');
+
+            return `
+            <tr>
+                <td onclick="event.stopPropagation();">
+                    <input type="checkbox" class="ticket-checkbox" value="${ticket.id}" onchange="updateBulkSelection()" ${selectedTickets.has(ticket.id) ? 'checked' : ''}>
+                </td>
+                <td onclick="goToTicket('${ticket.ticket_id || ticket.id}')" style="cursor: pointer;">
+                    <span class="font-semibold">${ticket.ticket_id || ticket.id}</span>
+                </td>
+                <td onclick="goToTicket('${ticket.ticket_id || ticket.id}')" style="cursor: pointer;">
+                    <div>${truncate(ticket.subject || '', 50)}</div>
+                    <div style="margin-top: 2px;">${tagsHtml}</div>
                 </td>
                 <td><span class="badge badge-status-${getStatusClass(ticket.status)}">${formatStatus(ticket.status)}</span></td>
                 <td><span class="badge badge-priority-${ticket.priority || 'low'}">${formatPriority(ticket.priority || 'low')}</span></td>
+                <td><span class="text-secondary text-sm">${formatTicketType(ticket.ticket_type)}</span></td>
                 <td><span class="text-secondary">${ticket.project_key || '-'}</span></td>
                 <td><span class="text-secondary">${ticket.assigned_to_name || '<span class="text-tertiary">Unassigned</span>'}</span></td>
+                <td>${slaHtml}</td>
                 <td><span class="text-tertiary text-sm">${formatDate(ticket.created_at)}</span></td>
-                <td>
-                    <a href="/${window.api.getCompanyName()}/tickets/${ticket.id}" class="btn btn-sm btn-secondary" onclick="event.stopPropagation();">
-                        <i class="fas fa-eye"></i>
-                    </a>
-                </td>
             </tr>
-        `).join('');
+        `}).join('');
 
         // Fade in with stagger
         requestAnimationFrame(() => {
             tbody.style.transition = 'opacity 200ms ease-out';
             tbody.style.opacity = '1';
 
-            // Stagger row animations
             const rows = tbody.querySelectorAll('tr');
             rows.forEach((row, index) => {
                 row.style.opacity = '0';
@@ -217,6 +309,139 @@
         });
     }
 
+    function goToTicket(ticketId) {
+        window.location.href = '/' + window.api.getCompanyName() + '/tickets/' + ticketId;
+    }
+
+    function getSLABadge(slaStatus) {
+        if (slaStatus === 'breached') {
+            return '<span class="badge" style="background-color: #de350b; color: #fff; font-size: 0.7rem;">Breached</span>';
+        }
+        if (slaStatus === 'on_track') {
+            return '<span class="badge" style="background-color: #36b37e; color: #fff; font-size: 0.7rem;">On Track</span>';
+        }
+        return '<span class="text-tertiary text-sm">-</span>';
+    }
+
+    function formatTicketType(type) {
+        if (!type) return '-';
+        return type.split('_').map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(' ');
+    }
+
+    // ========= BULK SELECTION =========
+    function toggleSelectAll(checkbox) {
+        const checkboxes = document.querySelectorAll('.ticket-checkbox');
+        checkboxes.forEach(cb => {
+            cb.checked = checkbox.checked;
+            if (checkbox.checked) {
+                selectedTickets.add(parseInt(cb.value));
+            } else {
+                selectedTickets.delete(parseInt(cb.value));
+            }
+        });
+        updateBulkToolbar();
+    }
+
+    function updateBulkSelection() {
+        selectedTickets = new Set();
+        document.querySelectorAll('.ticket-checkbox:checked').forEach(cb => {
+            selectedTickets.add(parseInt(cb.value));
+        });
+        updateBulkToolbar();
+    }
+
+    function updateBulkToolbar() {
+        const toolbar = document.getElementById('bulk-toolbar');
+        const countEl = document.getElementById('bulk-count');
+        if (selectedTickets.size > 0) {
+            toolbar.style.display = 'block';
+            countEl.textContent = `${selectedTickets.size} selected`;
+        } else {
+            toolbar.style.display = 'none';
+        }
+    }
+
+    function clearSelection() {
+        selectedTickets.clear();
+        document.querySelectorAll('.ticket-checkbox').forEach(cb => cb.checked = false);
+        document.getElementById('select-all').checked = false;
+        updateBulkToolbar();
+    }
+
+    async function bulkAssign() {
+        const userId = document.getElementById('bulk-assign-to').value;
+        if (!userId) { showError('Please select a user to assign'); return; }
+        if (selectedTickets.size === 0) return;
+
+        try {
+            const result = await api.bulkAction({
+                ticket_ids: Array.from(selectedTickets),
+                action: 'assign',
+                user_id: parseInt(userId)
+            });
+            showSuccess(result.message || 'Tickets assigned');
+            clearSelection();
+            loadTickets(currentPage);
+        } catch (err) {
+            showError('Bulk assign failed: ' + err.message);
+        }
+    }
+
+    async function bulkChangePriority() {
+        const priority = document.getElementById('bulk-priority').value;
+        if (!priority) { showError('Please select a priority'); return; }
+        if (selectedTickets.size === 0) return;
+
+        try {
+            const result = await api.bulkAction({
+                ticket_ids: Array.from(selectedTickets),
+                action: 'change_priority',
+                priority: priority
+            });
+            showSuccess(result.message || 'Priority changed');
+            clearSelection();
+            loadTickets(currentPage);
+        } catch (err) {
+            showError('Bulk priority change failed: ' + err.message);
+        }
+    }
+
+    async function bulkClose() {
+        if (selectedTickets.size === 0) return;
+        showConfirm('Close Tickets', `Close ${selectedTickets.size} ticket(s)?`, async () => {
+            try {
+                const result = await api.bulkAction({
+                    ticket_ids: Array.from(selectedTickets),
+                    action: 'close'
+                });
+                showSuccess(result.message || 'Tickets closed');
+                clearSelection();
+                loadTickets(currentPage);
+            } catch (err) {
+                showError('Bulk close failed: ' + err.message);
+            }
+        }, true);
+    }
+
+    // ========= CSV EXPORT =========
+    async function exportCSV() {
+        try {
+            const blob = await api.exportTicketsCSV(currentFilters);
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `tickets_export_${new Date().toISOString().split('T')[0]}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+            showSuccess('Tickets exported successfully');
+        } catch (err) {
+            showError('Export failed: ' + err.message);
+        }
+    }
+
+    // ========= PAGINATION =========
     function renderPagination(totalPages, currentPage) {
         const pagination = document.getElementById('pagination');
 
@@ -263,61 +488,92 @@
         pagination.innerHTML = html;
     }
 
+    // ========= FILTERS =========
     async function loadFilters() {
         try {
             currentUser = await api.getCurrentUser();
 
-            // Load statuses (use workflow states or default statuses)
-            try {
-                // Try to get statuses from workflow, fallback to default
-                const statuses = [
-                    { id: 'open', name: 'Open' },
-                    { id: 'in_progress', name: 'In Progress' },
-                    { id: 'waiting', name: 'Waiting' },
-                    { id: 'resolved', name: 'Resolved' },
-                    { id: 'closed', name: 'Closed' }
-                ];
-                const statusSelect = document.getElementById('status-filter');
-                statuses.forEach(status => {
-                    const option = document.createElement('option');
-                    option.value = status.id;
-                    option.textContent = status.name;
-                    statusSelect.appendChild(option);
-                });
-            } catch (e) {
-                console.error('Failed to load statuses:', e);
-            }
+            // Load statuses
+            const statuses = [
+                { id: 'open', name: 'Open' },
+                { id: 'in_progress', name: 'In Progress' },
+                { id: 'waiting', name: 'Waiting' },
+                { id: 'resolved', name: 'Resolved' },
+                { id: 'closed', name: 'Closed' }
+            ];
+            const statusSelect = document.getElementById('status-filter');
+            statuses.forEach(status => {
+                const option = document.createElement('option');
+                option.value = status.id;
+                option.textContent = status.name;
+                statusSelect.appendChild(option);
+            });
 
             // Load projects
             try {
                 const projectsResponse = await api.getProjects();
-                // Handle paginated response (projects array) or direct array
-                const projects = projectsResponse.projects || projectsResponse || [];
+                const projects = projectsResponse.results || projectsResponse.projects || projectsResponse || [];
                 const projectSelect = document.getElementById('project-filter');
-                if (projects && projects.length > 0) {
-                    projects.forEach(project => {
-                        const option = document.createElement('option');
-                        option.value = project.id;
-                        option.textContent = `${project.key} - ${project.name}`;
-                        projectSelect.appendChild(option);
-                    });
-                }
+                (Array.isArray(projects) ? projects : []).forEach(project => {
+                    const option = document.createElement('option');
+                    option.value = project.id;
+                    option.textContent = `${project.key} - ${project.name}`;
+                    projectSelect.appendChild(option);
+                });
             } catch (e) {
                 console.error('Failed to load projects:', e);
             }
 
-            // Load departments (only for admin)
-            if (currentUser.role === 'admin') {
-                const departments = await api.getDepartments();
-                const deptSelect = document.getElementById('department-filter');
-                departments.forEach(dept => {
+            // Load tags
+            try {
+                const tagsResponse = await api.getTags();
+                const tags = tagsResponse.results || tagsResponse || [];
+                const tagSelect = document.getElementById('tag-filter');
+                (Array.isArray(tags) ? tags : []).forEach(tag => {
                     const option = document.createElement('option');
-                    option.value = dept.id;
-                    option.textContent = dept.name;
-                    deptSelect.appendChild(option);
+                    option.value = tag.name;
+                    option.textContent = tag.name;
+                    option.style.color = tag.color || '';
+                    tagSelect.appendChild(option);
                 });
+            } catch (e) {
+                console.error('Failed to load tags:', e);
+            }
+
+            // Load departments (only for admin)
+            if (currentUser.role === 'admin' || currentUser.role === 'manager') {
+                try {
+                    const departments = await api.getDepartments();
+                    const depts = Array.isArray(departments) ? departments : (departments.results || []);
+                    const deptSelect = document.getElementById('department-filter');
+                    depts.forEach(dept => {
+                        const option = document.createElement('option');
+                        option.value = dept.id;
+                        option.textContent = dept.name;
+                        deptSelect.appendChild(option);
+                    });
+                } catch (e) {
+                    console.error('Failed to load departments:', e);
+                }
             } else {
                 document.getElementById('department-filter-container').style.display = 'none';
+            }
+
+            // Populate bulk assign dropdown
+            try {
+                const usersData = await api.getProjectLeadUsers();
+                const users = usersData.results || usersData.users || usersData || [];
+                const assignSelect = document.getElementById('bulk-assign-to');
+                (Array.isArray(users) ? users : []).forEach(user => {
+                    if (user.is_active && ['admin', 'manager', 'agent'].includes(user.role)) {
+                        const option = document.createElement('option');
+                        option.value = user.id;
+                        option.textContent = user.full_name;
+                        assignSelect.appendChild(option);
+                    }
+                });
+            } catch (e) {
+                console.error('Failed to load users for bulk assign:', e);
             }
 
         } catch (error) {
@@ -339,8 +595,11 @@
             search: document.getElementById('search').value,
             status: document.getElementById('status-filter').value,
             priority: document.getElementById('priority-filter').value,
+            ticket_type: document.getElementById('type-filter').value,
             department: document.getElementById('department-filter').value,
-            project_id: document.getElementById('project-filter').value
+            project: document.getElementById('project-filter').value,
+            tag: document.getElementById('tag-filter').value,
+            sla: document.getElementById('sla-filter').value,
         };
 
         // Remove empty filters
@@ -350,8 +609,6 @@
 
         loadTickets(1);
     });
-
-
 
     // Initialize page
     document.addEventListener('DOMContentLoaded', function () {

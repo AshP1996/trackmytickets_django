@@ -5,7 +5,7 @@ import json
 import re
 
 # ============================================================================
-# PLATFORM ADMIN MODEL
+# PLATFORM ADMIN MODEL (lives in PRIMARY DB)
 # ============================================================================
 class PlatformAdmin(AbstractBaseUser):
     email = models.EmailField(unique=True, db_index=True)
@@ -43,8 +43,34 @@ class PlatformAdmin(AbstractBaseUser):
         return self.is_active
 
 
+import uuid
+
 # ============================================================================
-# ORGANIZATION (TENANT) MODEL
+# GLOBAL USER DIRECTORY (lives in PRIMARY DB)
+# ============================================================================
+class GlobalUser(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    email = models.EmailField(db_index=True)
+    organization = models.ForeignKey('Organization', on_delete=models.CASCADE, related_name='global_users')
+    tenant_user_id = models.IntegerField()
+    status = models.CharField(max_length=20, default='active')
+    created_at = models.DateTimeField(auto_now_add=True)
+    last_login = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        db_table = 'global_users'
+        unique_together = ('email', 'organization')
+        indexes = [
+            models.Index(fields=['email', 'organization']),
+            models.Index(fields=['tenant_user_id', 'organization']),
+        ]
+
+    def __str__(self):
+        return f"{self.email} ({self.organization.name})"
+
+
+# ============================================================================
+# ORGANIZATION (TENANT) MODEL — lives in PRIMARY DB
 # ============================================================================
 class Organization(models.Model):
     name = models.CharField(max_length=200)
@@ -103,29 +129,28 @@ class Organization(models.Model):
 # USER MANAGER
 # ============================================================================
 class UserManager(BaseUserManager):
-    def create_user(self, email, organization_id, password=None, **extra_fields):
+    def create_user(self, email, password=None, **extra_fields):
         if not email:
             raise ValueError('The Email field must be set')
         email = self.normalize_email(email)
-        organization = Organization.objects.get(pk=organization_id)
-        user = self.model(email=email, organization=organization, **extra_fields)
+        user = self.model(email=email, **extra_fields)
         if password:
             user.set_password(password)
         user.save(using=self._db)
         return user
 
     def create_superuser(self, email, password=None, **extra_fields):
-        # We need a default organization for superuser if enforcing organization_id
-        # For simplicity in Django Admin, we might make organization null=True temporarily or handle it differently.
-        # However, sticking to the schema:
-        raise NotImplementedError("Use create_user with an organization_id. Superusers in this system are PlatformAdmins or need an Org.")
+        raise NotImplementedError(
+            "Use create_user. Superusers in this system are PlatformAdmins."
+        )
 
 # ============================================================================
-# USER MODEL
+# USER MODEL — lives in TENANT DB
 # ============================================================================
 class User(AbstractBaseUser, PermissionsMixin):
-    email = models.EmailField()
-    organization = models.ForeignKey(Organization, on_delete=models.CASCADE, related_name='users')
+    # Scopes user to org when using shared default DB; 0 when in dedicated tenant DB.
+    organization_id = models.IntegerField(default=0, db_index=True)
+    email = models.EmailField(unique=True, db_index=True)
     full_name = models.CharField(max_length=100)
     role = models.CharField(max_length=20, default='agent') # admin, manager, agent
     department = models.CharField(max_length=50, null=True, blank=True)
@@ -138,28 +163,26 @@ class User(AbstractBaseUser, PermissionsMixin):
     reset_otp_expires_at = models.DateTimeField(null=True, blank=True)
 
     # Django Admin requirements
-    is_staff = models.BooleanField(default=False) # For accessing Django Admin
+    is_staff = models.BooleanField(default=False)
 
     objects = UserManager()
 
     USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = ['full_name'] # email and password are required by default
+    REQUIRED_FIELDS = ['full_name']
 
     class Meta:
         db_table = 'users'
-        constraints = [
-            models.UniqueConstraint(fields=['email', 'organization'], name='uq_user_email_org')
-        ]
     
     def __str__(self):
         return f"{self.full_name} ({self.email})"
 
 # ============================================================================
-# DEPARTMENT MODEL
+# DEPARTMENT MODEL — lives in TENANT DB
 # ============================================================================
 class Department(models.Model):
     name = models.CharField(max_length=100)
-    organization = models.ForeignKey(Organization, on_delete=models.CASCADE, related_name='departments')
+    # Denormalized org ID for backward compat
+    organization_id = models.IntegerField(default=0)
     default_assignee = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='default_departments')
     sla_policy_id = models.IntegerField(null=True, blank=True)
     is_active = models.BooleanField(default=True)
@@ -168,15 +191,12 @@ class Department(models.Model):
 
     class Meta:
         db_table = 'departments'
-        constraints = [
-            models.UniqueConstraint(fields=['name', 'organization'], name='uq_department_name_org')
-        ]
 
     def __str__(self):
         return self.name
 
 # ============================================================================
-# USER ROLE MODEL
+# USER ROLE MODEL — lives in TENANT DB
 # ============================================================================
 class UserRole(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='scoped_roles')
@@ -192,7 +212,7 @@ class UserRole(models.Model):
         ]
 
 # ============================================================================
-# ORGANIZATION SECRET MODEL
+# ORGANIZATION SECRET MODEL — lives in PRIMARY DB
 # ============================================================================
 class OrganizationSecret(models.Model):
     organization = models.ForeignKey(Organization, on_delete=models.CASCADE, related_name='secrets')

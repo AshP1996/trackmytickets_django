@@ -14,6 +14,9 @@ ALLOWED_HOSTS = [
     'www.trackmytickets.in',
     '*.trackmytickets.in',  # For subdomains
     os.environ.get('SERVER_IP', ''),  # Server IP
+    'localhost',
+    'demo.localhost',
+    '127.0.0.1',
 ]
 
 # Database

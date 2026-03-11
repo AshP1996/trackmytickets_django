@@ -1,18 +1,25 @@
 """
 API Views for Core app
 """
+import logging
+from datetime import timedelta
+
 from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.utils import timezone
+from django.db import models
+from django.db.models import Count
+from django.db.models.functions import TruncDate
+from rest_framework.views import APIView
+
 from .models import ExternalDataSource, SchemaMapping, Feedback, Enquiry
 from .serializers import ExternalDataSourceSerializer, SchemaMappingSerializer, FeedbackSerializer, EnquirySerializer
 from .connectors import get_connector, DATABASE_CONFIGS
 from apps.accounts.models import User
 from apps.tickets.models import Ticket
-from django.db import models
-from django.db.models import Count
-from rest_framework.views import APIView
+
+logger = logging.getLogger('apps')
 
 class ExternalDataSourceViewSet(viewsets.ModelViewSet):
     serializer_class = ExternalDataSourceSerializer
@@ -21,10 +28,10 @@ class ExternalDataSourceViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         if not hasattr(self.request, 'organization') or not self.request.organization:
             return ExternalDataSource.objects.none()
-        return ExternalDataSource.objects.filter(organization=self.request.organization)
+        return ExternalDataSource.objects.filter(organization_id=self.request.organization.id)
     
     def perform_create(self, serializer):
-        serializer.save(organization=self.request.organization)
+        serializer.save(organization_id=self.request.organization.id)
     
     @action(detail=False, methods=['get'])
     def database_types(self, request, company_name=None):
@@ -185,7 +192,7 @@ class SchemaMappingViewSet(viewsets.ModelViewSet):
         
         if not hasattr(self.request, 'organization') or not self.request.organization:
             return SchemaMapping.objects.none()
-        return SchemaMapping.objects.filter(datasource__organization=self.request.organization)
+        return SchemaMapping.objects.filter(datasource__organization_id=self.request.organization.id)
 
 class FeedbackViewSet(viewsets.ModelViewSet):
     serializer_class = FeedbackSerializer
@@ -198,9 +205,12 @@ class FeedbackViewSet(viewsets.ModelViewSet):
         serializer.save(user=self.request.user)
 
 class EnquiryViewSet(viewsets.ModelViewSet):
+    """Enquiries are only accessible by authenticated users (org admins)."""
     serializer_class = EnquirySerializer
-    permission_classes = [permissions.AllowAny]
-    queryset = Enquiry.objects.all()
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return Enquiry.objects.all().order_by('-created_at')
 
 class AdminDashboardView(APIView):
     permission_classes = [permissions.IsAuthenticated]
@@ -212,11 +222,11 @@ class AdminDashboardView(APIView):
         org = request.organization
         now = timezone.now()
         
-        # Tickets
-        tickets = Ticket.objects.filter(organization=org)
+        # Tickets — tenant DB is already scoped to this org
+        tickets = Ticket.objects.all()
         
-        # Users
-        users = User.objects.filter(organization=org)
+        # Users — tenant DB is already scoped to this org
+        users = User.objects.all()
         
         # Key Counts
         total_tickets = tickets.count()
@@ -227,11 +237,11 @@ class AdminDashboardView(APIView):
         total_users = users.count()
 
         # 1. Active Users (Logged in last 24h) - assuming last_login is updated
-        active_threshold = now - timezone.timedelta(hours=24)
+        active_threshold = now - timedelta(hours=24)
         active_users = users.filter(last_login__gte=active_threshold).count()
 
         # 2. SLA Breaches (Open > 24h)
-        sla_threshold = now - timezone.timedelta(hours=24)
+        sla_threshold = now - timedelta(hours=24)
         sla_breaches = tickets.filter(status='open', created_at__lt=sla_threshold).count()
 
         # 3. Avg Resolution Time (in hours)
@@ -256,9 +266,9 @@ class AdminDashboardView(APIView):
              dept_data[name] = item['count']
 
         # 4. Ticket Trends (Last 7 Days)
-        seven_days_ago = now - timezone.timedelta(days=6)
+        seven_days_ago = now - timedelta(days=6)
         trend_qs = tickets.filter(created_at__gte=seven_days_ago)\
-                          .extra({'date': "date(created_at)"})\
+                          .annotate(date=TruncDate('created_at'))\
                           .values('date')\
                           .annotate(count=Count('id'))\
                           .order_by('date')
@@ -269,7 +279,7 @@ class AdminDashboardView(APIView):
         end_date = now.date()
         while current_date <= end_date:
             trend_data[current_date.strftime('%Y-%m-%d')] = 0
-            current_date += timezone.timedelta(days=1)
+            current_date += timedelta(days=1)
             
         for item in trend_qs:
             # item['date'] might be string or date object depending on DB backend

@@ -1,0 +1,38 @@
+INFO 2026-03-09 05:58:59,683 autoreload: Watching for file changes with StatReloader
+INFO 2026-03-09 05:59:02,269 correlation: request_complete correlation_id=4e302a8a-d420-4594-987c-5450c885cc57 tenant_id=- user_id=- method=GET path=/platform/login/ status=404 duration_ms=6.64
+WARNING 2026-03-09 05:59:02,270 log: Not Found: /platform/login/
+WARNING 2026-03-09 05:59:02,270 basehttp: "GET /platform/login/ HTTP/1.1" 404 11548
+INFO 2026-03-09 05:59:02,516 correlation: request_complete correlation_id=a085618c-9fc8-441d-ba5f-b71c72eb15d9 tenant_id=- user_id=- method=POST path=/api/platform/login status=200 duration_ms=245.39
+INFO 2026-03-09 05:59:02,517 basehttp: "POST /api/platform/login HTTP/1.1" 200 388
+INFO 2026-03-09 05:59:02,561 correlation: request_complete correlation_id=d3466d7e-d7e7-4c50-98bd-380f5c1424c8 tenant_id=- user_id=2 method=GET path=/api/platform/me status=200 duration_ms=1.72
+INFO 2026-03-09 05:59:02,561 basehttp: "GET /api/platform/me HTTP/1.1" 200 61
+INFO 2026-03-09 05:59:02,860 correlation: request_complete correlation_id=4d86cd2b-b79a-4555-919c-c5359861b6ce tenant_id=- user_id=2 method=POST path=/api/platform/organizations status=201 duration_ms=256.12
+INFO 2026-03-09 05:59:02,860 basehttp: "POST /api/platform/organizations HTTP/1.1" 201 319
+INFO 2026-03-09 05:59:02,906 correlation: request_complete correlation_id=cae130dd-7913-47ff-8742-5b096a1434a8 tenant_id=91 user_id=- method=POST path=/api/audit-1773035942/auth/login/ status=400 duration_ms=2.66
+WARNING 2026-03-09 05:59:02,906 log: Bad Request: /api/audit-1773035942/auth/login/
+WARNING 2026-03-09 05:59:02,906 basehttp: "POST /api/audit-1773035942/auth/login/ HTTP/1.1" 400 41
+INFO 2026-03-09 06:00:02,211 correlation: request_complete correlation_id=e1179309-e731-461f-affb-2e3cf2963605 tenant_id=- user_id=- method=GET path=/platform/login/ status=404 duration_ms=3.64
+WARNING 2026-03-09 06:00:02,211 log: Not Found: /platform/login/
+WARNING 2026-03-09 06:00:02,211 basehttp: "GET /platform/login/ HTTP/1.1" 404 11548
+INFO 2026-03-09 06:00:02,471 correlation: request_complete correlation_id=e20a7309-6b69-4611-a690-373137813d63 tenant_id=- user_id=- method=POST path=/api/platform/login status=200 duration_ms=258.05
+INFO 2026-03-09 06:00:02,471 basehttp: "POST /api/platform/login HTTP/1.1" 200 388
+INFO 2026-03-09 06:00:02,515 correlation: request_complete correlation_id=21eded71-fdff-41ac-9282-b11c8547ee34 tenant_id=- user_id=2 method=GET path=/api/platform/me status=200 duration_ms=2.43
+INFO 2026-03-09 06:00:02,516 basehttp: "GET /api/platform/me HTTP/1.1" 200 61
+INFO 2026-03-09 06:00:02,841 correlation: request_complete correlation_id=20834b5e-b2a1-4b79-9fcb-0fb25badd6e6 tenant_id=- user_id=2 method=POST path=/api/platform/organizations status=201 duration_ms=281.78
+INFO 2026-03-09 06:00:02,842 basehttp: "POST /api/platform/organizations HTTP/1.1" 201 319
+INFO 2026-03-09 06:00:02,888 correlation: request_complete correlation_id=43cad55e-77f1-48b9-8c76-aa2dea6dd3fa tenant_id=92 user_id=- method=POST path=/api/audit-1773036002/auth/login/ status=400 duration_ms=2.91
+WARNING 2026-03-09 06:00:02,888 log: Bad Request: /api/audit-1773036002/auth/login/
+WARNING 2026-03-09 06:00:02,888 basehttp: "POST /api/audit-1773036002/auth/login/ HTTP/1.1" 400 41
+INFO 2026-03-09 06:00:43,008 autoreload: Watching for file changes with StatReloader
+INFO 2026-03-09 06:00:45,596 correlation: request_complete correlation_id=7b2b1d24-3c72-4828-91d5-d08e5affc487 tenant_id=- user_id=- method=GET path=/platform/login/ status=404 duration_ms=6.53
+WARNING 2026-03-09 06:00:45,596 log: Not Found: /platform/login/
+WARNING 2026-03-09 06:00:45,597 basehttp: "GET /platform/login/ HTTP/1.1" 404 11548
+INFO 2026-03-09 06:00:45,840 correlation: request_complete correlation_id=964e3ca9-d852-4d15-a0b8-319cac4dee00 tenant_id=- user_id=- method=POST path=/api/platform/login status=200 duration_ms=241.78
+INFO 2026-03-09 06:00:45,840 basehttp: "POST /api/platform/login HTTP/1.1" 200 388
+INFO 2026-03-09 06:00:45,884 correlation: request_complete correlation_id=8c6fd9b7-0da0-4812-bee4-325d056114fd tenant_id=- user_id=2 method=GET path=/api/platform/me status=200 duration_ms=1.73
+INFO 2026-03-09 06:00:45,884 basehttp: "GET /api/platform/me HTTP/1.1" 200 61
+INFO 2026-03-09 06:00:46,187 correlation: request_complete correlation_id=5179b3c0-5c7f-4a97-8f4a-6e54e17c03e0 tenant_id=- user_id=2 method=POST path=/api/platform/organizations status=201 duration_ms=261.15
+INFO 2026-03-09 06:00:46,187 basehttp: "POST /api/platform/organizations HTTP/1.1" 201 319
+INFO 2026-03-09 06:00:46,232 correlation: request_complete correlation_id=45b74321-9242-43ab-aaf0-748287da194b tenant_id=93 user_id=- method=POST path=/api/audit-1773036045/auth/login/ status=400 duration_ms=2.59
+WARNING 2026-03-09 06:00:46,233 log: Bad Request: /api/audit-1773036045/auth/login/
+WARNING 2026-03-09 06:00:46,233 basehttp: "POST /api/audit-1773036045/auth/login/ HTTP/1.1" 400 41

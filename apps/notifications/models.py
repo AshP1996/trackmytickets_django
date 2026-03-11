@@ -4,11 +4,11 @@ from apps.accounts.models import User
 from apps.tickets.models import Ticket
 
 # ============================================================================
-# NOTIFICATION MODEL
+# NOTIFICATION MODEL — lives in TENANT DB
 # ============================================================================
 class Notification(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='notifications', db_index=True, db_constraint=False)
-    actor = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='actor_notifications', db_constraint=False)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='notifications', db_index=True)
+    actor = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='actor_notifications')
     ticket = models.ForeignKey(Ticket, on_delete=models.CASCADE, null=True, blank=True, related_name='notifications')
     type = models.CharField(max_length=50) # 'assigned', 'comment', 'status_change', 'generic'
     message = models.CharField(max_length=500)

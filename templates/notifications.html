@@ -194,7 +194,8 @@
         }
 
         try {
-            const data = await api.request(`/api/notifications/?page=${page}&per_page=${perPage}`);
+            // DRF pagination uses `page_size` (not `per_page`)
+            const data = await api.request(`/api/notifications/?page=${page}&page_size=${perPage}`);
             // Handle DRF pagination format (results) or direct array
             const notifications = data.results || (Array.isArray(data) ? data : []);
 

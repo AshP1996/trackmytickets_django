@@ -1,0 +1,52 @@
+nohup: ignoring input
+INFO 2026-02-19 11:47:23,588 autoreload: Watching for file changes with StatReloader
+INFO 2026-02-19 11:47:30,216 basehttp: "POST /api/platform/login HTTP/1.1" 200 635
+INFO 2026-02-19 11:47:30,225 basehttp: "GET /api/platform/organizations?page=1&page_size=2 HTTP/1.1" 200 601
+INFO 2026-02-19 11:47:30,229 basehttp: "GET /api/platform/enquiries?page=1&page_size=2 HTTP/1.1" 200 510
+INFO 2026-02-19 11:48:23,745 basehttp: "GET /platform/login HTTP/1.1" 200 11945
+INFO 2026-02-19 11:48:23,771 basehttp: "GET /static/images/logo.png HTTP/1.1" 200 0
+INFO 2026-02-19 11:48:23,772 basehttp: "GET /static/css/style.css HTTP/1.1" 200 5880
+INFO 2026-02-19 11:48:23,791 basehttp: "GET /static/js/api.js?v=20260205 HTTP/1.1" 200 24962
+INFO 2026-02-19 11:48:23,837 basehttp: "GET /static/img/login_bg.png HTTP/1.1" 200 553045
+INFO 2026-02-19 11:48:24,215 basehttp: "GET /static/images/logo.png HTTP/1.1" 200 0
+INFO 2026-02-19 11:48:34,619 basehttp: "POST /api/platform/login HTTP/1.1" 200 635
+INFO 2026-02-19 11:48:34,703 basehttp: "GET /platform/dashboard HTTP/1.1" 200 21105
+INFO 2026-02-19 11:48:34,716 basehttp: "GET /static/js/platform.js HTTP/1.1" 200 39653
+INFO 2026-02-19 11:48:34,716 basehttp: "GET /static/css/animations.css HTTP/1.1" 200 13249
+INFO 2026-02-19 11:48:34,717 basehttp: "GET /static/css/design-system.css HTTP/1.1" 200 20691
+INFO 2026-02-19 11:48:34,795 basehttp: "GET /api/platform/me HTTP/1.1" 200 66
+WARNING 2026-02-19 11:48:34,809 log: Not Found: /favicon.ico
+WARNING 2026-02-19 11:48:34,809 basehttp: "GET /favicon.ico HTTP/1.1" 404 5790
+INFO 2026-02-19 11:48:34,845 basehttp: "GET /api/platform/me HTTP/1.1" 200 66
+INFO 2026-02-19 11:48:34,853 basehttp: "GET /api/platform/enquiries?page=1&page_size=10 HTTP/1.1" 200 1069
+INFO 2026-02-19 11:48:34,859 basehttp: "GET /api/platform/stats HTTP/1.1" 200 121
+INFO 2026-02-19 11:48:34,866 basehttp: "GET /api/platform/organizations?page=1&page_size=10 HTTP/1.1" 200 2548
+INFO 2026-02-19 11:58:35,284 basehttp: "GET /api/platform/organizations?page=1&page_size=25 HTTP/1.1" 200 6182
+INFO 2026-02-19 12:00:24,335 basehttp: "GET /api/platform/organizations?page=2&page_size=25 HTTP/1.1" 200 6280
+INFO 2026-02-20 08:41:33,286 autoreload: /home/ashish/.pyenv/versions/3.11.9/lib/python3.11/site-packages/urllib3/connection.py changed, reloading.
+Performing system checks...
+
+LOADING PLATFORM URLS
+System check identified no issues (1 silenced).
+February 19, 2026 - 11:47:23
+Django version 5.2.9, using settings 'config.settings.base'
+Starting development server at http://127.0.0.1:8002/
+Quit the server with CONTROL-C.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
+Error fetching data: no such table: tickets
+INFO 2026-02-20 08:41:33,810 autoreload: Watching for file changes with StatReloader
+INFO 2026-02-20 08:44:22,974 autoreload: /home/ashish/.pyenv/versions/3.11.9/lib/python3.11/site-packages/sqlparse/utils.py changed, reloading.
+Performing system checks...
+
+LOADING PLATFORM URLS
+System check identified no issues (1 silenced).
+February 20, 2026 - 08:41:34
+Django version 5.2.9, using settings 'config.settings.base'
+Starting development server at http://127.0.0.1:8002/
+Quit the server with CONTROL-C.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
+INFO 2026-02-20 08:44:23,403 autoreload: Watching for file changes with StatReloader

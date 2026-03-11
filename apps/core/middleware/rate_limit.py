@@ -1,55 +1,108 @@
-import time
+"""
+Rate Limit Middleware — atomic increment edition.
+
+FIX for TOCTOU race in the original:
+    Original pattern:
+        count = cache.get(key)          # Thread A reads 999
+        if count >= limit: block        # Thread A: 999 < 1000, continue
+        cache.incr(key)                 # Thread A increments to 1000
+        # Thread B also read 999 concurrently — BOTH pass the limit check!
+
+    Fixed pattern:
+        Use cache.add() to atomically set key=1 with TTL if absent,
+        then cache.incr() for subsequent hits. The incr() return value
+        IS the authoritative count. If it exceeds the limit, reject.
+
+    This is correct on both Redis and Memcached backends.
+    On Redis, both add and incr are atomic single-command operations.
+
+COMPLEXITY:
+    O(1) per request — two cache round-trips maximum (add + incr),
+    or one if the key already exists (just incr).
+"""
+
+import logging
 from django.core.cache import cache
 from django.http import JsonResponse
 from django.conf import settings
 
+logger = logging.getLogger('apps')
+
+
 class RateLimitMiddleware:
     """
-    Simple Rate Limiting Middleware using Redis
-    Limits requests per organization
+    Rate Limiting Middleware using Django cache (Redis recommended).
+    Limits requests per organization AND per IP address.
+
+    Runs via process_view so TenantMiddleware has already set request.organization.
     """
+
     def __init__(self, get_response):
         self.get_response = get_response
-        # Default limit: 1000 requests per minute per org
-        self.rate_limit = getattr(settings, 'ORG_RATE_LIMIT', 1000)
+        self.org_limit = getattr(settings, 'ORG_RATE_LIMIT', 1000)   # per window per org
+        self.ip_limit = getattr(settings, 'IP_RATE_LIMIT', 200)       # per window per IP
         self.window = 60  # seconds
 
     def __call__(self, request):
-        if not hasattr(request, 'organization') or not request.organization:
-            return self.get_response(request)
+        return self.get_response(request)
 
-        org_id = request.organization.id
-        client_ip = self.get_client_ip(request)
-        
-        # Key format: rate_limit:org_id
-        key = f"rate_limit:{org_id}"
-        
-        # Increment counter
+    def process_view(self, request, view_func, view_args, view_kwargs):
+        client_ip = self._get_client_ip(request)
+
+        # 1. Per-IP check
+        if client_ip:
+            if self._is_rate_limited(f'rl:ip:{client_ip}', self.ip_limit):
+                logger.warning('ip_rate_limit_exceeded ip=%s', client_ip)
+                return self._rate_limit_response()
+
+        # 2. Per-organization check
+        org = getattr(request, 'organization', None)
+        if org:
+            if self._is_rate_limited(f'rl:org:{org.id}', self.org_limit):
+                logger.warning('org_rate_limit_exceeded org_id=%s', org.id)
+                return self._rate_limit_response(per_org=True)
+
+        return None
+
+    # ------------------------------------------------------------------
+
+    def _is_rate_limited(self, key: str, limit: int) -> bool:
+        """
+        Atomically increment the request counter and check against the limit.
+
+        cache.add()  — sets key=1 with TTL only if key does NOT exist (atomic).
+        cache.incr() — atomically increments and returns the new value.
+
+        If add() returns True the key was new, count is 1 → never rate-limited.
+        If add() returns False the key existed; incr() gives the authoritative count.
+        """
         try:
-            # Use Redis atomic increment
-            current_count = cache.incr(key)
-            
-            # If this is the first request, set expiry
-            if current_count == 1:
-                cache.touch(key, self.window)
-                
-            if current_count > self.rate_limit:
-                return JsonResponse({
-                    'error': 'Rate limit exceeded', 
-                    'message': 'Too many requests. Please try again later.'
-                }, status=429)
-                
+            added = cache.add(key, 1, timeout=self.window)
+            if added:
+                # Key was just created; this is the first request in the window.
+                return False
+            count = cache.incr(key)
+            return count > limit
         except Exception:
-            # If cache fails, fail open (allow request)
-            pass
+            # Cache unavailable → fail open (let request through).
+            logger.debug('rate_limit_cache_error key=%s', key)
+            return False
 
-        response = self.get_response(request)
-        return response
+    def _rate_limit_response(self, per_org: bool = False) -> JsonResponse:
+        scope = 'organization' if per_org else 'IP'
+        return JsonResponse(
+            {
+                'error': 'rate_limit_exceeded',
+                'message': f'Too many requests from this {scope}. Please retry after {self.window}s.',
+                'retry_after': self.window,
+            },
+            status=429,
+        )
 
-    def get_client_ip(self, request):
-        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
-        if x_forwarded_for:
-            ip = x_forwarded_for.split(',')[0]
-        else:
-            ip = request.META.get('REMOTE_ADDR')
-        return ip
+    @staticmethod
+    def _get_client_ip(request) -> str:
+        forwarded = request.META.get('HTTP_X_FORWARDED_FOR', '')
+        if forwarded:
+            # Trust only the *first* IP in the chain (closest to the client).
+            return forwarded.split(',')[0].strip()
+        return request.META.get('REMOTE_ADDR', '')

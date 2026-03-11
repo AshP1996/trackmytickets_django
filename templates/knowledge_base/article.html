@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+
+{% block title %}Article - Knowledge Base{% endblock %}
+{% block page_title %}Knowledge Base{% endblock %}
+
+{% block header_actions %}
+<a href="/{{ company_name }}/knowledge-base" class="btn btn-secondary">
+    <i class="fas fa-arrow-left"></i> Back to Knowledge Base
+</a>
+{% endblock %}
+
+{% block content %}
+<div id="article-container">
+    <div class="text-center" style="padding: 3rem;">
+        <div class="spinner"></div>
+        <p class="text-tertiary mt-2">Loading article...</p>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const articleId = "{{ article_id }}";
+
+    async function loadArticle() {
+        try {
+            const article = await api.getKBArticle(articleId);
+            const container = document.getElementById('article-container');
+
+            container.innerHTML = `
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <div>
+                                <h2 style="font-size: var(--font-size-xl); margin-bottom: var(--spacing-sm);">
+                                    ${article.is_pinned ? '<i class="fas fa-thumbtack text-warning"></i> ' : ''}
+                                    ${article.title}
+                                </h2>
+                                <div class="d-flex gap-3 text-sm text-tertiary flex-wrap">
+                                    ${article.category_name ? `<span><i class="fas fa-folder"></i> ${article.category_name}</span>` : ''}
+                                    <span><i class="fas fa-user"></i> ${article.author_name || 'Unknown'}</span>
+                                    <span><i class="fas fa-eye"></i> ${article.views_count} views</span>
+                                    ${article.published_at ? `<span><i class="fas fa-calendar"></i> ${formatDate(article.published_at)}</span>` : ''}
+                                    ${article.tags ? `<span><i class="fas fa-tags"></i> ${article.tags}</span>` : ''}
+                                </div>
+                            </div>
+                            <span class="badge badge-status-${article.status === 'published' ? 'resolved' : 'open'}">${article.status}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <div style="line-height: 1.8; white-space: pre-wrap;">${article.content || 'No content available.'}</div>
+                    </div>
+                </div>
+
+                <!-- Helpful? -->
+                <div class="card">
+                    <div class="card-body text-center">
+                        <p class="mb-3">Was this article helpful?</p>
+                        <div class="d-flex gap-3 justify-content-center">
+                            <button class="btn btn-success" onclick="markHelpful(true)" id="helpful-yes">
+                                <i class="fas fa-thumbs-up"></i> Yes (${article.helpful_count || 0})
+                            </button>
+                            <button class="btn btn-secondary" onclick="markHelpful(false)" id="helpful-no">
+                                <i class="fas fa-thumbs-down"></i> No (${article.not_helpful_count || 0})
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        } catch (err) {
+            console.error('Failed to load article:', err);
+            document.getElementById('article-container').innerHTML = `
+                <div class="card">
+                    <div class="card-body text-center">
+                        <i class="fas fa-exclamation-triangle" style="font-size: 2rem; color: var(--color-text-tertiary);"></i>
+                        <p class="mt-2 text-tertiary">Article not found or failed to load.</p>
+                        <a href="/${window.api.getCompanyName()}/knowledge-base" class="btn btn-primary mt-2">Back to Knowledge Base</a>
+                    </div>
+                </div>
+            `;
+        }
+    }
+
+    async function markHelpful(isHelpful) {
+        try {
+            const result = await api.markKBArticleHelpful(articleId, isHelpful);
+            document.getElementById('helpful-yes').innerHTML = `<i class="fas fa-thumbs-up"></i> Yes (${result.helpful_count})`;
+            document.getElementById('helpful-no').innerHTML = `<i class="fas fa-thumbs-down"></i> No (${result.not_helpful_count})`;
+            showSuccess('Thank you for your feedback!');
+        } catch (err) {
+            showError('Failed to submit feedback');
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', loadArticle);
+</script>
+{% endblock %}

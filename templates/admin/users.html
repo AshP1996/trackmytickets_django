@@ -58,7 +58,7 @@
                 <h5 class="modal-title">Add New User</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <form id="add-user-form">
+            <form id="add-user-form" novalidate>
                 <div class="modal-body">
                     <div class="mb-3">
                         <label class="form-label">Full Name</label>
@@ -182,10 +182,12 @@
             currentPage = page;
             const response = await api.getUsers({ page, per_page: 20 });
 
-            // Handle both paginated and non-paginated responses
-            // DRF pagination returns 'results', not 'users'
-            const users = response.results || (Array.isArray(response) ? response : []);
-            const totalPages = Math.ceil((response.count || users.length) / 20) || 1;
+            // DRF pagination returns { count, next, previous, results }
+            let users = [];
+            if (Array.isArray(response.results)) users = response.results;
+            else if (Array.isArray(response.users)) users = response.users;
+            else if (Array.isArray(response)) users = response;
+            const totalPages = Math.max(1, Math.ceil((response.count != null ? response.count : users.length) / 20));
 
             renderUsers(users);
             renderPagination(totalPages, page);
@@ -365,25 +367,16 @@
             try {
                 if (scopeType === 'project') {
                     scopeIdLabel.textContent = 'Project';
-                    const response = await api.getProjects();
-                    const projectsList = response.projects || response;
-                    if (Array.isArray(projectsList)) {
-                        scopeIdSelect.innerHTML = projectsList.map(p =>
-                            `<option value="${p.id}">${p.name}</option>`
-                        ).join('');
-                    } else {
-                        scopeIdSelect.innerHTML = '<option value="">No projects available</option>';
-                    }
+                    const projectsList = await api.getProjectsList();
+                    scopeIdSelect.innerHTML = Array.isArray(projectsList) && projectsList.length
+                        ? projectsList.map(p => `<option value="${p.id}">${(p.name || '').replace(/</g, '&lt;')}</option>`).join('')
+                        : '<option value="">No projects available</option>';
                 } else if (scopeType === 'department') {
                     scopeIdLabel.textContent = 'Department';
-                    const departmentsList = await api.getDepartments();
-                    if (Array.isArray(departmentsList)) {
-                        scopeIdSelect.innerHTML = departmentsList.map(d =>
-                            `<option value="${d.id}">${d.name}</option>`
-                        ).join('');
-                    } else {
-                        scopeIdSelect.innerHTML = '<option value="">No departments available</option>';
-                    }
+                    const departmentsList = await api.getDepartmentsList();
+                    scopeIdSelect.innerHTML = Array.isArray(departmentsList) && departmentsList.length
+                        ? departmentsList.map(d => `<option value="${d.id}">${(d.name || '').replace(/</g, '&lt;')}</option>`).join('')
+                        : '<option value="">No departments available</option>';
                 }
             } catch (error) {
                 showError('Failed to load options: ' + error.message);
@@ -435,45 +428,121 @@
     }
 
     async function loadDepartments() {
+        const select = document.getElementById('user-department');
+        if (!select) return;
+        // Unwrap from SearchableDropdown so we can replace options cleanly
+        const wrapper = select.closest && select.closest('.searchable-dropdown');
+        if (wrapper && wrapper.parentNode) {
+            wrapper.parentNode.insertBefore(select, wrapper);
+            wrapper.remove();
+        }
+        select.style.display = '';
+        select.innerHTML = '<option value="">Loading...</option>';
         try {
-            const response = await api.getDepartments();
-            const departments = response.results || response || [];
+            const res = await api.getDepartments();
+            const departments = Array.isArray(res) ? res : (res && res.results) ? res.results : [];
+            select.innerHTML = '<option value="">Select Department...</option>' + (departments || []).map(dept =>
+                `<option value="${(dept.name || '').replace(/"/g, '&quot;')}">${(dept.name || '').replace(/</g, '&lt;')}</option>`
+            ).join('');
 
-            const select = document.getElementById('user-department');
-            if (Array.isArray(departments)) {
-                select.innerHTML = '<option value="">Select Department...</option>' + departments.map(dept =>
-                    `<option value="${dept.name}">${dept.name}</option>`
-                ).join('');
-
-                // Initialize Searchable Dropdown
-                if (window.SearchableDropdown) {
-                    // Check if already initialized to avoid duplicates
-                    const existing = select.parentNode.querySelector('.searchable-dropdown');
-                    if (!existing) {
-                        new SearchableDropdown(select);
-                    }
-                }
+            if (window.SearchableDropdown) {
+                new SearchableDropdown(select);
             }
         } catch (error) {
             console.error('Failed to load departments:', error);
+            const msg = (error && error.message) ? error.message : 'Request failed';
+            if (typeof showError === 'function') showError('Departments: ' + msg);
+            select.innerHTML = '<option value="">Select Department...</option><option value="" disabled>— Load failed —</option>';
         }
     }
 
-    document.getElementById('add-user-form').addEventListener('submit', async function (e) {
-        e.preventDefault();
-        const formData = new FormData(e.target);
-        const data = Object.fromEntries(formData);
+    function bindAddUserForm() {
+        var form = document.getElementById('add-user-form');
+        if (!form) return;
+        form.removeEventListener('submit', handleAddUserSubmit);
+        form.addEventListener('submit', handleAddUserSubmit);
+    }
 
-        try {
-            await api.registerUser(data);
-            showSuccess('User added successfully');
-            bootstrap.Modal.getInstance(document.getElementById('addUserModal')).hide();
-            e.target.reset();
-            loadUsers(currentPage);
-        } catch (error) {
-            showError('Failed to add user: ' + error.message);
+    async function handleAddUserSubmit(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var form = e.target;
+        var submitBtn = form.querySelector('button[type="submit"]');
+        if (submitBtn && submitBtn.disabled) return;
+
+        var api = window.api;
+        if (!api || typeof api.request !== 'function') {
+            console.error('[Add User] window.api or api.request not available');
+            if (typeof showError === 'function') showError('Application not ready. Please refresh the page.'); else alert('Application not ready. Please refresh the page.');
+            return;
         }
-    });
+
+        var departmentSelect = document.getElementById('user-department');
+        var departmentVal = '';
+        if (departmentSelect) {
+            departmentVal = departmentSelect.value || '';
+            if (!departmentVal && departmentSelect.options && departmentSelect.selectedIndex >= 0) {
+                var opt = departmentSelect.options[departmentSelect.selectedIndex];
+                if (opt && opt.value) departmentVal = opt.value;
+            }
+        }
+        if (!departmentVal) {
+            var fd = new FormData(form);
+            departmentVal = (fd.get('department') || '').toString().trim();
+        } else {
+            departmentVal = (departmentVal || '').trim();
+        }
+
+        var data = {
+            full_name: (form.querySelector('[name="full_name"]') && form.querySelector('[name="full_name"]').value || '').trim(),
+            email: (form.querySelector('[name="email"]') && form.querySelector('[name="email"]').value || '').trim().toLowerCase(),
+            password: (form.querySelector('[name="password"]') && form.querySelector('[name="password"]').value) || '',
+            role: (form.querySelector('[name="role"]') && form.querySelector('[name="role"]').value) || 'agent',
+            department: departmentVal || null
+        };
+
+        if (!data.full_name || !data.email || !data.password) {
+            var msg = 'Please fill in Full Name, Email and Password.';
+            if (typeof showError === 'function') showError(msg); else alert(msg);
+            return;
+        }
+        if (data.password.length < 8) {
+            var msg = 'Password must be at least 8 characters.';
+            if (typeof showError === 'function') showError(msg); else alert(msg);
+            return;
+        }
+        if (!data.department) {
+            var msg = 'Please select a department.';
+            if (typeof showError === 'function') showError(msg); else alert(msg);
+            return;
+        }
+
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Adding...';
+        }
+        try {
+            // Use users endpoint (admin add user), not register endpoint, to avoid 403
+            var res = await api.request('/api/auth/users/', { method: 'POST', body: JSON.stringify(data) });
+            if (typeof showSuccess === 'function') showSuccess('User added successfully'); else alert('User added successfully.');
+            var modalEl = document.getElementById('addUserModal');
+            if (modalEl) {
+                var modal = bootstrap.Modal.getInstance(modalEl);
+                if (modal) modal.hide();
+            }
+            form.reset();
+            setTimeout(function () { loadUsers(1); }, 150);
+        } catch (err) {
+            console.error('[Add User] Error:', err);
+            var msg = 'Failed to add user: ' + (err && err.message ? err.message : 'Unknown error');
+            if (typeof showError === 'function') showError(msg); else alert(msg);
+        } finally {
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Add User';
+            }
+        }
+    }
 
     async function toggleUserStatus(userId, isActive) {
         window.showConfirm(
@@ -510,17 +579,19 @@
     }
 
     document.addEventListener('DOMContentLoaded', function () {
+        bindAddUserForm();
         loadUsers(1);
         loadDepartments();
 
-        const addBtn = document.getElementById('add-user-btn');
+        var addBtn = document.getElementById('add-user-btn');
         if (addBtn) {
             addBtn.addEventListener('click', function () {
-                const modalElement = document.getElementById('addUserModal');
-                const form = document.getElementById('add-user-form');
+                loadDepartments();
+                var modalElement = document.getElementById('addUserModal');
+                var form = document.getElementById('add-user-form');
                 if (form) form.reset();
 
-                let modal = bootstrap.Modal.getInstance(modalElement);
+                var modal = bootstrap.Modal.getInstance(modalElement);
                 if (!modal) {
                     modal = new bootstrap.Modal(modalElement, {
                         backdrop: true,

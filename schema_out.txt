@@ -1,0 +1,5 @@
+CREATE TABLE IF NOT EXISTS "projects" ("id" integer NOT NULL PRIMARY KEY AUTOINCREMENT, "name" varchar(200) NOT NULL, "key" varchar(10) NOT NULL, "description" varchar(200) NULL, "is_active" bool NOT NULL, "start_date" datetime NULL, "end_date" datetime NULL, "extension_date" datetime NULL, "created_at" datetime NOT NULL, "updated_at" datetime NOT NULL, "lead_user_id" bigint NULL REFERENCES "users" ("id") DEFERRABLE INITIALLY DEFERRED, "default_assignee_id" bigint NULL REFERENCES "users" ("id") DEFERRABLE INITIALLY DEFERRED, "organization_id" integer NOT NULL, CONSTRAINT "uq_project_key_org" UNIQUE ("key", "organization_id"));
+CREATE INDEX "projects_lead_user_id_12084aed" ON "projects" ("lead_user_id");
+CREATE INDEX "projects_default_assignee_id_7e6248d2" ON "projects" ("default_assignee_id");
+CREATE INDEX "projects_created_40bcd1_idx" ON "projects" ("created_at");
+CREATE INDEX "projects_organiz_896a0c_idx" ON "projects" ("organization_id");

@@ -83,8 +83,12 @@
 
     async function loadDepartments() {
         try {
-            const departments = await api.getDepartments();
-            renderDepartments(departments.results || departments || []);
+            const response = await api.getDepartments();
+            let list = [];
+            if (Array.isArray(response.results)) list = response.results;
+            else if (Array.isArray(response)) list = response;
+            else if (response && Array.isArray(response.departments)) list = response.departments;
+            renderDepartments(list);
         } catch (error) {
             console.error('Error loading departments:', error);
             showError('Failed to load departments: ' + (error.message || 'Unknown error'));
@@ -234,7 +238,7 @@
         try {
             await api.deleteDepartment(deptId);
             showSuccess('Department deleted successfully');
-            loadDepartments();
+            setTimeout(function () { loadDepartments(); }, 150);
         } catch (error) {
             showError('Failed to delete department: ' + error.message);
         }
@@ -266,7 +270,7 @@
             const modal = bootstrap.Modal.getInstance(document.getElementById('department-modal'));
             modal.hide();
 
-            loadDepartments();
+            setTimeout(function () { loadDepartments(); }, 150);
         } catch (error) {
             showError('Failed to save department: ' + error.message);
         } finally {

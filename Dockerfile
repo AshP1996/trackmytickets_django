@@ -27,7 +27,8 @@ FROM python:3.12-slim
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     DJANGO_SETTINGS_MODULE=config.settings.prod_override \
-    SECRET_KEY=dummy_build_key
+    SECRET_KEY=dummy_build_key \
+    DB_CREDENTIALS_ENCRYPTION_KEY=dummy_build_key_for_collectstatic
 
 # Install runtime dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \

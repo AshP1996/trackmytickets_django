@@ -49,6 +49,36 @@
                 </div>
 
                 <div class="form-group mb-4">
+                    <label class="form-label">Type</label>
+                    <select class="form-select" id="ticket_type" name="ticket_type">
+                        <option value="issue" selected>Issue</option>
+                        <option value="bug">Bug</option>
+                        <option value="feature_request">Feature Request</option>
+                        <option value="question">Question</option>
+                        <option value="task">Task</option>
+                    </select>
+                </div>
+
+                <div class="form-group mb-4">
+                    <label class="form-label">Source</label>
+                    <select class="form-select" id="source" name="source">
+                        <option value="web" selected>Web</option>
+                        <option value="email">Email</option>
+                        <option value="api">API</option>
+                        <option value="phone">Phone</option>
+                    </select>
+                </div>
+
+                <div class="form-group mb-4">
+                    <label class="form-label">Due Date</label>
+                    <input type="datetime-local" class="form-control" id="due_date" name="due_date">
+                    <small class="form-text text-tertiary">Optional deadline for this ticket</small>
+                </div>
+            </div>
+
+            <div
+                style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--spacing-md);">
+                <div class="form-group mb-4">
                     <label class="form-label">Department</label>
                     <select class="form-select" id="department_id" name="department_id">
                         <option value="">None</option>
@@ -62,6 +92,13 @@
                         <option value="">Unassigned</option>
                     </select>
                 </div>
+            </div>
+
+            <!-- Tags -->
+            <div class="form-group mb-4">
+                <label class="form-label">Tags</label>
+                <div id="tags-selector" class="d-flex flex-wrap gap-2 mb-2"></div>
+                <small class="form-text text-tertiary">Click tags to toggle selection</small>
             </div>
 
             <div class="form-group mb-4">
@@ -91,36 +128,38 @@
     let currentUser = null;
     let projects = [];
     let users = [];
-    let inputFiles = []; // Array to store multiple files
+    let inputFiles = [];
+    let availableTags = [];
+    let selectedTagIds = new Set();
 
     async function loadFormData() {
         try {
-            currentUser = getCurrentUser();
+            currentUser = await api.getCurrentUser();
 
-            // Load projects
-            const projectsResponse = await api.getProjects();
-            projects = projectsResponse.projects || projectsResponse || [];
+            // Load projects (use list helper for pagination)
+            projects = await api.getProjectsList();
+            if (!Array.isArray(projects)) projects = [];
 
             const projectSelect = document.getElementById('project_id');
+            projectSelect.innerHTML = '<option value="">Select a project...</option>';
             projects.forEach(project => {
-                if (project.is_active) {
+                if (project.is_active !== false) {
                     const option = document.createElement('option');
                     option.value = project.id;
-                    option.textContent = `${project.key} - ${project.name}`;
+                    option.textContent = (project.key ? project.key + ' - ' : '') + (project.name || '');
                     projectSelect.appendChild(option);
                 }
             });
 
             // Load departments
-            const departmentsData = await api.getDepartments();
-            const departments = departmentsData || [];
-
+            const departments = await api.getDepartmentsList();
             const departmentSelect = document.getElementById('department_id');
-            departments.forEach(dept => {
-                if (dept.is_active) {
+            departmentSelect.innerHTML = '<option value="">None</option>';
+            (Array.isArray(departments) ? departments : []).forEach(dept => {
+                if (dept.is_active !== false) {
                     const option = document.createElement('option');
                     option.value = dept.id;
-                    option.textContent = dept.name;
+                    option.textContent = dept.name || '';
                     departmentSelect.appendChild(option);
                 }
             });
@@ -128,10 +167,11 @@
             // Auto-assign when department is selected
             departmentSelect.addEventListener('change', function () {
                 const selectedDept = departments.find(d => d.id == this.value);
-                if (selectedDept && selectedDept.default_assignee_id) {
+                // DepartmentSerializer uses `default_assignee` (id), not `default_assignee_id`
+                if (selectedDept && selectedDept.default_assignee) {
                     const assigneeSelect = document.getElementById('assigned_to');
                     if (assigneeSelect && assigneeSelect.options.length > 0) {
-                        assigneeSelect.value = selectedDept.default_assignee_id;
+                        assigneeSelect.value = selectedDept.default_assignee;
                     }
                 }
             });
@@ -139,8 +179,9 @@
             // Load users for assignment (admin/manager/agent)
             if (currentUser.role === 'admin' || currentUser.role === 'manager' || currentUser.role === 'agent') {
                 document.getElementById('assignee-group').style.display = 'block';
-                const usersData = await api.getUsers();
-                users = usersData.users || usersData || [];
+                const usersData = await api.getProjectLeadUsers();
+                users = usersData.results || usersData.users || usersData || [];
+                if (!Array.isArray(users)) users = [];
 
                 const assigneeSelect = document.getElementById('assigned_to');
                 users.forEach(user => {
@@ -152,10 +193,53 @@
                     }
                 });
             }
+
+            // Load tags
+            try {
+                const tagsData = await api.getTags();
+                availableTags = tagsData.results || tagsData || [];
+                if (!Array.isArray(availableTags)) availableTags = [];
+                renderTagSelector();
+            } catch (e) {
+                console.error('Failed to load tags:', e);
+            }
+
         } catch (error) {
             console.error('Error loading form data:', error);
             showError('Failed to load form data: ' + error.message);
         }
+    }
+
+    function renderTagSelector() {
+        const container = document.getElementById('tags-selector');
+        if (availableTags.length === 0) {
+            container.innerHTML = '<span class="text-tertiary text-sm">No tags available</span>';
+            return;
+        }
+
+        container.innerHTML = availableTags.map(tag => {
+            const isSelected = selectedTagIds.has(tag.id);
+            return `
+                <button type="button" class="btn btn-sm tag-selector-btn"
+                    data-tag-id="${tag.id}"
+                    onclick="toggleTag(${tag.id})"
+                    style="background-color: ${isSelected ? (tag.color || '#6b778c') : 'var(--color-bg-secondary)'};
+                           color: ${isSelected ? '#fff' : 'var(--color-text-primary)'};
+                           border: 2px solid ${tag.color || '#6b778c'};
+                           border-radius: 16px; padding: 4px 12px; font-size: 0.8rem;">
+                    ${isSelected ? '<i class="fas fa-check"></i> ' : ''}${tag.name}
+                </button>
+            `;
+        }).join('');
+    }
+
+    function toggleTag(tagId) {
+        if (selectedTagIds.has(tagId)) {
+            selectedTagIds.delete(tagId);
+        } else {
+            selectedTagIds.add(tagId);
+        }
+        renderTagSelector();
     }
 
     // File preview
@@ -163,7 +247,6 @@
         const newFiles = Array.from(e.target.files);
         inputFiles = [...inputFiles, ...newFiles];
         updateFilePreview();
-        // Reset input so same file can be selected again if needed (though duplicated check might be better, simple reset is ok)
         this.value = '';
     });
 
@@ -202,13 +285,33 @@
         try {
             const formData = new FormData(this);
 
-            // Remove existing 'attachments' entries from FormData (which might be empty due to value reset)
+            // Remove existing 'attachments' entries from FormData
             formData.delete('attachments');
 
             // Append files from our array
             inputFiles.forEach(file => {
                 formData.append('attachments', file);
             });
+
+            // Append selected tag IDs
+            selectedTagIds.forEach(tagId => {
+                formData.append('tag_ids', tagId);
+            });
+
+            // Backend expects `project` and `department` field names (not *_id)
+            if (formData.get('project_id')) {
+                formData.set('project', formData.get('project_id'));
+                formData.delete('project_id');
+            }
+            if (formData.get('department_id')) {
+                formData.set('department', formData.get('department_id'));
+                formData.delete('department_id');
+            }
+
+            // Remove empty optional fields
+            if (!formData.get('department')) formData.delete('department');
+            if (!formData.get('assigned_to')) formData.delete('assigned_to');
+            if (!formData.get('due_date')) formData.delete('due_date');
 
             // Create ticket with file uploads
             const ticket = await api.createTicketWithFiles(formData);

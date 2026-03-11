@@ -74,8 +74,16 @@ class PlatformAPIClient {
         return this.request('/api/platform/me', { method: 'GET' });
     }
 
-    async getOrganizations() {
-        return this.request('/api/platform/organizations', { method: 'GET' });
+    async getOrganizations(page = 1, pageSize = 10, search = '') {
+        let query = `?page=${page}&page_size=${pageSize}`;
+        if (search) query += `&search=${encodeURIComponent(search)}`;
+        return this.request(`/api/platform/organizations${query}`, { method: 'GET' });
+    }
+
+    async getEnquiries(unreadOnly = false, page = 1, pageSize = 10) {
+        let query = `?page=${page}&page_size=${pageSize}`;
+        if (unreadOnly) query += '&unread_only=true';
+        return this.request(`/api/platform/enquiries${query}`, { method: 'GET' });
     }
 
     async createOrganization(data) {
@@ -109,11 +117,6 @@ class PlatformAPIClient {
 
     async getStats() {
         return this.request('/api/platform/stats', { method: 'GET' });
-    }
-
-    async getEnquiries(unreadOnly = false) {
-        const params = unreadOnly ? '?unread_only=true' : '';
-        return this.request(`/api/platform/enquiries${params}`, { method: 'GET' });
     }
 
     async markEnquiryRead(enquiryId) {
@@ -192,104 +195,182 @@ async function loadPlatformStats() {
         }
     } catch (error) {
         console.error('Error loading stats:', error);
+        const fallback = '0';
+        const ids = ['total-orgs', 'total-users', 'total-tickets', 'active-orgs'];
+        ids.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = fallback;
+        });
+        const totalEnquiriesEl = document.getElementById('total-enquiries');
+        const unreadEnquiriesEl = document.getElementById('unread-enquiries');
+        if (totalEnquiriesEl) totalEnquiriesEl.textContent = fallback;
+        if (unreadEnquiriesEl) unreadEnquiriesEl.textContent = '0 unread';
     }
 }
+let currentOrgPage = 1;
+let currentOrgPageSize = 10;
+let currentOrgSearch = '';
 
-// Load organizations
-async function loadOrganizations() {
+async function loadOrganizations(page = 1, pageSize = 10) {
+    currentOrgPage = page;
+    currentOrgPageSize = pageSize;
+
     const container = document.getElementById('orgs-container');
-    container.innerHTML = '<div class="loading"><div class="spinner"></div><span style="margin-left: var(--spacing-sm);">Loading organizations...</span></div>';
+    container.innerHTML = `
+        <div class="loading">
+            <div class="d-flex flex-column align-items-center">
+                <div class="spinner mb-3"></div>
+                <span class="text-tertiary">Loading organizations...</span>
+            </div>
+        </div>`;
 
     try {
-        const response = await platformAPI.getOrganizations();
-        const orgs = response.organizations || [];
+        const response = await platformAPI.getOrganizations(page, pageSize, currentOrgSearch);
+
+        // Handle paginated response: DRF returns { count, next, previous, results }
+        let orgs = [];
+        if (Array.isArray(response.results)) {
+            orgs = response.results;
+        } else if (Array.isArray(response.organizations)) {
+            orgs = response.organizations;
+        } else if (response && typeof response.results === 'object' && Array.isArray(response.results.organizations)) {
+            orgs = response.results.organizations;
+        }
+        const totalCount = response.count != null ? response.count : orgs.length;
+        const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
 
         if (orgs.length === 0) {
-            container.innerHTML = '<div class="text-center p-4"><p class="text-tertiary">No organizations found. Create your first organization.</p></div>';
+            container.innerHTML = '<div class="text-center p-5"><p class="text-tertiary mb-0">No organizations found.</p></div>';
             return;
         }
 
         // Get base URL for generating access URLs
         const baseUrl = window.location.origin;
 
-        container.innerHTML = `
-            <table class="table" style="margin: 0;">
-                <thead>
-                    <tr>
-                        <th>Organization</th>
-                        <th>Subdomain</th>
-                        <th>Access URL</th>
-                        <th>Plan</th>
-                        <th>Status</th>
-                        <th>Stats</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    ${orgs.map(org => {
+        let html = `
+            <div class="table-responsive">
+                <table class="table table-hover" style="margin: 0; vertical-align: middle;">
+                    <thead class="bg-light">
+                        <tr>
+                            <th class="border-0 px-4 py-3 text-tertiary font-medium">Organization</th>
+                            <th class="border-0 px-4 py-3 text-tertiary font-medium">Subdomain</th>
+                            <th class="border-0 px-4 py-3 text-tertiary font-medium">Access URL</th>
+                            <th class="border-0 px-4 py-3 text-tertiary font-medium">Plan</th>
+                            <th class="border-0 px-4 py-3 text-tertiary font-medium">Status</th>
+                            <th class="border-0 px-4 py-3 text-tertiary font-medium">Stats</th>
+                            <th class="border-0 px-4 py-3 text-tertiary font-medium text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${orgs.map(org => {
             const loginUrl = `${baseUrl}/${org.subdomain}/login`;
             const dashboardUrl = `${baseUrl}/${org.subdomain}/dashboard`;
             return `
                         <tr>
-                            <td>
-                                <div class="font-semibold">${org.name || 'N/A'}</div>
+                            <td class="px-4 py-3">
+                                <div class="font-semibold text-dark">${org.name || 'N/A'}</div>
                                 <div class="text-tertiary text-sm">${org.email || 'N/A'}</div>
                             </td>
-                            <td>
-                                <code>${org.subdomain}</code>
+                            <td class="px-4 py-3">
+                                <code class="px-2 py-1 bg-light rounded text-primary">${org.subdomain}</code>
                             </td>
-                            <td>
-                                <div class="text-sm">
-                                    <div style="word-break: break-all;">
-                                        <a href="${loginUrl}" target="_blank" style="color: var(--color-brand-primary); text-decoration: none; font-size: 11px;">
-                                            <i class="fas fa-external-link-alt"></i> ${loginUrl}
-                                        </a>
-                                    </div>
-                                    <div class="text-tertiary" style="font-size: 10px; margin-top: 4px;">
-                                        Dashboard: <a href="${dashboardUrl}" target="_blank" style="color: var(--color-brand-primary);">${dashboardUrl}</a>
-                                    </div>
+                            <td class="px-4 py-3">
+                                <div class="d-flex flex-column gap-1">
+                                    <a href="${loginUrl}" target="_blank" class="text-decoration-none text-sm d-flex align-items-center gap-1 text-primary">
+                                        <i class="fas fa-external-link-alt fa-xs"></i> Login
+                                    </a>
+                                    <a href="${dashboardUrl}" target="_blank" class="text-decoration-none text-sm d-flex align-items-center gap-1 text-tertiary hover-text-primary">
+                                        <i class="fas fa-tachometer-alt fa-xs"></i> Dashboard
+                                    </a>
                                 </div>
                             </td>
-                            <td>
-                                <span class="badge ${org.plan === 'growth_cluster' ? 'badge-status-resolved' : 'badge-status-in-progress'}">${org.plan === 'growth_cluster' ? 'Growth Cluster' : 'Starter Trial'}</span>
-                                ${org.has_external_db ? '<span class="badge" style="background-color: var(--color-brand-secondary); margin-left: 4px;" title="External Database Connected"><i class="fas fa-database"></i> BYODB</span>' : ''}
+                            <td class="px-4 py-3">
+                                <span class="badge ${org.plan === 'growth_cluster' ? 'badge-status-resolved' : 'badge-status-in-progress'} rounded-pill fw-normal px-3 py-2 border">
+                                    ${org.plan === 'growth_cluster' ? 'Growth Cluster' : 'Starter Trial'}
+                                </span>
+                                ${org.has_external_db ? '<span class="badge bg-info text-white rounded-pill ms-1" title="External Database Connected"><i class="fas fa-database"></i> BYODB</span>' : ''}
                             </td>
-                            <td>
-                                ${org.is_active ? '<span class="badge badge-status-resolved">Active</span>' : '<span class="badge" style="background-color: var(--color-bg-tertiary);">Suspended</span>'}
+                            <td class="px-4 py-3">
+                                ${org.is_active
+                    ? '<span class="status-indicator status-open"><span class="status-dot"></span>Active</span>'
+                    : '<span class="status-indicator status-closed"><span class="status-dot"></span>Suspended</span>'}
                             </td>
-                            <td>
-                                <div class="text-sm">
-                                    <div>👥 ${org.stats?.users || 0} users</div>
-                                    <div>🎫 ${org.stats?.tickets || 0} tickets</div>
-                                    <div>📁 ${org.stats?.projects || 0} projects</div>
+                            <td class="px-4 py-3">
+                                <div class="d-flex gap-3 text-sm text-tertiary">
+                                    <span title="Users"><i class="fas fa-users me-1"></i>${org.stats?.users || 0}</span>
+                                    <span title="Tickets"><i class="fas fa-ticket-alt me-1"></i>${org.stats?.tickets || 0}</span>
+                                    <span title="Projects"><i class="fas fa-folder me-1"></i>${org.stats?.projects || 0}</span>
                                 </div>
                             </td>
-                            <td>
-                                <div class="d-flex gap-2">
-                                    <button class="btn btn-sm btn-secondary" onclick="window.viewOrganization(${org.id})" title="View Details" type="button">
-                                        <i class="fas fa-eye"></i>
+                            <td class="px-4 py-3 text-end">
+                                <div class="d-flex justify-content-end gap-2">
+                                    <button class="btn btn-icon btn-sm btn-light" onclick="window.viewOrganization(${org.id})" title="View Details">
+                                        <i class="fas fa-eye text-secondary"></i>
                                     </button>
                                     ${org.is_active ?
-                    `<button class="btn btn-sm btn-warning" onclick="window.suspendOrganization(${org.id}, true)" title="Suspend" type="button">
-                                            <i class="fas fa-pause"></i>
+                    `<button class="btn btn-icon btn-sm btn-light" onclick="window.suspendOrganization(${org.id}, true)" title="Suspend">
+                                            <i class="fas fa-pause text-warning"></i>
                                         </button>` :
-                    `<button class="btn btn-sm btn-success" onclick="window.suspendOrganization(${org.id}, false)" title="Activate" type="button">
-                                            <i class="fas fa-play"></i>
+                    `<button class="btn btn-icon btn-sm btn-light" onclick="window.suspendOrganization(${org.id}, false)" title="Activate">
+                                            <i class="fas fa-play text-success"></i>
                                         </button>`
                 }
-                                    <button class="btn btn-sm btn-danger" onclick="window.deleteOrganization(${org.id})" title="Delete" type="button">
-                                        <i class="fas fa-trash"></i>
+                                    <button class="btn btn-icon btn-sm btn-light" onclick="window.deleteOrganization(${org.id})" title="Delete">
+                                        <i class="fas fa-trash text-danger"></i>
                                     </button>
                                 </div>
                             </td>
                         </tr>
                     `;
         }).join('')}
-                </tbody>
-            </table>
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Pagination Controls -->
+            <div class="d-flex justify-content-between align-items-center mt-4 px-2">
+                <div class="d-flex align-items-center gap-3">
+                    <span class="text-tertiary text-sm">Rows per page:</span>
+                    <select class="form-select form-select-sm" style="width: 70px;" onchange="loadOrganizations(1, this.value)">
+                        <option value="5" ${pageSize == 5 ? 'selected' : ''}>5</option>
+                        <option value="10" ${pageSize == 10 ? 'selected' : ''}>10</option>
+                        <option value="25" ${pageSize == 25 ? 'selected' : ''}>25</option>
+                        <option value="50" ${pageSize == 50 ? 'selected' : ''}>50</option>
+                    </select>
+                    <span class="text-tertiary text-sm">
+                        ${(page - 1) * pageSize + 1}-${Math.min(page * pageSize, totalCount)} of ${totalCount}
+                    </span>
+                </div>
+                
+                <div class="d-flex gap-2">
+                    <button class="btn btn-sm btn-outline-secondary" 
+                        ${!response.previous ? 'disabled' : ''} 
+                        onclick="loadOrganizations(${page - 1}, ${pageSize})">
+                        <i class="fas fa-chevron-left"></i> Previous
+                    </button>
+                    ${Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+            // Logic to show generic page numbers locally around current page could be added here
+            // For now, simple 1-5 or based on total pages
+            let p = i + 1;
+            if (totalPages > 5) {
+                if (page > 3) p = page - 2 + i;
+                if (p > totalPages) return '';
+            }
+            return ''; // Simplified: just Prev/Next for now to be safe, or implement full logic
+        }).join('')}
+                     <button class="btn btn-sm btn-outline-secondary" 
+                        ${!response.next ? 'disabled' : ''} 
+                        onclick="loadOrganizations(${page + 1}, ${pageSize})">
+                        Next <i class="fas fa-chevron-right"></i>
+                    </button>
+                </div>
+            </div>
         `;
+
+        container.innerHTML = html;
+
     } catch (error) {
-        container.innerHTML = `<div class="alert alert-error">Error loading organizations: ${error.message}</div>`;
+        container.innerHTML = `<div class="alert alert-danger m-4"><i class="fas fa-exclamation-circle me-2"></i>Error loading organizations: ${error.message}</div>`;
     }
 }
 
@@ -434,9 +515,11 @@ Password: ${adminPassword}`;
         // Also show toast notification
         showSuccess(`Organization "${result.organization?.name || data.name}" created successfully!`);
 
-        // Refresh organizations list and stats
-        loadOrganizations();
-        loadPlatformStats();
+        // Refresh list and stats after a short delay so the new org is committed and visible
+        setTimeout(() => {
+            loadOrganizations(1, currentOrgPageSize);
+            loadPlatformStats();
+        }, 200);
 
         submitBtn.disabled = false;
         submitBtn.innerHTML = originalText;
@@ -461,8 +544,10 @@ async function suspendOrganization(orgId, suspend) {
             try {
                 await platformAPI.suspendOrganization(orgId, suspend);
                 showSuccess(`Organization ${suspend ? 'suspended' : 'activated'} successfully`);
-                loadOrganizations();
-                loadPlatformStats();
+                setTimeout(() => {
+                    loadOrganizations(1, currentOrgPageSize);
+                    loadPlatformStats();
+                }, 150);
             } catch (error) {
                 showError('Failed to update organization: ' + error.message);
             }
@@ -479,8 +564,10 @@ async function deleteOrganization(orgId) {
             try {
                 await platformAPI.deleteOrganization(orgId);
                 showSuccess('Organization deleted successfully');
-                loadOrganizations();
-                loadPlatformStats();
+                setTimeout(() => {
+                    loadOrganizations(1, currentOrgPageSize);
+                    loadPlatformStats();
+                }, 150);
             } catch (error) {
                 showError('Failed to delete organization: ' + error.message);
             }
@@ -569,17 +656,38 @@ Projects:
 }
 
 // Load enquiries
+let currentEnqPage = 1;
+let currentEnqPageSize = 10;
 let showUnreadOnly = false;
-async function loadEnquiries(unreadOnly = false) {
+
+async function loadEnquiries(unreadOnly = false, page = 1, pageSize = 10) {
     showUnreadOnly = unreadOnly;
+    currentEnqPage = page;
+    currentEnqPageSize = pageSize;
+
     const container = document.getElementById('enquiries-container');
     if (!container) return;
 
-    container.innerHTML = '<div class="loading"><div class="spinner"></div><span style="margin-left: var(--spacing-sm);">Loading enquiries...</span></div>';
+    container.innerHTML = `
+        <div class="loading">
+            <div class="d-flex flex-column align-items-center">
+                <div class="spinner mb-3"></div>
+                <span class="text-tertiary">Loading enquiries...</span>
+            </div>
+        </div>`;
 
     try {
-        const response = await platformAPI.getEnquiries(unreadOnly);
-        const enquiries = response.enquiries || [];
+        const response = await platformAPI.getEnquiries(unreadOnly, page, pageSize);
+        let enquiries = [];
+        if (Array.isArray(response.results)) {
+            enquiries = response.results;
+        } else if (Array.isArray(response.enquiries)) {
+            enquiries = response.enquiries;
+        } else if (response && typeof response.results === 'object' && Array.isArray(response.results.enquiries)) {
+            enquiries = response.results.enquiries;
+        }
+        const totalCount = response.count != null ? response.count : enquiries.length;
+        const totalPages = Math.ceil(totalCount / pageSize);
 
         // Update button text
         const showUnreadBtn = document.getElementById('show-unread-btn');
@@ -590,84 +698,109 @@ async function loadEnquiries(unreadOnly = false) {
         }
 
         if (enquiries.length === 0) {
-            container.innerHTML = '<div class="text-center p-4"><p class="text-tertiary">No enquiries found.</p></div>';
+            container.innerHTML = '<div class="text-center p-5"><p class="text-tertiary mb-0">No enquiries found.</p></div>';
             return;
         }
 
-        container.innerHTML = `
-            <table class="table" style="margin: 0;">
-                <thead>
-                    <tr>
-                        <th>Name</th>
-                        <th>Email</th>
-                        <th>Company</th>
-                        <th>Phone</th>
-                        <th>Message</th>
-                        <th>Date</th>
-                        <th>Status</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    ${enquiries.map(enquiry => `
-                        <tr style="${enquiry.is_read ? '' : 'background-color: #f0f9ff;'}">
-                            <td><strong>${enquiry.name}</strong></td>
-                            <td><a href="mailto:${enquiry.email}">${enquiry.email}</a></td>
-                            <td>${enquiry.company || '-'}</td>
-                            <td>${enquiry.phone || '-'}</td>
-                            <td style="max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${enquiry.message}">${enquiry.message}</td>
-                            <td>${new Date(enquiry.created_at).toLocaleDateString()}</td>
-                            <td>
+        let html = `
+            <div class="table-responsive">
+                <table class="table table-hover" style="margin: 0; vertical-align: middle;">
+                    <thead class="bg-light">
+                        <tr>
+                            <th class="border-0 px-4 py-3 text-tertiary font-medium">Name</th>
+                            <th class="border-0 px-4 py-3 text-tertiary font-medium">Email</th>
+                            <th class="border-0 px-4 py-3 text-tertiary font-medium">Company</th>
+                            <th class="border-0 px-4 py-3 text-tertiary font-medium">Phone</th>
+                            <th class="border-0 px-4 py-3 text-tertiary font-medium">Message</th>
+                            <th class="border-0 px-4 py-3 text-tertiary font-medium">Date</th>
+                            <th class="border-0 px-4 py-3 text-tertiary font-medium">Status</th>
+                            <th class="border-0 px-4 py-3 text-tertiary font-medium text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${enquiries.map(enquiry => `
+                        <tr style="${enquiry.is_read ? '' : 'background-color: var(--color-bg-secondary);'}">
+                            <td class="px-4 py-3"><strong>${enquiry.name}</strong></td>
+                            <td class="px-4 py-3"><a href="mailto:${enquiry.email}" class="text-primary text-decoration-none">${enquiry.email}</a></td>
+                            <td class="px-4 py-3 text-tertiary">${enquiry.company || '-'}</td>
+                            <td class="px-4 py-3 text-tertiary">${enquiry.phone || '-'}</td>
+                            <td class="px-4 py-3 text-tertiary" style="max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${enquiry.message}">${enquiry.message}</td>
+                            <td class="px-4 py-3 text-tertiary">${new Date(enquiry.created_at).toLocaleDateString()}</td>
+                            <td class="px-4 py-3">
                                 ${enquiry.is_read
-                ? '<span class="badge badge-status-resolved">Read</span>'
-                : '<span class="badge" style="background-color: var(--color-primary);">Unread</span>'
+                ? '<span class="badge bg-light text-secondary rounded-pill border fw-normal px-3">Read</span>'
+                : '<span class="badge bg-primary text-white rounded-pill fw-normal px-3">Unread</span>'
             }
                             </td>
-                            <td>
-                                <div class="d-flex gap-2">
-                                    <button class="btn btn-sm btn-secondary" onclick="viewEnquiry(${enquiry.id})" title="View Details" type="button">
-                                        <i class="fas fa-eye"></i>
+                            <td class="px-4 py-3 text-end">
+                                <div class="d-flex justify-content-end gap-2">
+                                    <button class="btn btn-icon btn-sm btn-light" onclick="viewEnquiry(${enquiry.id})" title="View Details">
+                                        <i class="fas fa-eye text-secondary"></i>
                                     </button>
                                     ${!enquiry.is_read ? `
-                                        <button class="btn btn-sm btn-primary" onclick="markEnquiryRead(${enquiry.id})" title="Mark as Read" type="button">
-                                            <i class="fas fa-check"></i>
+                                        <button class="btn btn-icon btn-sm btn-light" onclick="markEnquiryRead(${enquiry.id})" title="Mark as Read">
+                                            <i class="fas fa-check text-primary"></i>
                                         </button>
                                     ` : ''}
                                 </div>
                             </td>
                         </tr>
                     `).join('')}
-                </tbody>
-            </table>
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Pagination Controls -->
+            <div class="d-flex justify-content-between align-items-center mt-4 px-2">
+                <div class="d-flex align-items-center gap-3">
+                    <span class="text-tertiary text-sm">Rows per page:</span>
+                    <select class="form-select form-select-sm" style="width: 70px;" onchange="loadEnquiries(${unreadOnly}, 1, this.value)">
+                        <option value="5" ${pageSize == 5 ? 'selected' : ''}>5</option>
+                        <option value="10" ${pageSize == 10 ? 'selected' : ''}>10</option>
+                        <option value="25" ${pageSize == 25 ? 'selected' : ''}>25</option>
+                        <option value="50" ${pageSize == 50 ? 'selected' : ''}>50</option>
+                    </select>
+                    <span class="text-tertiary text-sm">
+                        ${(page - 1) * pageSize + 1}-${Math.min(page * pageSize, totalCount)} of ${totalCount}
+                    </span>
+                </div>
+                
+                <div class="d-flex gap-2">
+                    <button class="btn btn-sm btn-outline-secondary" 
+                        ${!response.previous ? 'disabled' : ''} 
+                        onclick="loadEnquiries(${unreadOnly}, ${page - 1}, ${pageSize})">
+                        <i class="fas fa-chevron-left"></i> Previous
+                    </button>
+                    ${Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                let p = i + 1;
+                if (totalPages > 5) {
+                    if (page > 3) p = page - 2 + i;
+                    if (p > totalPages) return '';
+                }
+                return '';
+            }).join('')}
+                     <button class="btn btn-sm btn-outline-secondary" 
+                        ${!response.next ? 'disabled' : ''} 
+                        onclick="loadEnquiries(${unreadOnly}, ${page + 1}, ${pageSize})">
+                        Next <i class="fas fa-chevron-right"></i>
+                    </button>
+                </div>
+            </div>
         `;
+
+        container.innerHTML = html;
+
     } catch (error) {
-        container.innerHTML = `<div class="alert alert-error">Error loading enquiries: ${error.message}</div>`;
+        container.innerHTML = `<div class="alert alert-danger m-4"><i class="fas fa-exclamation-circle me-2"></i>Error loading enquiries: ${error.message}</div>`;
     }
 }
 
 async function viewEnquiry(enquiryId) {
     try {
-        const response = await platformAPI.getEnquiries(false);
-        const enquiry = response.enquiries?.find(e => e.id === enquiryId);
+        // Fetch single enquiry from the new detail endpoint
+        const enquiry = await platformAPI.request(`/api/platform/enquiries/${enquiryId}`, { method: 'GET' });
 
-        if (!enquiry) {
-            showError('Enquiry not found');
-            return;
-        }
-
-        const details = `
-Enquiry Details:
-
-Name: ${enquiry.name}
-Email: ${enquiry.email}
-Company: ${enquiry.company || 'Not provided'}
-Phone: ${enquiry.phone || 'Not provided'}
-Date: ${new Date(enquiry.created_at).toLocaleString()}
-Status: ${enquiry.is_read ? 'Read' : 'Unread'}
-
-Message:
-${enquiry.message}
-        `.trim();
+        const details = `Enquiry Details:\n\nName: ${enquiry.name}\nEmail: ${enquiry.email}\nCompany: ${enquiry.company || 'Not provided'}\nPhone: ${enquiry.phone || 'Not provided'}\nDate: ${new Date(enquiry.created_at).toLocaleString()}\nStatus: ${enquiry.is_read ? 'Read' : 'Unread'}\n\nMessage:\n${enquiry.message}`.trim();
 
         window.showAlert('Enquiry Details', details);
     } catch (error) {
@@ -696,6 +829,67 @@ window.loadOrganizations = loadOrganizations;
 window.loadEnquiries = loadEnquiries;
 window.viewEnquiry = viewEnquiry;
 window.markEnquiryRead = markEnquiryRead;
+
+// ─── Dialog helpers (Bootstrap modal-based) ───────────────────────────────────
+// Creates transient modal elements so we don't need separate HTML placeholders.
+
+window.showAlert = function (title, message) {
+    // Remove any previous instance
+    document.getElementById('_platformAlertModal')?.remove();
+    const el = document.createElement('div');
+    el.id = '_platformAlertModal';
+    el.className = 'modal fade';
+    el.tabIndex = -1;
+    el.innerHTML = `
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">${title}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <pre style="white-space:pre-wrap;word-break:break-word;font-size:0.875rem;background:#f8f9fa;border-radius:8px;padding:1rem;max-height:60vh;overflow-y:auto;">${message}</pre>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>`;
+    document.body.appendChild(el);
+    const m = new bootstrap.Modal(el);
+    el.addEventListener('hidden.bs.modal', () => el.remove());
+    m.show();
+};
+
+window.showConfirm = function (title, message, onConfirm, isDestructive = false) {
+    document.getElementById('_platformConfirmModal')?.remove();
+    const el = document.createElement('div');
+    el.id = '_platformConfirmModal';
+    el.className = 'modal fade';
+    el.tabIndex = -1;
+    el.innerHTML = `
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">${title}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">${message}</div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn ${isDestructive ? 'btn-danger' : 'btn-primary'}" id="_confirmOk">Confirm</button>
+                </div>
+            </div>
+        </div>`;
+    document.body.appendChild(el);
+    const m = new bootstrap.Modal(el);
+    el.querySelector('#_confirmOk').addEventListener('click', () => {
+        m.hide();
+        onConfirm();
+    });
+    el.addEventListener('hidden.bs.modal', () => el.remove());
+    m.show();
+};
 
 // Initialize
 document.addEventListener('DOMContentLoaded', async function () {

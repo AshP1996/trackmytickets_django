@@ -120,8 +120,10 @@
             const currentUser = await api.getCurrentUser();
             console.log('Projects API response:', response); // Debug log
 
-            // Handle paginated response
-            const projects = response.results || response.projects || (Array.isArray(response) ? response : []);
+            let projects = [];
+            if (Array.isArray(response.results)) projects = response.results;
+            else if (Array.isArray(response.projects)) projects = response.projects;
+            else if (Array.isArray(response)) projects = response;
             console.log('Projects to render:', projects.length); // Debug log
 
             renderProjects(projects, currentUser);
@@ -143,41 +145,29 @@
 
     async function loadUsers() {
         try {
-            const currentUser = getCurrentUser();
             const leadSelect = document.getElementById('project-lead');
-
             if (!leadSelect) return;
 
             // Always show "Unassigned" option
             leadSelect.innerHTML = '<option value="">Unassigned</option>';
 
-            // Load users for everyone (backend now allows employees)
-            // This allows managers to assign other users as project leads
+            // Use the dedicated lead_users endpoint (accessible to all org members)
             try {
-                const usersData = await api.getUsers();
+                const usersData = await api.getProjectLeadUsers();
                 allUsers = usersData.results || usersData.users || usersData || [];
 
-                // Add users to the dropdown
                 allUsers.forEach(user => {
-                    if (user.is_active) {
-                        const option = document.createElement('option');
-                        option.value = user.id;
-                        option.textContent = user.full_name;
-                        leadSelect.appendChild(option);
-                    }
+                    const option = document.createElement('option');
+                    option.value = user.id;
+                    option.textContent = user.full_name || user.email;
+                    leadSelect.appendChild(option);
                 });
             } catch (error) {
                 console.warn('Could not load users for dropdown:', error.message);
-                // Fallback: Show current user
-                const option = document.createElement('option');
-                option.value = currentUser.id;
-                option.textContent = currentUser.full_name + ' (You)';
-                option.selected = true;
-                leadSelect.appendChild(option);
+                // Fallback: show just "Unassigned" - form still works
             }
         } catch (error) {
             console.error('Error loading users:', error);
-            // Don't block modal from opening if user loading fails
         }
     }
 
@@ -219,7 +209,7 @@
                 <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--spacing-md); padding-top: var(--spacing-md); border-top: 1px solid var(--color-border-light);">
                     <div>
                         <div class="text-tertiary text-xs mb-1">Tickets</div>
-                        <div class="font-semibold">${project.tickets_count || 0}</div>
+                        <div class="font-semibold">${project.ticket_count ?? project.tickets_count ?? 0}</div>
                     </div>
                     <div>
                         <div class="text-tertiary text-xs mb-1">Lead</div>
@@ -390,7 +380,7 @@
         const data = {
             name: formData.get('name'),
             description: formData.get('description'),
-            lead_user: formData.get('lead_user') || null,
+            lead_user: formData.get('lead_user') ? parseInt(formData.get('lead_user'), 10) : null,
             start_date: formData.get('start_date') || null,
             end_date: formData.get('end_date') || null,
             extension_date: formData.get('extension_date') || null
@@ -417,7 +407,7 @@
             const modal = bootstrap.Modal.getInstance(document.getElementById('createProjectModal'));
             modal.hide();
             form.reset();
-            loadProjects();
+            setTimeout(function () { loadProjects(); }, 150);
 
             btn.disabled = false;
             btn.textContent = originalText;
@@ -476,33 +466,7 @@
             newProjectBtn.addEventListener('click', showCreateProjectModal);
         }
 
-        // Attach form submit handler
-        const form = document.getElementById('create-project-form');
-        if (form) {
-            form.addEventListener('submit', function (e) {
-                e.preventDefault();
-                console.log('Form submitted');
-                const formData = new FormData(e.target);
-                const projectData = {
-                    name: formData.get('name'),
-                    key: formData.get('key'),
-                    description: formData.get('description') || '',
-                    lead_user: formData.get('lead_user') || null,
-                    start_date: formData.get('start_date') || null,
-                    end_date: formData.get('end_date') || null,
-                    extension_date: formData.get('extension_date') || null
-                };
 
-                if (projectData.lead_user) {
-                    projectData.lead_user = parseInt(projectData.lead_user);
-                }
-
-                console.log('Creating project with data:', projectData);
-                createProject(projectData);
-            });
-        } else {
-            console.error('Create project form not found!');
-        }
     });
 </script>
 {% endblock %}

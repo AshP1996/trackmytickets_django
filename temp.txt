@@ -1,0 +1,19 @@
+Here are the verified login credentials that are currently working on your local Docker instance (accessible via http://localhost:8080):
+
+1. Platform Admin Login
+
+URL Pattern: http://localhost:8080/platform/login (API Endpoint: /api/platform/login)
+Email: admin@trackmytickets.in
+Password: Admin@2026
+2. TechFlow Organization Login (Tenant)
+
+URL Pattern: http://localhost:8080/techflow/login (API Endpoint: /api/techflow/auth/login/)
+Email: head.marketing@techflow.com
+Password: password123
+
+
+
+Docker
+Email: admin@demo.com
+Password: password123
+Login: http://localhost:8080/demo/login

@@ -169,25 +169,13 @@
         const endDate = document.getElementById('export-end-date').value;
         
         try {
-            let url = '/api/admin/tickets/export';
-            const params = new URLSearchParams();
-            if (startDate) params.append('start_date', startDate);
-            if (endDate) params.append('end_date', endDate);
-            if (params.toString()) url += '?' + params.toString();
-            
-            const token = localStorage.getItem('access_token');
-            const response = await fetch(url, {
-                method: 'GET',
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            });
-            
-            if (!response.ok) {
-                throw new Error('Export failed');
-            }
-            
-            const blob = await response.blob();
+            // Use tenant-aware API helper; backend export endpoint is:
+            // GET /api/{org}/tickets/export/?date_from=YYYY-MM-DD&date_to=YYYY-MM-DD
+            const params = {};
+            if (startDate) params.date_from = startDate;
+            if (endDate) params.date_to = endDate;
+
+            const blob = await api.exportTicketsCSV(params);
             const downloadUrl = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = downloadUrl;
