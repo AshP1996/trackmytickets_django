@@ -370,10 +370,10 @@ class ActivityTimeline {
                 <div class="timeline-content" style="flex: 1; padding-bottom: var(--spacing-sm);">
                     <div class="timeline-header" style="display: flex; justify-content: space-between; align-items: start; margin-bottom: var(--spacing-xs);">
                         <div>
-                            <span class="font-semibold">${activity.user_name || 'System'}</span>
-                            <span class="text-tertiary">${this.formatAction(activity)}</span>
+                            <span class="font-semibold" style="white-space: normal; word-break: break-word;">${activity.user_name || 'System'}</span>
+                            <span class="text-tertiary" style="white-space: normal; word-break: break-word;">${this.formatAction(activity)}</span>
                         </div>
-                        <span class="text-xs text-tertiary">${this.formatTime(activity.created_at)}</span>
+                        <span class="text-xs text-tertiary" style="flex-shrink: 0; white-space: nowrap; margin-left: var(--spacing-sm);">${this.formatTime(activity.created_at)}</span>
                     </div>
                     ${this.formatDetails(activity)}
                 </div>
@@ -402,7 +402,8 @@ class ActivityTimeline {
     }
 
     formatAction(activity) {
-        return activity.action || 'made a change';
+        if (!activity.action) return 'made a change';
+        return activity.action.replace(/_/g, ' ');
     }
 
     formatDetails(activity) {

@@ -374,6 +374,43 @@ class TicketViewSet(viewsets.ModelViewSet):
             updated_ticket.resolution_time_seconds = None
             updated_ticket.save(update_fields=['closed_at', 'resolution_time_seconds'])
 
+    def perform_destroy(self, instance):
+        creator_email = instance.created_by.email if instance.created_by else None
+        deleter_email = self.request.user.email
+        deleter_name = self.request.user.full_name
+        
+        org = None
+        if hasattr(instance, 'organization') and instance.organization:
+            org = instance.organization
+            
+        from apps.notifications.email_service import send_ticket_deleted_email
+        
+        # Notify the creator
+        if creator_email:
+            send_ticket_deleted_email(
+                ticket_id=instance.ticket_id or instance.id,
+                subject=instance.subject,
+                creator_email=creator_email,
+                deleter_name=deleter_name,
+                org=org
+            )
+            
+        # Notify the deleter (if different from creator)
+        if deleter_email and deleter_email != creator_email:
+            send_ticket_deleted_email(
+                ticket_id=instance.ticket_id or instance.id,
+                subject=instance.subject,
+                creator_email=deleter_email,
+                deleter_name=deleter_name,
+                org=org
+            )
+
+        AuditLog.log(
+            self.request, 'delete', 'ticket', instance.id,
+            f'Deleted ticket {instance.ticket_id}: {instance.subject}'
+        )
+        instance.delete()
+
     # ----- Custom Actions -----
 
     @action(detail=False, methods=['get'])

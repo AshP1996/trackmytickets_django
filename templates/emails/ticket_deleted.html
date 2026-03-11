@@ -1,0 +1,12 @@
+{% extends "emails/base_email.html" %}
+
+{% block content %}
+<div class="content">
+    <h2>Ticket Deleted</h2>
+    <p>The ticket <strong>{{ ticket_id }}</strong> - "{{ subject }}" has been deleted by <strong>{{ deleter_name
+            }}</strong>.</p>
+
+    <p>This action is irreversible and all associated comments, attachments, and history for this ticket have been
+        permanently removed.</p>
+</div>
+{% endblock %}

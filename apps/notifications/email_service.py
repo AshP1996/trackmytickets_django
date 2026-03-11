@@ -197,6 +197,29 @@ def send_ticket_created_email(ticket, assignee_email=None):
     )
 
 
+def send_ticket_deleted_email(ticket_id, subject, creator_email, deleter_name, org):
+    """Send email when a ticket is deleted."""
+    if not creator_email:
+        return
+
+    context = {
+        'ticket_id': ticket_id,
+        'subject': subject,
+        'deleter_name': deleter_name,
+        'org_name': org.name if org else '',
+        'subdomain': org.subdomain if org else '',
+    }
+    
+    # Notify just the creator; the deleter already knows they deleted it
+    # But as per user request "who created the ticket and who deleted the ticket send notification"
+    _send_async(
+        f'🗑️ Ticket Deleted: {ticket_id} — {subject}',
+        'emails/ticket_deleted.html',
+        context,
+        [creator_email],
+    )
+
+
 def send_ticket_assigned_email(ticket, assignee, actor=None, action='assigned'):
     """Send email when a ticket is assigned/reassigned."""
     if not assignee or not hasattr(assignee, 'email'):
