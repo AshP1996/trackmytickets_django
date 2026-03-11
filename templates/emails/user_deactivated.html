@@ -1,0 +1,16 @@
+{% extends "emails/base_email.html" %}
+{% block title %}Account Deactivated - TrackMyTicket{% endblock %}
+{% block header_subtitle %}Account Notification{% endblock %}
+
+{% block content %}
+<h2>🚫 Account Deactivated</h2>
+<p>Hello {{ user_name }}, your account on <strong>{{ org_name }}</strong> has been deactivated by an administrator.</p>
+
+<p>You will no longer be able to log in to the platform. If you believe this is an error, please contact your
+    organization administrator.</p>
+
+<div class="info-box">
+    <div class="label">Organization</div>
+    <div class="value">{{ org_name }}</div>
+</div>
+{% endblock %}

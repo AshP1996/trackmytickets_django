@@ -1,0 +1,50 @@
+{% extends "emails/base_email.html" %}
+{% block title %}Organization Created - TrackMyTicket{% endblock %}
+{% block header_subtitle %}New Organization Created{% endblock %}
+
+{% block content %}
+<h2>🏢 Organization Created Successfully!</h2>
+<p>A new organization has been set up on TrackMyTicket. Here are the details:</p>
+
+<div class="info-box">
+    <div class="label">Organization</div>
+    <div class="value">{{ org_name }}</div>
+</div>
+
+<table style="margin: 16px 0;">
+    <tr class="info-row">
+        <td class="label">Subdomain</td>
+        <td class="value">{{ subdomain }}</td>
+    </tr>
+    <tr class="info-row">
+        <td class="label">Plan</td>
+        <td class="value">{{ plan|default:"Free" }}</td>
+    </tr>
+    <tr class="info-row">
+        <td class="label">Admin Name</td>
+        <td class="value">{{ admin_name }}</td>
+    </tr>
+    <tr class="info-row">
+        <td class="label">Admin Email</td>
+        <td class="value">{{ admin_email }}</td>
+    </tr>
+</table>
+
+<hr class="divider">
+
+<h2>🔑 Login Credentials</h2>
+<p>Use these credentials to log in to the admin panel:</p>
+
+<div class="credential-box">
+    <div class="cred-label">Login URL</div>
+    <div class="cred-value">{{ site_url }}/{{ subdomain }}/login</div>
+    <div class="cred-label">Email</div>
+    <div class="cred-value">{{ admin_email }}</div>
+    <div class="cred-label">Password</div>
+    <div class="cred-value">{{ admin_password }}</div>
+</div>
+
+<p style="color: #e53e3e; font-size: 13px;">⚠️ Please change your password after your first login for security.</p>
+
+<a href="{{ site_url }}/{{ subdomain }}/login" class="btn">Login to Dashboard →</a>
+{% endblock %}

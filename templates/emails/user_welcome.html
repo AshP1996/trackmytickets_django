@@ -1,0 +1,39 @@
+{% extends "emails/base_email.html" %}
+{% block title %}Welcome to TrackMyTicket{% endblock %}
+{% block header_subtitle %}Welcome Aboard!{% endblock %}
+
+{% block content %}
+<h2>👋 Welcome, {{ user_name }}!</h2>
+<p>Your account has been created on <strong>{{ org_name }}</strong>. You can now log in and start using TrackMyTicket.
+</p>
+
+<table style="margin: 16px 0;">
+    <tr class="info-row">
+        <td class="label">Organization</td>
+        <td class="value">{{ org_name }}</td>
+    </tr>
+    <tr class="info-row">
+        <td class="label">Role</td>
+        <td class="value">{{ role|title }}</td>
+    </tr>
+    {% if department %}<tr class="info-row">
+        <td class="label">Department</td>
+        <td class="value">{{ department }}</td>
+    </tr>{% endif %}
+</table>
+
+<h2>🔑 Your Login Credentials</h2>
+
+<div class="credential-box">
+    <div class="cred-label">Login URL</div>
+    <div class="cred-value">{{ site_url }}/{{ subdomain }}/login</div>
+    <div class="cred-label">Email</div>
+    <div class="cred-value">{{ user_email }}</div>
+    <div class="cred-label">Password</div>
+    <div class="cred-value">{{ password }}</div>
+</div>
+
+<p style="color: #e53e3e; font-size: 13px;">⚠️ Please change your password after your first login.</p>
+
+<a href="{{ site_url }}/{{ subdomain }}/login" class="btn">Login Now →</a>
+{% endblock %}

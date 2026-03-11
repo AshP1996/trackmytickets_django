@@ -990,6 +990,167 @@
                 opacity: 0;
             }
         }
+
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(4px);
+            z-index: 2000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal-container {
+            background: var(--bg-white);
+            border-radius: 1.5rem;
+            width: 100%;
+            max-width: 500px;
+            padding: 2.5rem;
+            position: relative;
+            transform: translateY(20px) scale(0.95);
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            box-shadow: var(--shadow-2xl);
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-overlay.active .modal-container {
+            transform: translateY(0) scale(1);
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 1.5rem;
+            right: 1.5rem;
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            color: var(--text-light);
+            cursor: pointer;
+            transition: color 0.2s ease;
+        }
+
+        .modal-close:hover {
+            color: var(--accent-color);
+        }
+
+        .modal-title {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: var(--text-dark);
+            margin-bottom: 0.5rem;
+            text-align: center;
+        }
+
+        .modal-subtitle {
+            text-align: center;
+            color: var(--text-light);
+            margin-bottom: 2rem;
+            font-size: 0.95rem;
+        }
+
+        /* Success Animation */
+        .success-checkmark {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 1.5rem;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--success-color);
+            color: white;
+            font-size: 2.5rem;
+            animation: scaleIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        @keyframes scaleIn {
+            from {
+                transform: scale(0);
+                opacity: 0;
+            }
+
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        .credentials-box {
+            background: var(--bg-light);
+            border: 1px solid var(--border-color);
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+            text-align: left;
+        }
+
+        .credential-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.75rem;
+            font-size: 0.95rem;
+        }
+
+        .credential-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .credential-label {
+            color: var(--text-light);
+            font-weight: 500;
+        }
+
+        .credential-value {
+            color: var(--text-dark);
+            font-weight: 600;
+            font-family: monospace;
+            background: var(--bg-white);
+            padding: 0.2rem 0.6rem;
+            border-radius: 0.25rem;
+            border: 1px solid var(--border-color);
+        }
+
+        /* Loading Spinner */
+        .btn-loading {
+            position: relative;
+            color: transparent !important;
+            pointer-events: none;
+        }
+
+        .btn-loading::after {
+            content: '';
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 0.8s linear infinite;
+            transform: translate(-50%, -50%);
+        }
+
+        @keyframes spin {
+            to {
+                transform: translate(-50%, -50%) rotate(360deg);
+            }
+        }
     </style>
 </head>
 
@@ -1005,10 +1166,12 @@
             </a>
             <div class="nav-links">
                 <a href="#features">Features</a>
-                <a href="#benefits">Benefits</a>
-                <a href="#testimonials">Reviews</a>
+                <a href="#how-it-works">How it Works</a>
+                <a href="#testimonials">Testimonials</a>
                 <a href="#faq">FAQ</a>
-                <a href="#enquiry">Contact</a>
+                <a href="#" class="btn-login" onclick="openRegisterModal(event)"
+                    style="margin-right: -1rem; background: var(--gradient-hero);">Add Organization</a>
+                <a href="/platform/login" class="btn-login">Login</a>
             </div>
         </div>
     </nav>
@@ -1663,6 +1826,95 @@
         </div>
     </footer>
 
+    <!-- Register Organization Modal -->
+    <div class="modal-overlay" id="registerModal" tabindex="-1">
+        <div class="modal-container">
+            <button class="modal-close" onclick="closeRegisterModal()">&times;</button>
+
+            <div id="registerFormContainer">
+                <h2 class="modal-title">Get Started Free</h2>
+                <p class="modal-subtitle">Set up your organization's helpdesk in seconds.</p>
+
+                <form id="registerForm">
+                    <div class="form-group">
+                        <label for="orgName">Organization Name *</label>
+                        <input type="text" id="orgName" name="name" placeholder="e.g. Acme Corp" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="orgSubdomain">Subdomain *</label>
+                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                            <input type="text" id="orgSubdomain" name="subdomain" placeholder="acme"
+                                style="margin-bottom:0;" required pattern="[a-z0-9-]+"
+                                title="Only lowercase letters, numbers, and hyphens">
+                            <span style="color:var(--text-light); white-space:nowrap;">.trackmytickets.in</span>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="orgEmail">Billing Email *</label>
+                        <input type="email" id="orgEmail" name="email" placeholder="billing@acmecorp.com" required>
+                    </div>
+
+                    <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 1.5rem 0;">
+
+                    <div class="form-group">
+                        <label for="adminName">Admin Full Name *</label>
+                        <input type="text" id="adminName" name="admin_name" placeholder="John Doe" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="adminEmail">Admin Email *</label>
+                        <input type="email" id="adminEmail" name="admin_email" placeholder="john@acmecorp.com" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="adminPassword">Admin Password *</label>
+                        <input type="password" id="adminPassword" name="admin_password" placeholder="Min 8 characters"
+                            minlength="8" required>
+                    </div>
+
+                    <div id="registerError" class="form-message error" style="display:none; margin-bottom:1rem;"></div>
+
+                    <button type="submit" class="form-submit" id="registerSubmitBtn">
+                        Create Organization
+                    </button>
+                    <p style="text-align: center; margin-top: 1rem; font-size: 0.85rem; color: var(--text-light);">No
+                        credit card required.</p>
+                </form>
+            </div>
+
+            <div id="registerSuccessContainer" style="display: none; text-align: center;">
+                <div class="success-checkmark"><i class="fas fa-check"></i></div>
+                <h2 class="modal-title">Organization Created!</h2>
+                <p class="modal-subtitle">Your tenant environment is fully provisioned and ready to go.</p>
+
+                <div class="credentials-box">
+                    <div class="credential-row">
+                        <span class="credential-label">Subdomain</span>
+                        <span class="credential-value" id="successSubdomain"></span>
+                    </div>
+                    <div class="credential-row">
+                        <span class="credential-label">Admin Email</span>
+                        <span class="credential-value" id="successEmail"></span>
+                    </div>
+                    <div class="credential-row">
+                        <span class="credential-label">Password</span>
+                        <span class="credential-value" id="successPassword"></span>
+                    </div>
+                </div>
+
+                <p style="margin-bottom: 1.5rem; color: var(--text-light); font-size: 0.9rem;">
+                    We've also sent these details to <strong id="successEmailRef"></strong>.
+                </p>
+
+                <a href="#" id="successDashboardLink" class="btn-primary" style="width: 100%; justify-content: center;">
+                    Go to Your Dashboard <i class="fas fa-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+
     <script>
         // Navbar scroll effect
         window.addEventListener('scroll', function () {
@@ -1729,55 +1981,147 @@
         const formMessage = document.getElementById('form-message');
         const submitBtn = document.getElementById('submit-btn');
 
-        enquiryForm.addEventListener('submit', async function (e) {
-            e.preventDefault();
+        if (enquiryForm) {
+            enquiryForm.addEventListener('submit', async function (e) {
+                e.preventDefault();
 
-            // Disable submit button
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
+                // Disable submit button
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
 
-            // Get form data
-            const formData = {
-                name: document.getElementById('name').value.trim(),
-                email: document.getElementById('email').value.trim(),
-                company: document.getElementById('company').value.trim(),
-                phone: document.getElementById('phone').value.trim(),
-                message: document.getElementById('message').value.trim()
-            };
+                // Get form data
+                const formData = {
+                    name: document.getElementById('name').value.trim(),
+                    email: document.getElementById('email').value.trim(),
+                    company: document.getElementById('company').value.trim(),
+                    phone: document.getElementById('phone').value.trim(),
+                    message: document.getElementById('message').value.trim()
+                };
 
-            try {
-                const response = await fetch('/api/platform/public/enquiries', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(formData)
-                });
+                try {
+                    const response = await fetch('/api/platform/public/enquiries', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(formData)
+                    });
 
-                const data = await response.json();
+                    const data = await response.json();
 
-                if (response.ok) {
-                    // Success
-                    formMessage.className = 'form-message success';
-                    formMessage.innerHTML = '<i class="fas fa-check-circle"></i> ' + (data.message || 'Thank you for your enquiry! We will get back to you soon.');
-                    enquiryForm.reset();
+                    if (response.ok) {
+                        // Success
+                        formMessage.className = 'form-message success';
+                        formMessage.innerHTML = '<i class="fas fa-check-circle"></i> ' + (data.message || 'Thank you for your enquiry! We will get back to you soon.');
+                        enquiryForm.reset();
 
-                    // Scroll to message
-                    formMessage.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-                } else {
-                    // Error
+                        // Scroll to message
+                        formMessage.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    } else {
+                        // Error
+                        formMessage.className = 'form-message error';
+                        formMessage.innerHTML = '<i class="fas fa-exclamation-circle"></i> ' + (data.error || 'Failed to send message. Please try again.');
+                    }
+                } catch (error) {
                     formMessage.className = 'form-message error';
-                    formMessage.innerHTML = '<i class="fas fa-exclamation-circle"></i> ' + (data.error || 'Failed to send message. Please try again.');
+                    formMessage.innerHTML = '<i class="fas fa-exclamation-circle"></i> Network error. Please check your connection and try again.';
+                } finally {
+                    // Re-enable submit button
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Send Message';
                 }
-            } catch (error) {
-                formMessage.className = 'form-message error';
-                formMessage.innerHTML = '<i class="fas fa-exclamation-circle"></i> Network error. Please check your connection and try again.';
-            } finally {
-                // Re-enable submit button
-                submitBtn.disabled = false;
-                submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Send Message';
+            });
+        }
+
+        // --- Registration Modal Logic ---
+        const registerModal = document.getElementById('registerModal');
+        const registerForm = document.getElementById('registerForm');
+        const registerSubmitBtn = document.getElementById('registerSubmitBtn');
+        const registerError = document.getElementById('registerError');
+
+        function openRegisterModal(e) {
+            if (e) e.preventDefault();
+            registerModal.classList.add('active');
+            document.body.style.overflow = 'hidden'; // Stop background scrolling
+        }
+
+        function closeRegisterModal() {
+            registerModal.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        // Close when clicking outside
+        registerModal.addEventListener('click', function (e) {
+            if (e.target === registerModal) {
+                closeRegisterModal();
             }
         });
+
+        // Auto-fill subdomain based on org name
+        const orgNameInput = document.getElementById('orgName');
+        const subdomainInput = document.getElementById('orgSubdomain');
+        orgNameInput.addEventListener('input', function () {
+            if (!subdomainInput.dataset.manualEdit) {
+                let generated = this.value.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
+                subdomainInput.value = generated;
+            }
+        });
+        subdomainInput.addEventListener('input', function () {
+            this.dataset.manualEdit = 'true';
+        });
+
+        if (registerForm) {
+            registerForm.addEventListener('submit', async function (e) {
+                e.preventDefault();
+                registerError.style.display = 'none';
+
+                // Set loading state
+                const originalText = registerSubmitBtn.innerHTML;
+                registerSubmitBtn.classList.add('btn-loading');
+
+                const payload = {
+                    name: orgNameInput.value.trim(),
+                    subdomain: subdomainInput.value.trim().toLowerCase(),
+                    email: document.getElementById('orgEmail').value.trim(),
+                    admin_name: document.getElementById('adminName').value.trim(),
+                    admin_email: document.getElementById('adminEmail').value.trim(),
+                    admin_password: document.getElementById('adminPassword').value,
+                    plan: 'free'
+                };
+
+                try {
+                    const response = await fetch('/api/platform/register', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    const data = await response.json();
+
+                    if (response.ok && data.admin_user) {
+                        // Success flow
+                        document.getElementById('registerFormContainer').style.display = 'none';
+                        document.getElementById('registerSuccessContainer').style.display = 'block';
+
+                        document.getElementById('successSubdomain').textContent = data.subdomain;
+                        document.getElementById('successEmail').textContent = data.admin_user.email;
+                        document.getElementById('successPassword').textContent = data.admin_user.password;
+                        document.getElementById('successEmailRef').textContent = data.admin_user.email;
+                        document.getElementById('successDashboardLink').href = data.access_urls.login;
+
+                    } else {
+                        registerError.innerHTML = '<i class="fas fa-exclamation-circle"></i> ' + (data.error || 'Failed to create organization.');
+                        registerError.style.display = 'block';
+                    }
+                } catch (error) {
+                    registerError.innerHTML = '<i class="fas fa-exclamation-circle"></i> Network error. Please try again.';
+                    registerError.style.display = 'block';
+                } finally {
+                    registerSubmitBtn.classList.remove('btn-loading');
+                    registerSubmitBtn.innerHTML = originalText;
+                }
+            });
+        }
     </script>
     <script>
         // Typewriter Effect

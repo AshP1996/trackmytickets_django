@@ -1,0 +1,30 @@
+{% extends "emails/base_email.html" %}
+{% block title %}Ticket Assigned - TrackMyTicket{% endblock %}
+{% block header_subtitle %}Ticket Assignment{% endblock %}
+
+{% block content %}
+<h2>👤 Ticket Assigned to You</h2>
+<p>You have been {{ action|default:"assigned" }} to the following ticket:</p>
+
+<div class="info-box">
+    <div class="label">Ticket</div>
+    <div class="value">{{ ticket_id }} — {{ subject }}</div>
+</div>
+
+<table style="margin: 16px 0;">
+    <tr class="info-row">
+        <td class="label">Priority</td>
+        <td class="value"><span class="badge badge-{{ priority }}">{{ priority|upper }}</span></td>
+    </tr>
+    <tr class="info-row">
+        <td class="label">Status</td>
+        <td class="value"><span class="badge badge-{{ status }}">{{ status|upper }}</span></td>
+    </tr>
+    <tr class="info-row">
+        <td class="label">Assigned By</td>
+        <td class="value">{{ actor_name|default:"System" }}</td>
+    </tr>
+</table>
+
+<a href="{{ site_url }}/{{ subdomain }}/tickets/{{ ticket_id }}" class="btn">View Ticket →</a>
+{% endblock %}

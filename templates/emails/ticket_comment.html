@@ -1,0 +1,20 @@
+{% extends "emails/base_email.html" %}
+{% block title %}New Comment - TrackMyTicket{% endblock %}
+{% block header_subtitle %}New Comment{% endblock %}
+
+{% block content %}
+<h2>💬 New Comment on Ticket</h2>
+<p><strong>{{ actor_name|default:"Someone" }}</strong> added a comment on ticket <strong>{{ ticket_id }}</strong>.</p>
+
+<div class="info-box">
+    <div class="label">{{ ticket_id }} — {{ subject }}</div>
+    <div class="value" style="margin-top: 8px; font-weight: normal; font-size: 14px; white-space: pre-wrap;">{{
+        comment_text|truncatewords:80 }}</div>
+</div>
+
+{% if is_internal %}
+<p style="color: #d69e2e; font-size: 13px;">🔒 This is an internal comment (visible to team only).</p>
+{% endif %}
+
+<a href="{{ site_url }}/{{ subdomain }}/tickets/{{ ticket_id }}" class="btn">View Ticket →</a>
+{% endblock %}

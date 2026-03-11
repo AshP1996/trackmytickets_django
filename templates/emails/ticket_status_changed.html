@@ -1,0 +1,34 @@
+{% extends "emails/base_email.html" %}
+{% block title %}Ticket Status Changed - TrackMyTicket{% endblock %}
+{% block header_subtitle %}Status Update{% endblock %}
+
+{% block content %}
+<h2>🔄 Ticket Status Changed</h2>
+<p>The status of ticket <strong>{{ ticket_id }}</strong> has been updated.</p>
+
+<div class="info-box">
+    <div class="label">{{ ticket_id }} — {{ subject }}</div>
+    <div class="value" style="margin-top: 8px;">
+        <span class="badge badge-{{ old_status }}">{{ old_status_display }}</span>
+        &nbsp;→&nbsp;
+        <span class="badge badge-{{ new_status }}">{{ new_status_display }}</span>
+    </div>
+</div>
+
+<table style="margin: 16px 0;">
+    <tr class="info-row">
+        <td class="label">Changed By</td>
+        <td class="value">{{ actor_name|default:"System" }}</td>
+    </tr>
+    <tr class="info-row">
+        <td class="label">Priority</td>
+        <td class="value"><span class="badge badge-{{ priority }}">{{ priority|upper }}</span></td>
+    </tr>
+    {% if assigned_to_name %}<tr class="info-row">
+        <td class="label">Assigned To</td>
+        <td class="value">{{ assigned_to_name }}</td>
+    </tr>{% endif %}
+</table>
+
+<a href="{{ site_url }}/{{ subdomain }}/tickets/{{ ticket_id }}" class="btn">View Ticket →</a>
+{% endblock %}

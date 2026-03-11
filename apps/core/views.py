@@ -202,7 +202,13 @@ class FeedbackViewSet(viewsets.ModelViewSet):
         return Feedback.objects.filter(user=self.request.user)
     
     def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
+        feedback = serializer.save(user=self.request.user)
+        try:
+            from apps.notifications.email_service import send_feedback_email
+            if hasattr(self.request, 'organization'):
+                send_feedback_email(feedback, self.request.organization)
+        except Exception as e:
+            logger.warning(f'Failed to send feedback email: {e}')
 
 class EnquiryViewSet(viewsets.ModelViewSet):
     """Enquiries are only accessible by authenticated users (org admins)."""

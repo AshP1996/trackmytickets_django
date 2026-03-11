@@ -221,6 +221,14 @@ class UserListView(generics.ListCreateAPIView):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
+        # ✉️ Send welcome email with login credentials
+        try:
+            from apps.notifications.email_service import send_user_welcome_email
+            password = serializer.validated_data.get('password', '')
+            send_user_welcome_email(user, password, org)
+        except Exception as e:
+            logger.warning(f'Failed to send welcome email: {e}')
+
         output_serializer = UserSerializer(user)
         logger.info('UserListView.create: user created id=%s', user.id)
         return Response(output_serializer.data, status=status.HTTP_201_CREATED)
@@ -447,7 +455,13 @@ class ForgotPasswordView(views.APIView):
             }, status=200)
         
         otp = create_reset_otp(user)
-        email_sent = send_otp_email(user.email, otp, user_type='user')
+        try:
+            from apps.notifications.email_service import send_forgot_password_otp_email
+            send_forgot_password_otp_email(user.email, otp, user_name=user.full_name)
+            email_sent = True
+        except Exception as e:
+            logger.error(f"Failed to send HTML OTP email to {email}: {e}")
+            email_sent = False
         
         if email_sent:
             return Response({

@@ -1,0 +1,17 @@
+{% extends "emails/base_email.html" %}
+{% block title %}Account Updated - TrackMyTicket{% endblock %}
+{% block header_subtitle %}Account Update{% endblock %}
+
+{% block content %}
+<h2>🔄 Account Updated</h2>
+<p>Hello {{ user_name }}, your account on <strong>{{ org_name }}</strong> has been updated.</p>
+
+<div class="info-box">
+    <div class="label">Changes Made</div>
+    <div class="value">{{ changes }}</div>
+</div>
+
+<p>If you did not expect this change, please contact your administrator.</p>
+
+<a href="{{ site_url }}/{{ subdomain }}/login" class="btn">Go to Dashboard →</a>
+{% endblock %}

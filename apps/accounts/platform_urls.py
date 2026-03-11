@@ -2,6 +2,7 @@ from django.urls import path
 from .platform_views import (
     PlatformLoginView, PlatformMeView,
     PlatformOrganizationsView, PlatformOrganizationDetailView, PlatformOrganizationSuspendView,
+    PublicOrganizationRegisterView,
     PlatformStatsView,
     PlatformEnquiriesView, PlatformEnquiryReadView, PlatformEnquiryDetailView,
     PublicEnquiryView,
@@ -28,6 +29,7 @@ urlpatterns = [
 
     # Public
     path('public/enquiries', PublicEnquiryView.as_view(), name='platform_api_public_enquiry'),
+    path('register', PublicOrganizationRegisterView.as_view(), name='platform_api_public_register'),
 
     # Password reset
     path('forgot-password', PlatformForgotPasswordView.as_view(), name='platform_api_forgot_password'),

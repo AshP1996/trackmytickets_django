@@ -1,0 +1,31 @@
+{% extends "emails/base_email.html" %}
+{% block title %}New Feedback - TrackMyTicket{% endblock %}
+{% block header_subtitle %}Feedback Received{% endblock %}
+
+{% block content %}
+<h2>📝 New Feedback Received</h2>
+<p>A user has submitted feedback on your organization's platform.</p>
+
+<table style="margin: 16px 0;">
+    <tr class="info-row">
+        <td class="label">From</td>
+        <td class="value">{{ user_name }} ({{ user_email }})</td>
+    </tr>
+    <tr class="info-row">
+        <td class="label">Rating</td>
+        <td class="value">{% for i in "12345" %}{% if forloop.counter <= rating %}⭐{% else %}☆{% endif %}{% endfor %}
+                ({{ rating }}/5)</td>
+    </tr>
+    <tr class="info-row">
+        <td class="label">Submitted</td>
+        <td class="value">{{ submitted_at }}</td>
+    </tr>
+</table>
+
+<div class="info-box">
+    <div class="label">Feedback</div>
+    <div class="value" style="font-weight: normal; font-size: 14px; white-space: pre-wrap;">{{ feedback_text }}</div>
+</div>
+
+<a href="{{ site_url }}/{{ subdomain }}/admin/dashboard" class="btn">View Dashboard →</a>
+{% endblock %}

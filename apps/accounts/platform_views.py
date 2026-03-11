@@ -215,6 +215,16 @@ class PlatformOrganizationsView(views.APIView):
         finally:
             reset_current_db_alias()
         
+        # ✉️ Send org creation email with credentials
+        try:
+            from apps.notifications.email_service import send_org_created_email
+            superadmin_email = getattr(request.user, 'email', None)
+            send_org_created_email(
+                org, admin_email, admin_name, admin_password,
+                notify_superadmin_email=superadmin_email
+            )
+        except Exception as e:
+            logger.warning(f'Failed to send org creation email: {e}')
         
         return Response({
             'id': org.id,
@@ -230,6 +240,91 @@ class PlatformOrganizationsView(views.APIView):
                 'dashboard': f'/{org.subdomain}/dashboard',
             },
             'message': 'Organization created successfully'
+        }, status=201)
+
+class PublicOrganizationRegisterView(views.APIView):
+    """
+    Public endpoint for unauthenticated users to create an organization.
+    Similar to PlatformOrganizationsView.post but without IsPlatformAdmin requirement.
+    """
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request):
+        name = request.data.get('name')
+        subdomain = request.data.get('subdomain')
+        email = request.data.get('email')
+        admin_email = request.data.get('admin_email')
+        admin_name = request.data.get('admin_name')
+        admin_password = request.data.get('admin_password')
+        plan = request.data.get('plan', 'free')
+        
+        if not all([name, subdomain, email, admin_email, admin_name, admin_password]):
+            return Response({'error': 'All fields are required'}, status=400)
+        
+        # Check if subdomain already exists
+        if Organization.objects.filter(subdomain=subdomain).exists():
+            return Response({'error': 'Subdomain already exists'}, status=400)
+        
+        # Check if email is already used for another organization globally
+        if Organization.objects.filter(email=email).exists():
+            return Response({'error': 'Organization with this email already exists'}, status=400)
+            
+        # Create organization
+        org = Organization.objects.create(
+            name=name,
+            subdomain=subdomain,
+            email=email,
+            plan=plan,
+            is_active=True
+        )
+        
+        # New org has no tenant DB yet; user is created in default DB with organization_id.
+        from apps.core.routers import set_current_db_alias, reset_current_db_alias
+        set_current_db_alias('default')
+        try:
+            from apps.accounts.services import UserProvisionService
+            admin_user, global_user = UserProvisionService.create_user(
+                email=admin_email,
+                password=admin_password,
+                organization=org,
+                full_name=admin_name,
+                role='admin',
+                is_active=True,
+                organization_id=org.id,
+            )
+        except Exception as e:
+            logger.error(f'Failed to create admin user during public registration: {e}')
+            # Delete the org if user creation fails to prevent orphaned orgs
+            org.delete()
+            return Response({'error': 'Failed to create admin user. Please ensure the email is not already in use globally.'}, status=400)
+        finally:
+            reset_current_db_alias()
+        
+        # ✉️ Send org creation email with credentials
+        try:
+            from apps.notifications.email_service import send_org_created_email
+            # No superadmin to notify for public registrations, just send to the new admin
+            send_org_created_email(
+                org, admin_email, admin_name, admin_password,
+                notify_superadmin_email=None
+            )
+        except Exception as e:
+            logger.warning(f'Failed to send org creation email during public registration: {e}')
+        
+        return Response({
+            'id': org.id,
+            'name': org.name,
+            'subdomain': org.subdomain,
+            'admin_user': {
+                'email': admin_user.email,
+                'full_name': admin_user.full_name,
+                'password': admin_password,  # Only returned on creation so UI can show it
+            },
+            'access_urls': {
+                'login': f'/{org.subdomain}/login',
+                'dashboard': f'/{org.subdomain}/dashboard',
+            },
+            'message': 'Organization registered successfully'
         }, status=201)
 
 

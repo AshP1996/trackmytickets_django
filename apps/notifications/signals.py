@@ -44,6 +44,13 @@ def create_notification_from_history(sender, instance, created, **kwargs):
     # Collect users to notify (watchers + specific targets)
     notified_users = set()
 
+    # Import email service (lazy to avoid circular imports)
+    from apps.notifications.email_service import (
+        send_ticket_assigned_email,
+        send_ticket_status_changed_email,
+        send_ticket_comment_email,
+    )
+
     # 1. Assignment Notification
     if action in ['assigned', 'reassigned'] and ticket.assigned_to:
         if ticket.assigned_to != actor:
@@ -53,8 +60,17 @@ def create_notification_from_history(sender, instance, created, **kwargs):
             )
             notified_users.add(ticket.assigned_to)
 
+            # ✉️ Send assignment email
+            send_ticket_assigned_email(
+                ticket, ticket.assigned_to, actor=actor,
+                action='assigned' if action == 'assigned' else 'reassigned'
+            )
+
     # 2. Comment Notification
     if action == 'added_comment':
+        comment_text = instance.new_value or ''
+        email_recipients = []
+
         # Notify assignee if they didn't write the comment
         if ticket.assigned_to and ticket.assigned_to != actor:
             _create_notification(
@@ -62,6 +78,7 @@ def create_notification_from_history(sender, instance, created, **kwargs):
                 f"New comment on ticket {ticket.ticket_id} by {actor.full_name if actor else 'System'}"
             )
             notified_users.add(ticket.assigned_to)
+            email_recipients.append(ticket.assigned_to.email)
 
         # Notify ticket creator
         from apps.accounts.models import User
@@ -73,13 +90,25 @@ def create_notification_from_history(sender, instance, created, **kwargs):
                     f"New comment on ticket {ticket.ticket_id}"
                 )
                 notified_users.add(creator)
+                if creator.email not in email_recipients:
+                    email_recipients.append(creator.email)
         except Exception:
             pass
+
+        # ✉️ Send comment email
+        if email_recipients:
+            is_internal = 'internal' in (instance.new_value or '').lower() if instance.new_value else False
+            send_ticket_comment_email(
+                ticket, comment_text, actor=actor,
+                is_internal=is_internal, notify_emails=email_recipients
+            )
 
     # 3. Status Change Notification
     if action == 'status_changed':
         new_status = instance.new_value or ''
+        old_status = instance.old_value or ''
         status_display = new_status.replace('_', ' ').title()
+        email_recipients = []
 
         if ticket.assigned_to and ticket.assigned_to != actor:
             _create_notification(
@@ -87,6 +116,7 @@ def create_notification_from_history(sender, instance, created, **kwargs):
                 f"Ticket {ticket.ticket_id} status changed to {status_display}"
             )
             notified_users.add(ticket.assigned_to)
+            email_recipients.append(ticket.assigned_to.email)
 
         # Notify ticket creator
         from apps.accounts.models import User
@@ -98,8 +128,17 @@ def create_notification_from_history(sender, instance, created, **kwargs):
                     f"Ticket {ticket.ticket_id} is now {status_display}"
                 )
                 notified_users.add(creator)
+                if creator.email not in email_recipients:
+                    email_recipients.append(creator.email)
         except Exception:
             pass
+
+        # ✉️ Send status change email
+        if email_recipients:
+            send_ticket_status_changed_email(
+                ticket, old_status, new_status, actor=actor,
+                notify_emails=email_recipients
+            )
 
     # 4. Priority Change Notification
     if action == 'priority_changed':
