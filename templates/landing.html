@@ -267,7 +267,7 @@
         .btn-login:hover {
             transform: translateY(-2px);
             box-shadow: var(--shadow-lg);
-            color: white;
+            color: white !important;
         }
 
         /* Hero Section */
@@ -275,7 +275,7 @@
             min-height: 100vh;
             display: flex;
             align-items: center;
-            background: var(--gradient-hero);
+            background: url('{% static "images/hero-bg.png" %}') center/cover no-repeat;
             position: relative;
             overflow: hidden;
             padding-top: 80px;
@@ -288,8 +288,8 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background: url('data:image/svg+xml,<svg width="100" height="100" xmlns="http://www.w3.org/2000/svg"><defs><pattern id="grid" width="100" height="100" patternUnits="userSpaceOnUse"><path d="M 100 0 L 0 0 0 100" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="1"/></pattern></defs><rect width="100" height="100" fill="url(%23grid)"/></svg>');
-            opacity: 0.3;
+            background: linear-gradient(135deg, rgba(15, 23, 42, 0.85) 0%, rgba(79, 70, 229, 0.7) 100%);
+            z-index: 0;
         }
 
         .hero-content {
@@ -391,6 +391,14 @@
             gap: 0.5rem;
             font-size: 0.9rem;
             opacity: 0.9;
+            transition: all 0.3s ease;
+            cursor: default;
+        }
+
+        .trust-badge:hover {
+            transform: scale(1.1);
+            opacity: 1;
+            color: white;
         }
 
         .trust-badge i {
@@ -1239,65 +1247,69 @@
                 A complete B2B ticketing platform designed for scalability, security, and performance
             </p>
             <div class="features-grid">
-                <div class="feature-card">
+                <div class="feature-card fade-in-section">
+                    <div class="feature-icon">
+                        <i class="fas fa-smile"></i>
+                    </div>
+                    <h3>User Friendly UI</h3>
+                    <p>Clean, intuitive interfaces designed for human workflows. Minimize the learning curve and
+                        maximize productivity from day one.</p>
+                </div>
+                <div class="feature-card fade-in-section">
+                    <div class="feature-icon">
+                        <i class="fas fa-cubes"></i>
+                    </div>
+                    <h3>Simple Architecture</h3>
+                    <p>Built with robust simplicity in mind. Our modern stack ensures highly available deployment and
+                        effortless scale.</p>
+                </div>
+                <div class="feature-card fade-in-section">
                     <div class="feature-icon">
                         <i class="fas fa-building"></i>
                     </div>
-                    <h3>Secure Multi-Tenancy</h3>
-                    <p>
-                        Enterprise-grade data isolation. Create separate, secure instances for different
-                        organizations or departments with our robust multi-tenant architecture.
-                    </p>
+                    <h3>Multi-Tenant Architecture</h3>
+                    <p>Enterprise-grade data isolation. Create separate, secure instances for distinct organizations
+                        from a single cloud platform.</p>
                 </div>
-                <div class="feature-card">
+                <div class="feature-card fade-in-section">
+                    <div class="feature-icon">
+                        <i class="fas fa-database"></i>
+                    </div>
+                    <h3>Separate Databases</h3>
+                    <p>Maximum security and performance with dedicated database routing. Complete tenant separation with
+                        zero data leakage.</p>
+                </div>
+                <div class="feature-card fade-in-section">
                     <div class="feature-icon">
                         <i class="fas fa-user-shield"></i>
                     </div>
                     <h3>Role-Based Access Control</h3>
-                    <p>
-                        Granular permissions for Admins, Managers, Agents, and Customers. Ensure the right people
-                        have the right access to your internal ticket management system.
-                    </p>
+                    <p>Granular permissions for Admins, Managers, and Agents. Ensure precisely the right people have the
+                        right access securely.</p>
                 </div>
-                <div class="feature-card">
+                <div class="feature-card fade-in-section">
                     <div class="feature-icon">
                         <i class="fas fa-clock"></i>
                     </div>
                     <h3>SLA & Lifecycle Tracking</h3>
-                    <p>
-                        Define clear service level agreements (SLAs) and track ticket lifecycles from creation to
-                        resolution. Never miss a deadline with automated alerts.
-                    </p>
+                    <p>Define clear service level agreements (SLAs) and orchestrate entire ticket lifecycles from
+                        creation to resolution.</p>
                 </div>
-                <div class="feature-card">
-                    <div class="feature-icon">
-                        <i class="fas fa-network-wired"></i>
-                    </div>
-                    <h3>Advanced Workflows</h3>
-                    <p>
-                        Design custom workflows for IT support, HR requests, or maintenance tickets.
-                        Route issues to the right department automatically.
-                    </p>
-                </div>
-                <div class="feature-card">
+                <div class="feature-card fade-in-section">
                     <div class="feature-icon">
                         <i class="fas fa-chart-line"></i>
                     </div>
                     <h3>Real-Time Analytics</h3>
-                    <p>
-                        Gain actionable insights into support performance. Monitor resolution times, agent workload,
-                        and customer satisfaction with built-in dashboards.
-                    </p>
+                    <p>Actionable insights driven by live data points. Monitor agent workloads, resolution times, and
+                        team performance.</p>
                 </div>
-                <div class="feature-card">
+                <div class="feature-card fade-in-section">
                     <div class="feature-icon">
-                        <i class="fas fa-database"></i>
+                        <i class="fas fa-eye-slash"></i>
                     </div>
-                    <h3>External Data Integration</h3>
-                    <p>
-                        Connect your existing databases (SQL, Oracle) to create data-driven tickets.
-                        Seamlessly integrate with your current IT infrastructure.
-                    </p>
+                    <h3>Distraction Free</h3>
+                    <p>Focused workspaces stripped of clutter, allowing your workforce to navigate and resolve core
+                        issues rapidly.</p>
                 </div>
             </div>
         </div>
