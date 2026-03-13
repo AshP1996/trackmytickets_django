@@ -1915,12 +1915,19 @@
                         <span class="credential-label">Password</span>
                         <span class="credential-value" id="successPassword"></span>
                     </div>
+                    <div class="credential-row">
+                        <span class="credential-label">Login URL</span>
+                        <span class="credential-value" id="successLoginUrl" style="word-break: break-all;"></span>
+                    </div>
                 </div>
 
-                <p style="margin-bottom: 1.5rem; color: var(--text-light); font-size: 0.9rem;">
+                <p style="margin-bottom: 1rem; color: var(--text-light); font-size: 0.9rem;">
                     We've also sent these details to <strong id="successEmailRef"></strong>.
                 </p>
 
+                <button type="button" id="downloadCredentialsBtn" class="btn-secondary" style="width: 100%; justify-content: center; margin-bottom: 0.75rem;">
+                    <i class="fas fa-download"></i> Download Credentials
+                </button>
                 <a href="#" id="successDashboardLink" class="btn-primary" style="width: 100%; justify-content: center;">
                     Go to Your Dashboard <i class="fas fa-arrow-right"></i>
                 </a>
@@ -2015,12 +2022,18 @@
                     const response = await fetch('/api/platform/public/enquiries', {
                         method: 'POST',
                         headers: {
-                            'Content-Type': 'application/json'
+                            'Content-Type': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest'
                         },
                         body: JSON.stringify(formData)
                     });
 
-                    const data = await response.json();
+                    let data = {};
+                    try {
+                        data = await response.json();
+                    } catch (_) {
+                        data = { error: response.ok ? 'Invalid response' : 'Server error. Please try again.' };
+                    }
 
                     if (response.ok) {
                         // Success
@@ -2113,14 +2126,47 @@
 
                     if (response.ok && data.admin_user) {
                         // Success flow
+                        const baseUrl = window.location.origin;
+                        const loginPath = data.access_urls.login || '/' + data.subdomain + '/login';
+                        const dashboardPath = data.access_urls.dashboard || '/' + data.subdomain + '/dashboard';
+                        const loginUrl = baseUrl + loginPath;
+                        const dashboardUrl = baseUrl + dashboardPath;
+
                         document.getElementById('registerFormContainer').style.display = 'none';
                         document.getElementById('registerSuccessContainer').style.display = 'block';
 
                         document.getElementById('successSubdomain').textContent = data.subdomain;
                         document.getElementById('successEmail').textContent = data.admin_user.email;
                         document.getElementById('successPassword').textContent = data.admin_user.password;
+                        document.getElementById('successLoginUrl').textContent = loginUrl;
                         document.getElementById('successEmailRef').textContent = data.admin_user.email;
-                        document.getElementById('successDashboardLink').href = data.access_urls.login;
+                        document.getElementById('successDashboardLink').href = dashboardPath;
+
+                        // Download credentials button
+                        const creds = {
+                            subdomain: data.subdomain,
+                            adminEmail: data.admin_user.email,
+                            password: data.admin_user.password,
+                            loginUrl: loginUrl,
+                            dashboardUrl: dashboardUrl
+                        };
+                        const downloadBtn = document.getElementById('downloadCredentialsBtn');
+                        downloadBtn.onclick = function () {
+                            const txt = 'TrackMyTickets - Organization Credentials\n' +
+                                '==========================================\n\n' +
+                                'Subdomain: ' + creds.subdomain + '\n' +
+                                'Admin Email: ' + creds.adminEmail + '\n' +
+                                'Password: ' + creds.password + '\n' +
+                                'Login URL: ' + creds.loginUrl + '\n' +
+                                'Dashboard URL: ' + creds.dashboardUrl + '\n\n' +
+                                'Keep these details secure. Login at: ' + creds.loginUrl;
+                            const blob = new Blob([txt], { type: 'text/plain' });
+                            const a = document.createElement('a');
+                            a.href = URL.createObjectURL(blob);
+                            a.download = 'trackmytickets-credentials-' + creds.subdomain + '.txt';
+                            a.click();
+                            URL.revokeObjectURL(a.href);
+                        };
 
                     } else {
                         registerError.innerHTML = '<i class="fas fa-exclamation-circle"></i> ' + (data.error || 'Failed to create organization.');

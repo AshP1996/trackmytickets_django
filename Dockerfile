@@ -50,9 +50,10 @@ COPY --from=builder /usr/local/bin /usr/local/bin
 # Copy application code
 COPY . .
 
-# Create necessary directories
+# Create necessary directories and make entrypoint executable
 RUN mkdir -p /app/staticfiles /app/media /app/logs && \
-    chown -R appuser:appuser /app
+    chown -R appuser:appuser /app && \
+    chmod +x /app/scripts/docker-entrypoint.sh 2>/dev/null || true
 
 # Switch to non-root user
 USER appuser

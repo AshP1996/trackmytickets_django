@@ -4,6 +4,15 @@
 
 This guide will help you deploy the Ticket System to production using Docker.
 
+### Migrations on Startup
+
+The Docker web container runs `python manage.py migrate --noinput` automatically on startup via `scripts/docker-entrypoint.sh`. This ensures the `global_users` table and other schema are created. If you see `relation "global_users" does not exist`, run migrations manually:
+
+```bash
+docker compose exec web python manage.py migrate --noinput
+# Or rebuild: docker compose up -d --build
+```
+
 ## Prerequisites
 
 - Server with Docker and Docker Compose installed

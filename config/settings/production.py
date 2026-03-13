@@ -1,6 +1,9 @@
 """
 Production Settings for Ticket System
 Domain: trackmytickets.in
+
+Bare VPS (non-Docker): Set DB_HOST=127.0.0.1, REDIS_URL=redis://127.0.0.1:6379/1
+Or set USE_REDIS=False to use database sessions + LocMem cache (no Redis required).
 """
 import os
 from .base import *
@@ -8,32 +11,42 @@ from .base import *
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
-# Domain configuration
+# Domain configuration (Django does not support *. in ALLOWED_HOSTS; use .domain for subdomains)
+_SERVER_IP = os.environ.get('SERVER_IP', '72.60.101.189').strip()
 ALLOWED_HOSTS = [
     'trackmytickets.in',
     'www.trackmytickets.in',
-    '*.trackmytickets.in',  # For subdomains
-    os.environ.get('SERVER_IP', ''),  # Server IP
-    'localhost',
-    'demo.localhost',
-    '127.0.0.1',
+    '.trackmytickets.in',  # Subdomains: demo.trackmytickets.in, etc.
 ]
+if _SERVER_IP:
+    ALLOWED_HOSTS.append(_SERVER_IP)
+ALLOWED_HOSTS.extend(['localhost', 'demo.localhost', '127.0.0.1'])
 
-# Database
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.environ.get('DB_NAME', 'ticket_system'),
-        'USER': os.environ.get('DB_USER', 'postgres'),
-        'PASSWORD': os.environ.get('DB_PASSWORD', ''),
-        'HOST': os.environ.get('DB_HOST', 'db'),
-        'PORT': os.environ.get('DB_PORT', '5432'),
-        'CONN_MAX_AGE': 600,  # Connection pooling
-        'OPTIONS': {
-            'connect_timeout': 10,
+# Database — default to 127.0.0.1 for bare VPS (Docker uses DB_HOST=db)
+USE_SQLITE = os.environ.get('USE_SQLITE', '').lower() in ('1', 'true', 'yes')
+if USE_SQLITE:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+            'CONN_MAX_AGE': 600,
         }
     }
-}
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': os.environ.get('DB_NAME', 'ticket_system'),
+            'USER': os.environ.get('DB_USER', 'postgres'),
+            'PASSWORD': os.environ.get('DB_PASSWORD', ''),
+            'HOST': os.environ.get('DB_HOST', '127.0.0.1'),  # 127.0.0.1 for bare VPS; 'db' for Docker
+            'PORT': os.environ.get('DB_PORT', '5432'),
+            'CONN_MAX_AGE': 600,  # Connection pooling
+            'OPTIONS': {
+                'connect_timeout': 10,
+            }
+        }
+    }
 
 # Security Settings
 SECRET_KEY = os.environ.get('SECRET_KEY')
@@ -58,6 +71,9 @@ SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 USE_X_FORWARDED_HOST = True
 USE_X_FORWARDED_PORT = True
 
+# Site URL for emails (login links, etc.) — use production domain in prod
+SITE_URL = os.environ.get('SITE_URL', 'https://trackmytickets.in')
+
 # CORS Settings
 CORS_ALLOWED_ORIGINS = [
     'https://trackmytickets.in',
@@ -73,9 +89,8 @@ STATIC_URL = '/static/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 MEDIA_URL = '/media/'
 
-# WhiteNoise for static file serving
+# WhiteNoise for static file serving (base.py already adds WhiteNoiseMiddleware)
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
-MIDDLEWARE.insert(1, 'whitenoise.middleware.WhiteNoiseMiddleware')
 
 # Email Configuration
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
@@ -153,22 +168,37 @@ LOGGING = {
     },
 }
 
-# Cache Configuration (Redis)
-CACHES = {
-    'default': {
-        'BACKEND': 'django.core.cache.backends.redis.RedisCache',
-        'LOCATION': os.environ.get('REDIS_URL', 'redis://redis:6379/1'),
-        'OPTIONS': {
-            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
-        },
-        'KEY_PREFIX': 'ticket_system',
-        'TIMEOUT': 300,
-    }
-}
+# Cache & Session — Redis optional for bare VPS
+# Set USE_REDIS=true + REDIS_URL when Redis is installed. Default: DB sessions + LocMem (no Redis).
+_USE_REDIS = os.environ.get('USE_REDIS', 'false').lower() in ('1', 'true', 'yes')
+_REDIS_URL = (os.environ.get('REDIS_URL') or '').strip() or 'redis://127.0.0.1:6379/1'
 
-# Session Configuration
-SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
-SESSION_CACHE_ALIAS = 'default'
+if _USE_REDIS and _REDIS_URL:
+    # Redis: sessions in cache, fast. Requires Redis running at REDIS_URL.
+    CACHES = {
+        'default': {
+            'BACKEND': 'django_redis.cache.RedisCache',
+            'LOCATION': _REDIS_URL,
+            'OPTIONS': {
+                'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+                'SOCKET_CONNECT_TIMEOUT': 5,
+            },
+            'KEY_PREFIX': 'ticket_system',
+            'TIMEOUT': 300,
+        }
+    }
+    SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
+    SESSION_CACHE_ALIAS = 'default'
+else:
+    # Fallback: LocMem cache + DB sessions (works without Redis)
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+            'KEY_PREFIX': 'ticket_system',
+            'TIMEOUT': 300,
+        }
+    }
+    SESSION_ENGINE = 'django.contrib.sessions.backends.db'
 
 # Admin Configuration
 ADMINS = [

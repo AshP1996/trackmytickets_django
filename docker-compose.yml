@@ -34,6 +34,7 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: ticket_system_web
+    entrypoint: ["sh", "/app/scripts/docker-entrypoint.sh"]
     command: gunicorn --config gunicorn.conf.py config.wsgi:application
     volumes:
       - static_volume:/app/staticfiles

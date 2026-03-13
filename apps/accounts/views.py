@@ -33,9 +33,12 @@ class LoginView(views.APIView):
                 return Response({'error': 'Organization not found'}, status=404)
             
             organization = request.organization
-            # ContextVar set by TenantMiddleware → User query hits tenant DB
-            # No organization filter needed: tenant DB = one org
-            user = User.objects.filter(email__iexact=email).first()
+            # Tenant DB: one org per DB. Shared default DB: must filter by organization_id.
+            # Always filter by organization_id so login works correctly in both setups.
+            user = User.objects.filter(
+                email__iexact=email,
+                organization_id=organization.id
+            ).first()
             
             if user:
                 if not user.check_password(password):
@@ -46,11 +49,21 @@ class LoginView(views.APIView):
                     return Response({'message': 'Account is inactive'}, status=403)
                 
                 from django.utils import timezone
+                from django.db import ProgrammingError
+
                 user.last_login = timezone.now()
                 user.save(update_fields=['last_login'])
-                
+
                 from .services import UserProvisionService
-                global_user = UserProvisionService.sync_global_user(user, organization)
+                try:
+                    global_user = UserProvisionService.sync_global_user(user, organization)
+                except ProgrammingError as e:
+                    if 'global_users' in str(e) or 'does not exist' in str(e):
+                        return Response(
+                            {'error': 'Database schema is outdated. Run: python manage.py migrate --noinput'},
+                            status=503
+                        )
+                    raise
                 global_user.last_login = timezone.now()
                 global_user.save(update_fields=['last_login'])
 

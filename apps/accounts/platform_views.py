@@ -1,5 +1,7 @@
 import logging
 from datetime import timedelta
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import csrf_exempt
 from rest_framework import views, status, permissions
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import AccessToken
@@ -648,9 +650,11 @@ class PlatformEnquiryReadView(views.APIView):
         except Enquiry.DoesNotExist:
             return Response({'error': 'Enquiry not found'}, status=404)
 
+@method_decorator(csrf_exempt, name='dispatch')
 class PublicEnquiryView(views.APIView):
-    """Public endpoint for landing page enquiry submissions"""
+    """Public endpoint for landing page enquiry submissions. CSRF exempt for unauthenticated POST."""
     permission_classes = [permissions.AllowAny]
+    authentication_classes = []
 
     def post(self, request):
         name = request.data.get('name', '').strip()
