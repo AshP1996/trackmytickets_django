@@ -227,12 +227,14 @@ class AdminDashboardView(APIView):
         
         org = request.organization
         now = timezone.now()
-        
-        # Tickets — tenant DB is already scoped to this org
-        tickets = Ticket.objects.all()
-        
-        # Users — tenant DB is already scoped to this org
-        users = User.objects.all()
+
+        from apps.core.routers import get_current_db_alias
+        if get_current_db_alias() == 'default':
+            tickets = Ticket.objects.filter(organization_id=org.id)
+            users = User.objects.filter(organization_id=org.id)
+        else:
+            tickets = Ticket.objects.all()
+            users = User.objects.all()
         
         # Key Counts
         total_tickets = tickets.count()

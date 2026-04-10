@@ -265,7 +265,11 @@ class UserDetailView(generics.RetrieveUpdateDestroyAPIView):
         if not hasattr(self.request, 'organization') or not self.request.organization:
             return User.objects.none()
 
-        org_qs = User.objects.all()  # Tenant DB has only this org's users
+        from apps.core.routers import get_current_db_alias
+        if get_current_db_alias() == 'default':
+            org_qs = User.objects.filter(organization_id=self.request.organization.id)
+        else:
+            org_qs = User.objects.all()  # Tenant DB has only this org's users
 
         # AUDIT-FIX HIGH-8: IDOR guard.
         # Non-admins (agents, managers) can only READ all users in their org,
@@ -552,7 +556,10 @@ class DepartmentViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         if not hasattr(self.request, 'organization') or not self.request.organization:
             return Department.objects.none()
-        return Department.objects.all().order_by('name')  # Tenant DB scoped
+        from apps.core.routers import get_current_db_alias
+        if get_current_db_alias() == 'default':
+            return Department.objects.filter(organization_id=self.request.organization.id).order_by('name')
+        return Department.objects.all().order_by('name')
 
     def perform_create(self, serializer):
         serializer.save(organization_id=self.request.organization.id)

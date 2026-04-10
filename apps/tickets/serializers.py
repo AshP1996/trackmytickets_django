@@ -246,6 +246,15 @@ class TicketCreateSerializer(serializers.ModelSerializer):
             'project': {'required': True}
         }
 
+    def create(self, validated_data):
+        """
+        Attachments are handled manually in the view using request.FILES.
+        Remove them from validated_data so DRF doesn't try to assign the
+        raw InMemoryUploadedFile list to the related field.
+        """
+        validated_data.pop('attachments', None)
+        return super().create(validated_data)
+
 
 # ============================================================================
 # CANNED RESPONSE SERIALIZER

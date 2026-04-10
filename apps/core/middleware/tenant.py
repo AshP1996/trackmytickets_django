@@ -91,6 +91,13 @@ class TenantMiddleware:
             request.organization = organization
             request.organization_id = organization.id
 
+            # [TENANT] Debug logging (set LOG_TENANT_ROUTING=True to enable)
+            if getattr(settings, 'LOG_TENANT_ROUTING', False):
+                logger.info(
+                    '[TENANT] org=%s org_id=%s path=%s',
+                    organization.subdomain, organization.id, request.path
+                )
+
             # ---- 3. BYODB: resolve tenant-specific DB ----
             db_alias = f'tenant_{organization.id}'
 
@@ -117,6 +124,9 @@ class TenantMiddleware:
 
             # If alias was just registered *or* was already there, activate it.
             if db_alias in settings.DATABASES:
+                if getattr(settings, 'LOG_TENANT_ROUTING', False):
+                    db_name = settings.DATABASES[db_alias].get('NAME', '?')
+                    logger.info('[TENANT] db_alias=%s db_name=%s', db_alias, db_name)
                 # Lightweight connectivity check before routing
                 if not self._db_is_reachable(db_alias):
                     logger.error(
@@ -185,7 +195,7 @@ class TenantMiddleware:
 
     @staticmethod
     def _is_excluded_path(path: str) -> bool:
-        excluded_prefixes = ('/admin/', '/static/', '/media/', '/health')
+        excluded_prefixes = ('/admin/', '/static/', '/media/', '/health', '/platform/')
         excluded_exact = {'/robots.txt', '/sitemap.xml'}
         return path in excluded_exact or any(path.startswith(p) for p in excluded_prefixes)
 

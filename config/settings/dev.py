@@ -22,6 +22,9 @@ DATABASES = {
     }
 }
 
+# Optional: Log tenant routing for debugging (org, db_alias, path)
+# LOG_TENANT_ROUTING = True
+
 # Shorten JWT lifetime to 1 hour in dev so tokens expire in a reasonable time
 # while still being longer than 15min for developer ergonomics.
 from datetime import timedelta

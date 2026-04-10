@@ -12,8 +12,9 @@ urlpatterns = [
     path('sitemap.xml', sitemap_xml, name='sitemap_xml'),
     
     path('admin/', admin.site.urls),
-    # API Routes - Multi-tenant
+    # API Routes - Multi-tenant (debug before generic to avoid capture)
     path('api/<str:company_name>/auth/', include('apps.accounts.urls')),
+    path('api/<str:company_name>/debug/', include('apps.core.debug_urls')),
     path('api/<str:company_name>/', include('apps.tickets.urls')),
     path('api/<str:company_name>/', include('apps.notifications.urls')),
     path('api/<str:company_name>/', include('apps.core.urls')),  # Data sources, feedback, etc.

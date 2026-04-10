@@ -45,7 +45,14 @@ class RegisterSerializer(serializers.ModelSerializer):
 
     def validate_email(self, value):
         """Validate email uniqueness within the tenant database."""
-        if User.objects.filter(email__iexact=value).exists():
+        request = self.context.get('request')
+        org = getattr(request, 'organization', None) if request else None
+        qs = User.objects.filter(email__iexact=value)
+        if org:
+            from apps.core.routers import get_current_db_alias
+            if get_current_db_alias() == 'default':
+                qs = qs.filter(organization_id=org.id)
+        if qs.exists():
             raise serializers.ValidationError('A user with this email already exists in this organization.')
         return value
 
