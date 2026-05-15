@@ -5,7 +5,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - Ticket Management System</title>
+    <title>Login - TrackMyTickets</title>
 
     <!-- Favicon -->
     <link rel="icon" type="image/png" href="{% static 'images/logo.png' %}">
@@ -38,50 +38,105 @@
             width: 100%;
         }
 
-        /* Left Side - Image */
+        /* Left Side - Animated Gradient Hero */
         .login-hero {
             flex: 1.2;
-            background-image: url("{% static 'img/login_bg.png' %}");
-            background-size: cover;
-            background-position: center;
+            background: linear-gradient(-45deg, #6366f1, #8b5cf6, #4f46e5, #7c3aed, #6366f1);
+            background-size: 400% 400%;
+            animation: gradientShift 12s ease infinite;
             position: relative;
             display: flex;
             flex-direction: column;
-            justify-content: flex-end;
+            justify-content: center;
+            align-items: center;
             padding: 60px;
             color: white;
-            display: flex;
-            /* Hidden on mobile by default media query below */
+            overflow: hidden;
+        }
+
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
         }
 
         .login-hero::before {
             content: '';
             position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: linear-gradient(to top, rgba(0, 0, 0, 0.7) 0%, rgba(0, 0, 0, 0) 60%);
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.08) 0%, transparent 60%);
+            animation: pulse-glow 6s ease-in-out infinite;
+        }
+
+        @keyframes pulse-glow {
+            0%, 100% { transform: scale(1); opacity: 0.5; }
+            50% { transform: scale(1.1); opacity: 0.8; }
         }
 
         .hero-content {
             position: relative;
             z-index: 2;
-            max-width: 600px;
+            max-width: 500px;
+            text-align: center;
+        }
+
+        .hero-icon {
+            width: 80px;
+            height: 80px;
+            background: rgba(255,255,255,0.15);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 2rem;
+            font-size: 2rem;
+            border: 1px solid rgba(255,255,255,0.2);
         }
 
         .hero-title {
-            font-size: 3.5rem;
+            font-size: 2.75rem;
             font-weight: 700;
-            margin-bottom: 20px;
-            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
-            line-height: 1.1;
+            margin-bottom: 1rem;
+            line-height: 1.15;
         }
 
         .hero-subtitle {
-            font-size: 1.2rem;
+            font-size: 1.1rem;
             opacity: 0.9;
             font-weight: 300;
+            line-height: 1.6;
+        }
+
+        .hero-features {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            margin-top: 2.5rem;
+            text-align: left;
+        }
+
+        .hero-feature {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 0.95rem;
+            opacity: 0.9;
+        }
+
+        .hero-feature i {
+            width: 28px;
+            height: 28px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            flex-shrink: 0;
         }
 
         /* Right Side - Form */
@@ -103,7 +158,7 @@
         }
 
         .login-header {
-            margin-bottom: 40px;
+            margin-bottom: 36px;
         }
 
         .brand-logo {
@@ -116,15 +171,11 @@
             font-size: 1.5rem;
         }
 
-        .brand-logo i {
-            font-size: 1.8rem;
-        }
-
         .login-welcome {
             font-size: 2rem;
             font-weight: 700;
             color: #1a202c;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
         }
 
         .login-instruction {
@@ -136,7 +187,7 @@
         .form-control {
             padding: 14px 16px;
             border-radius: 8px;
-            border: 1px solid #e2e8f0;
+            border: 1.5px solid #e2e8f0;
             background-color: #f8fafc;
             font-size: 1rem;
             transition: all 0.2s;
@@ -148,6 +199,11 @@
             box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15);
         }
 
+        .form-control.is-invalid {
+            border-color: #e53e3e;
+            box-shadow: 0 0 0 3px rgba(229, 62, 62, 0.1);
+        }
+
         .form-label {
             font-weight: 600;
             color: #4a5568;
@@ -156,7 +212,7 @@
         }
 
         .input-group-text {
-            border: 1px solid #e2e8f0;
+            border: 1.5px solid #e2e8f0;
             background-color: #f8fafc;
             border-right: none;
             color: #a0aec0;
@@ -166,8 +222,27 @@
             border-left: none;
         }
 
+        .password-toggle {
+            position: absolute;
+            right: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: #a0aec0;
+            cursor: pointer;
+            padding: 4px;
+            font-size: 1rem;
+            z-index: 5;
+            transition: color 0.2s;
+        }
+
+        .password-toggle:hover {
+            color: #667eea;
+        }
+
         .btn-login {
-            background: #667eea;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             padding: 14px;
             border-radius: 8px;
@@ -176,20 +251,27 @@
             border: none;
             width: 100%;
             margin-top: 10px;
-            transition: all 0.2s;
-            box-shadow: 0 4px 6px rgba(102, 126, 234, 0.25);
+            transition: all 0.3s;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+            position: relative;
+            overflow: hidden;
         }
 
-        .btn-login:hover {
-            background: #5a67d8;
+        .btn-login:hover:not(:disabled) {
             transform: translateY(-1px);
-            box-shadow: 0 6px 10px rgba(102, 126, 234, 0.3);
+            box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
         }
 
         .btn-login:disabled {
-            background: #a0aec0;
+            opacity: 0.7;
             cursor: not-allowed;
             transform: none;
+        }
+
+        .btn-login .spinner-border {
+            width: 1.1rem;
+            height: 1.1rem;
+            border-width: 2px;
         }
 
         .forgot-password-link {
@@ -206,16 +288,33 @@
         }
 
         .subdomain-info {
-            background: #ebf4ff;
+            background: linear-gradient(135deg, #ebf4ff, #f0f0ff);
             border: 1px solid #c3dafe;
             color: #4c51bf;
             padding: 12px 16px;
-            border-radius: 8px;
+            border-radius: 10px;
             font-size: 0.9rem;
             margin-bottom: 25px;
             display: flex;
             align-items: flex-start;
             gap: 10px;
+        }
+
+        .login-footer {
+            margin-top: 2.5rem;
+            text-align: center;
+            font-size: 0.85rem;
+            color: #a0aec0;
+        }
+
+        .login-footer a {
+            color: #718096;
+            text-decoration: none;
+            margin: 0 0.5rem;
+        }
+
+        .login-footer a:hover {
+            color: #667eea;
         }
 
         /* Mobile Responsive */
@@ -234,7 +333,7 @@
 
             .login-card {
                 background: white;
-                padding: 24px;
+                padding: 28px;
                 border-radius: 20px;
                 box-shadow: 0 20px 50px rgba(0, 0, 0, 0.1);
             }
@@ -250,14 +349,21 @@
 
 <body>
     <div class="login-wrapper">
-        <!-- Left Side: Hero Image -->
+        <!-- Left Side: Animated Gradient Hero -->
         <div class="login-hero">
             <div class="hero-content">
-                <i class="fas fa-ticket-alt animate-bounce-in mb-3"
-                    style="font-size: 3rem; color: rgba(255,255,255,0.9);"></i>
+                <div class="hero-icon">
+                    <i class="fas fa-ticket-alt"></i>
+                </div>
                 <div class="hero-title">Streamline Your Support</div>
                 <div class="hero-subtitle">Efficient ticket management for modern teams. Deliver exceptional customer
                     experiences with our platform.</div>
+                <div class="hero-features">
+                    <div class="hero-feature"><i class="fas fa-check"></i> Multi-tenant data isolation</div>
+                    <div class="hero-feature"><i class="fas fa-check"></i> Role-based access control</div>
+                    <div class="hero-feature"><i class="fas fa-check"></i> Real-time analytics dashboard</div>
+                    <div class="hero-feature"><i class="fas fa-check"></i> SLA tracking & notifications</div>
+                </div>
             </div>
         </div>
 
@@ -301,10 +407,13 @@
 
                     <div class="mb-2">
                         <label for="password" class="form-label">Password</label>
-                        <div class="input-group">
+                        <div class="input-group" style="position: relative;">
                             <span class="input-group-text"><i class="fas fa-lock"></i></span>
                             <input type="password" class="form-control" id="password" placeholder="Enter your password"
-                                required autocomplete="current-password">
+                                required autocomplete="current-password" style="padding-right: 44px;">
+                            <button type="button" class="password-toggle" id="toggle-password" tabindex="-1" aria-label="Toggle password visibility">
+                                <i class="fas fa-eye"></i>
+                            </button>
                         </div>
                     </div>
 
@@ -312,13 +421,17 @@
                         <a href="#" id="forgot-password-link" class="forgot-password-link">Forgot password?</a>
                     </div>
 
-                    <button type="submit" class="btn btn-login">
+                    <button type="submit" class="btn btn-login" id="login-btn">
                         Sign In
                     </button>
                 </form>
 
-                <div class="mt-5 text-center text-muted" style="font-size: 0.85rem;">
-                    &copy; 2026 Ticket Support System. All rights reserved.
+                <div class="login-footer">
+                    <p>&copy; 2026 TrackMyTickets. All rights reserved.</p>
+                    <p>
+                        <a href="/privacy-policy">Privacy</a> &middot;
+                        <a href="/terms-of-service">Terms</a>
+                    </p>
                 </div>
             </div>
         </div>
@@ -339,6 +452,28 @@
     <script src="{% static 'js/auth.js' %}?v=20260210"></script>
 
     <script>
+        // Password visibility toggle
+        const toggleBtn = document.getElementById('toggle-password');
+        const passwordInput = document.getElementById('password');
+        if (toggleBtn && passwordInput) {
+            toggleBtn.addEventListener('click', function() {
+                const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+                passwordInput.setAttribute('type', type);
+                this.querySelector('i').classList.toggle('fa-eye');
+                this.querySelector('i').classList.toggle('fa-eye-slash');
+            });
+        }
+
+        // Login form submit with loading spinner
+        const loginForm = document.getElementById('login-form');
+        const loginBtn = document.getElementById('login-btn');
+        if (loginForm && loginBtn) {
+            loginForm.addEventListener('submit', function() {
+                loginBtn.disabled = true;
+                loginBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Signing in...';
+            });
+        }
+
         // Fix BUG-2: Build forgot-password URL with correct org slug
         document.addEventListener('DOMContentLoaded', function () {
             const KNOWN = new Set(['login', 'dashboard', 'tickets', 'admin', 'head', 'projects',
@@ -387,4 +522,3 @@
     </script>
 </body>
 
-</html>

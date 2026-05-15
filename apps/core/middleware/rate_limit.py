@@ -49,10 +49,18 @@ class RateLimitMiddleware:
     def process_view(self, request, view_func, view_args, view_kwargs):
         client_ip = self._get_client_ip(request)
 
+        # Determine if this is a sensitive auth endpoint (stricter limit)
+        path = request.path.rstrip('/')
+        is_auth_endpoint = any(path.endswith(p) for p in (
+            '/login', '/forgot-password', '/reset-password', '/register'
+        ))
+        effective_ip_limit = 10 if is_auth_endpoint else self.ip_limit
+
         # 1. Per-IP check
         if client_ip:
-            if self._is_rate_limited(f'rl:ip:{client_ip}', self.ip_limit):
-                logger.warning('ip_rate_limit_exceeded ip=%s', client_ip)
+            key_suffix = ':auth' if is_auth_endpoint else ''
+            if self._is_rate_limited(f'rl:ip:{client_ip}{key_suffix}', effective_ip_limit):
+                logger.warning('ip_rate_limit_exceeded ip=%s auth=%s', client_ip, is_auth_endpoint)
                 return self._rate_limit_response()
 
         # 2. Per-organization check

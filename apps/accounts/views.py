@@ -106,7 +106,11 @@ class RegisterView(generics.CreateAPIView):
         org = request.organization
         limits = org.get_limits()
         max_users = limits.get('max_users', 30)
-        current_users = User.objects.count()
+        from apps.core.routers import get_current_db_alias
+        if get_current_db_alias() == 'default':
+            current_users = User.objects.filter(organization_id=org.id).count()
+        else:
+            current_users = User.objects.count()  # Tenant DB = single org
         if max_users > 0 and current_users >= max_users:
             return Response({
                 'error': f'User limit reached ({max_users}). Upgrade your plan to add more users.'
@@ -459,9 +463,9 @@ class ForgotPasswordView(views.APIView):
         if not email:
             return Response({'error': 'Email is required'}, status=400)
         
-        try:
-            organization = Organization.objects.get(subdomain=company_name)
-        except Organization.DoesNotExist:
+        # BUG-FIX: Use request.organization set by TenantMiddleware instead of
+        # undefined `company_name` variable which caused a NameError crash.
+        if not hasattr(request, 'organization') or not request.organization:
             return Response({'error': 'Organization not found'}, status=404)
         
         try:
@@ -510,9 +514,9 @@ class ResetPasswordView(views.APIView):
         if len(new_password) < 8:
             return Response({'error': 'Password must be at least 8 characters'}, status=400)
 
-        try:
-            organization = Organization.objects.get(subdomain=company_name)
-        except Organization.DoesNotExist:
+        # BUG-FIX: Use request.organization set by TenantMiddleware instead of
+        # undefined `company_name` variable which caused a NameError crash.
+        if not hasattr(request, 'organization') or not request.organization:
             return Response({'error': 'Organization not found'}, status=404)
 
         try:
@@ -777,16 +781,14 @@ class OrganizationSecretView(views.APIView):
     permission_classes = [permissions.IsAuthenticated, IsOrgAdmin]
 
     def _get_fernet(self):
-        """Return a Fernet cipher using the same key as ExternalDataSource."""
-        import base64, os
+        """Return a Fernet cipher using the canonical encryption key."""
         from cryptography.fernet import Fernet
-        raw_key = os.environ.get('DB_CREDENTIALS_ENCRYPTION_KEY', '')
-        if not raw_key:
+        try:
+            from apps.core.utils.encryption import get_encryption_key
+            key = get_encryption_key()
+            return Fernet(key)
+        except Exception:
             return None
-        # Pad/truncate to 32 bytes, then base64url-encode for Fernet
-        padded = raw_key.encode()[:32].ljust(32, b'\x00')
-        fernet_key = base64.urlsafe_b64encode(padded)
-        return Fernet(fernet_key)
 
     def _encrypt(self, value: str) -> str:
         f = self._get_fernet()

@@ -1,0 +1,592 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- SEO Meta Tags -->
+    <title>Pricing — Free Helpdesk Software for Teams | TrackMyTickets</title>
+    <meta name="description"
+        content="TrackMyTickets is 100% free helpdesk software. Unlimited tickets, unlimited users, multi-tenant architecture, dedicated databases — no hidden costs, no credit card required.">
+    <meta name="keywords"
+        content="free helpdesk software, free ticket management system, open source ticketing, free IT helpdesk, free customer support software, free SaaS helpdesk">
+    <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large">
+    <link rel="canonical" href="https://trackmytickets.in/pricing">
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://trackmytickets.in/pricing">
+    <meta property="og:title" content="Free Helpdesk Software — TrackMyTickets Pricing">
+    <meta property="og:description"
+        content="100% free ticket management with unlimited tickets, users, and full feature access. No credit card required.">
+    <meta property="og:image" content="https://trackmytickets.in{% static 'images/og-image.png' %}">
+    <meta property="og:site_name" content="TrackMyTickets">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Free Helpdesk Software — TrackMyTickets Pricing">
+    <meta name="twitter:description"
+        content="100% free ticket management with unlimited tickets, users, and full feature access.">
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="{% static 'images/logo.png' %}">
+    <link rel="apple-touch-icon" href="{% static 'images/logo.png' %}">
+    <meta name="theme-color" content="#6366f1">
+
+    <!-- Fonts & Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Shared Landing Styles -->
+    <link rel="stylesheet" href="{% static 'css/landing.css' %}">
+
+    <!-- JSON-LD: Product/Offer Schema -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "Product",
+        "name": "TrackMyTickets",
+        "description": "Free multi-tenant helpdesk and ticket management software for internal IT and customer support teams.",
+        "brand": {
+            "@type": "Brand",
+            "name": "TrackMyTickets"
+        },
+        "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "USD",
+            "availability": "https://schema.org/InStock",
+            "description": "Free forever plan with unlimited tickets, users, and all features included."
+        },
+        "aggregateRating": {
+            "@type": "AggregateRating",
+            "ratingValue": "4.8",
+            "ratingCount": "1250",
+            "bestRating": "5"
+        }
+    }
+    </script>
+
+    <!-- JSON-LD: Breadcrumb -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+            {
+                "@type": "ListItem",
+                "position": 1,
+                "name": "Home",
+                "item": "https://trackmytickets.in/"
+            },
+            {
+                "@type": "ListItem",
+                "position": 2,
+                "name": "Pricing",
+                "item": "https://trackmytickets.in/pricing"
+            }
+        ]
+    }
+    </script>
+
+    <!-- JSON-LD: Pricing FAQ -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+            {
+                "@type": "Question",
+                "name": "Is TrackMyTickets really free?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "Yes, TrackMyTickets is 100% free with no hidden costs. You get unlimited tickets, unlimited users, and access to all features including multi-tenant architecture, analytics, and knowledge base."
+                }
+            },
+            {
+                "@type": "Question",
+                "name": "Do I need a credit card to sign up?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "No credit card is required. You can create your organization and start managing tickets immediately after registration."
+                }
+            },
+            {
+                "@type": "Question",
+                "name": "Are there any usage limits?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "There are no limits on the number of tickets, projects, or knowledge base articles. User limits are configured per organization by your admin."
+                }
+            },
+            {
+                "@type": "Question",
+                "name": "Will there be paid plans in the future?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "We may introduce premium enterprise features in the future, but the core platform will remain free forever. Early adopters will always have access to all existing features at no cost."
+                }
+            }
+        ]
+    }
+    </script>
+
+    <style>
+        .pricing-hero {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 8rem 2rem 5rem;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .pricing-hero::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: url('data:image/svg+xml,<svg width="60" height="60" xmlns="http://www.w3.org/2000/svg"><defs><pattern id="dots" width="60" height="60" patternUnits="userSpaceOnUse"><circle cx="30" cy="30" r="1.5" fill="rgba(255,255,255,0.15)"/></pattern></defs><rect width="60" height="60" fill="url(%23dots)"/></svg>');
+        }
+
+        .pricing-hero > * { position: relative; z-index: 1; }
+        .pricing-hero h1 { font-size: 3rem; font-weight: 800; margin-bottom: 1rem; }
+        .pricing-hero p { font-size: 1.25rem; opacity: 0.95; max-width: 600px; margin: 0 auto; font-weight: 300; }
+
+        .breadcrumb-nav {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 1rem 2rem;
+            font-size: 0.9rem;
+        }
+
+        .breadcrumb-nav a { color: var(--primary-color); text-decoration: none; }
+        .breadcrumb-nav span { color: var(--text-light); }
+
+        /* Pricing Card */
+        .pricing-section {
+            padding: 5rem 2rem;
+            background: var(--bg-light);
+        }
+
+        .pricing-card {
+            max-width: 550px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 1.5rem;
+            box-shadow: 0 20px 60px rgba(99, 102, 241, 0.15);
+            overflow: hidden;
+            border: 2px solid var(--primary-color);
+            position: relative;
+        }
+
+        .pricing-badge {
+            position: absolute;
+            top: 1.25rem;
+            right: 1.25rem;
+            background: var(--success-color);
+            color: white;
+            padding: 0.35rem 1rem;
+            border-radius: 2rem;
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .pricing-card-header {
+            background: var(--gradient-primary);
+            color: white;
+            padding: 3rem 2.5rem;
+            text-align: center;
+        }
+
+        .pricing-card-header h2 { font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem; }
+
+        .pricing-amount {
+            font-size: 5rem;
+            font-weight: 900;
+            line-height: 1;
+            margin: 1rem 0 0.5rem;
+        }
+
+        .pricing-period { font-size: 1rem; opacity: 0.9; }
+
+        .pricing-card-body {
+            padding: 2.5rem;
+        }
+
+        .pricing-features {
+            list-style: none;
+            padding: 0;
+            margin: 0 0 2rem;
+        }
+
+        .pricing-features li {
+            padding: 0.65rem 0;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            color: var(--text-dark);
+            font-size: 1rem;
+            border-bottom: 1px solid var(--bg-light);
+        }
+
+        .pricing-features li:last-child { border-bottom: none; }
+
+        .pricing-features li i {
+            color: var(--success-color);
+            font-size: 1rem;
+            flex-shrink: 0;
+            width: 20px;
+            text-align: center;
+        }
+
+        .pricing-cta {
+            width: 100%;
+            padding: 1rem;
+            background: var(--gradient-primary);
+            color: white;
+            border: none;
+            border-radius: 0.75rem;
+            font-size: 1.125rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .pricing-cta:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-xl);
+            color: white;
+        }
+
+        /* Comparison Table */
+        .comparison-section {
+            padding: 5rem 2rem;
+            background: white;
+        }
+
+        .comparison-table {
+            max-width: 800px;
+            margin: 2rem auto 0;
+            border-collapse: collapse;
+            width: 100%;
+        }
+
+        .comparison-table th,
+        .comparison-table td {
+            padding: 1rem 1.5rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .comparison-table th {
+            background: var(--bg-light);
+            font-weight: 700;
+            color: var(--text-dark);
+        }
+
+        .comparison-table td:nth-child(2),
+        .comparison-table th:nth-child(2) {
+            text-align: center;
+            color: var(--primary-color);
+            font-weight: 600;
+        }
+
+        .comparison-table td:nth-child(3),
+        .comparison-table th:nth-child(3) {
+            text-align: center;
+            color: var(--text-light);
+        }
+
+        .check-yes { color: var(--success-color); font-size: 1.25rem; }
+        .check-no { color: #d1d5db; font-size: 1.25rem; }
+
+        /* FAQ */
+        .pricing-faq {
+            padding: 5rem 2rem;
+            background: var(--bg-light);
+        }
+
+        /* CTA */
+        .cta-banner {
+            background: var(--gradient-hero);
+            color: white;
+            padding: 5rem 2rem;
+            text-align: center;
+        }
+
+        .cta-banner h2 { font-size: 2.5rem; font-weight: 800; margin-bottom: 1rem; }
+        .cta-banner p { font-size: 1.25rem; opacity: 0.95; margin-bottom: 2rem; }
+
+        @media (max-width: 768px) {
+            .pricing-hero h1 { font-size: 2.25rem; }
+            .pricing-amount { font-size: 3.5rem; }
+            .comparison-table { font-size: 0.9rem; }
+            .comparison-table th, .comparison-table td { padding: 0.75rem; }
+            .cta-banner h2 { font-size: 2rem; }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Navigation -->
+    <header>
+    <nav class="navbar" id="navbar" aria-label="Main navigation">
+        <div class="nav-container">
+            <a href="/" class="logo" style="display: flex; align-items: center; gap: 12px; text-decoration: none;">
+                <img src="{% static 'images/logo.png' %}" alt="TrackMyTickets Logo"
+                    style="height: 48px; width: auto; object-fit: contain; display: block;"
+                    onerror="this.style.display='none';">
+                <span style="font-size: 20px; font-weight: 700;">TrackMyTickets</span>
+            </a>
+            <div class="nav-links">
+                <a href="/features">Features</a>
+                <a href="/pricing">Pricing</a>
+                <a href="/#faq">FAQ</a>
+                <a href="/#enquiry">Contact</a>
+                <a href="/platform/login" class="btn-login">Login</a>
+            </div>
+        </div>
+    </nav>
+    </header>
+
+    <main>
+    <!-- Breadcrumb -->
+    <nav class="breadcrumb-nav" aria-label="Breadcrumb">
+        <a href="/">Home</a> <span>/</span> <strong>Pricing</strong>
+    </nav>
+
+    <!-- Hero -->
+    <section class="pricing-hero">
+        <h1>Simple Pricing: It's Free</h1>
+        <p>No tiers, no tricks. Every feature is included from day one. TrackMyTickets is completely free for teams of any size.</p>
+    </section>
+
+    <!-- Pricing Card -->
+    <section class="pricing-section">
+        <div class="pricing-card">
+            <div class="pricing-badge">Most Popular</div>
+            <div class="pricing-card-header">
+                <h2>Free Forever Plan</h2>
+                <div class="pricing-amount">$0</div>
+                <div class="pricing-period">per month, forever</div>
+            </div>
+            <div class="pricing-card-body">
+                <ul class="pricing-features">
+                    <li><i class="fas fa-check-circle"></i> <strong>Unlimited</strong> tickets</li>
+                    <li><i class="fas fa-check-circle"></i> <strong>Unlimited</strong> projects</li>
+                    <li><i class="fas fa-check-circle"></i> Multi-tenant architecture with data isolation</li>
+                    <li><i class="fas fa-check-circle"></i> Dedicated database per organization</li>
+                    <li><i class="fas fa-check-circle"></i> Role-based access control (RBAC)</li>
+                    <li><i class="fas fa-check-circle"></i> SLA & ticket lifecycle tracking</li>
+                    <li><i class="fas fa-check-circle"></i> Real-time analytics dashboard</li>
+                    <li><i class="fas fa-check-circle"></i> Knowledge base & canned responses</li>
+                    <li><i class="fas fa-check-circle"></i> File attachments & audit logging</li>
+                    <li><i class="fas fa-check-circle"></i> Email notifications (OTP, ticket alerts)</li>
+                    <li><i class="fas fa-check-circle"></i> Mobile-responsive interface</li>
+                    <li><i class="fas fa-check-circle"></i> API access for integrations</li>
+                </ul>
+                <a href="/#enquiry" class="pricing-cta">
+                    <i class="fas fa-rocket"></i> Get Started Free
+                </a>
+                <p style="text-align: center; margin-top: 1rem; font-size: 0.85rem; color: var(--text-light);">
+                    No credit card required. Setup in under 5 minutes.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Comparison Table -->
+    <section class="comparison-section">
+        <div class="container">
+            <h2 class="section-title">How We Compare</h2>
+            <p class="section-subtitle">See how TrackMyTickets stacks up against typical paid helpdesk software.</p>
+
+            <table class="comparison-table">
+                <thead>
+                    <tr>
+                        <th>Feature</th>
+                        <th>TrackMyTickets</th>
+                        <th>Typical Paid Tools</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Price</td>
+                        <td><strong>$0/month</strong></td>
+                        <td>$15–$89/agent/month</td>
+                    </tr>
+                    <tr>
+                        <td>Unlimited Tickets</td>
+                        <td><i class="fas fa-check-circle check-yes"></i></td>
+                        <td><i class="fas fa-times-circle check-no"></i></td>
+                    </tr>
+                    <tr>
+                        <td>Multi-Tenant Architecture</td>
+                        <td><i class="fas fa-check-circle check-yes"></i></td>
+                        <td><i class="fas fa-times-circle check-no"></i></td>
+                    </tr>
+                    <tr>
+                        <td>Dedicated Database Isolation</td>
+                        <td><i class="fas fa-check-circle check-yes"></i></td>
+                        <td><i class="fas fa-times-circle check-no"></i></td>
+                    </tr>
+                    <tr>
+                        <td>Role-Based Access Control</td>
+                        <td><i class="fas fa-check-circle check-yes"></i></td>
+                        <td><i class="fas fa-check-circle check-yes"></i></td>
+                    </tr>
+                    <tr>
+                        <td>SLA Tracking</td>
+                        <td><i class="fas fa-check-circle check-yes"></i></td>
+                        <td>Paid tier only</td>
+                    </tr>
+                    <tr>
+                        <td>Knowledge Base</td>
+                        <td><i class="fas fa-check-circle check-yes"></i></td>
+                        <td>Paid tier only</td>
+                    </tr>
+                    <tr>
+                        <td>Analytics Dashboard</td>
+                        <td><i class="fas fa-check-circle check-yes"></i></td>
+                        <td>Paid tier only</td>
+                    </tr>
+                    <tr>
+                        <td>No Credit Card Required</td>
+                        <td><i class="fas fa-check-circle check-yes"></i></td>
+                        <td><i class="fas fa-times-circle check-no"></i></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <!-- Pricing FAQ -->
+    <section class="pricing-faq" id="pricing-faq">
+        <div class="container">
+            <h2 class="section-title">Pricing FAQ</h2>
+            <p class="section-subtitle">Common questions about our pricing model.</p>
+            <div class="faq-container">
+                <div class="faq-item">
+                    <div class="faq-question">
+                        <span>Is TrackMyTickets really free?</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        Yes, 100% free. There are no hidden charges, no trial periods, and no feature gates. You get full access to every feature from day one — multi-tenant architecture, analytics, knowledge base, and more.
+                    </div>
+                </div>
+                <div class="faq-item">
+                    <div class="faq-question">
+                        <span>Do I need a credit card to sign up?</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        No. Registration requires only your organization name, email, and a password. You can start managing tickets within minutes.
+                    </div>
+                </div>
+                <div class="faq-item">
+                    <div class="faq-question">
+                        <span>Are there any usage limits?</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        There are no limits on the number of tickets, projects, or knowledge base articles. User limits are configurable per organization by your admin.
+                    </div>
+                </div>
+                <div class="faq-item">
+                    <div class="faq-question">
+                        <span>Will there be paid plans in the future?</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        We may introduce premium enterprise features like SSO, advanced integrations, or priority support in the future. However, the core platform will remain free forever. Early adopters will always have access to all existing features at no cost.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA -->
+    <section class="cta-banner">
+        <h2>Start Resolving Tickets Today</h2>
+        <p>Set up your free helpdesk in under 5 minutes. No credit card, no commitment.</p>
+        <div class="hero-buttons">
+            <a href="/#enquiry" class="btn-primary">
+                <i class="fas fa-rocket"></i> Get Started Free
+            </a>
+            <a href="/features" class="btn-secondary">Explore Features</a>
+        </div>
+    </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-grid">
+                <div class="footer-section">
+                    <h3>TrackMyTickets</h3>
+                    <p style="color: rgba(255, 255, 255, 0.8); margin-top: 1rem;">
+                        Modern ticket management for teams who care about exceptional customer support.
+                    </p>
+                </div>
+                <div class="footer-section">
+                    <h3>Product</h3>
+                    <ul>
+                        <li><a href="/features">Features</a></li>
+                        <li><a href="/pricing">Pricing</a></li>
+                        <li><a href="/#faq">FAQ</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h3>Company</h3>
+                    <ul>
+                        <li><a href="/#enquiry">Contact Us</a></li>
+                        <li><a href="mailto:support@trackmytickets.in">Support Email</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h3>Legal</h3>
+                    <ul>
+                        <li><a href="/privacy-policy">Privacy Policy</a></li>
+                        <li><a href="/terms-of-service">Terms of Service</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2026 TrackMyTickets. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script>
+        // Navbar scroll
+        window.addEventListener('scroll', function () {
+            const navbar = document.getElementById('navbar');
+            if (window.scrollY > 50) navbar.classList.add('scrolled');
+            else navbar.classList.remove('scrolled');
+        });
+
+        // FAQ accordion
+        document.querySelectorAll('.faq-item').forEach(item => {
+            item.querySelector('.faq-question').addEventListener('click', () => {
+                const isActive = item.classList.contains('active');
+                document.querySelectorAll('.faq-item').forEach(i => i.classList.remove('active'));
+                if (!isActive) item.classList.add('active');
+            });
+        });
+    </script>
+</body>
+</html>

@@ -196,7 +196,18 @@ class TenantMiddleware:
     @staticmethod
     def _is_excluded_path(path: str) -> bool:
         excluded_prefixes = ('/admin/', '/static/', '/media/', '/health', '/platform/')
-        excluded_exact = {'/robots.txt', '/sitemap.xml'}
+        excluded_exact = {
+            '/robots.txt',
+            '/sitemap.xml',
+            '/features',
+            '/features/',
+            '/pricing',
+            '/pricing/',
+            '/privacy-policy',
+            '/privacy-policy/',
+            '/terms-of-service',
+            '/terms-of-service/',
+        }
         return path in excluded_exact or any(path.startswith(p) for p in excluded_prefixes)
 
     @staticmethod
@@ -204,13 +215,18 @@ class TenantMiddleware:
         parts = path.strip('/').split('/')
         if not parts or not parts[0]:
             return None
-        known_routes = frozenset({'admin', 'api', 'static', 'media', 'platform', 'health'})
-        if parts[0] not in known_routes:
-            return parts[0]
-        # api/<company>/...
-        if parts[0] == 'api' and len(parts) >= 2 and parts[1] != 'platform':
-            return parts[1]
-        return None
+        # Known non-tenant top-level paths — never treat these as company slugs
+        known_routes = frozenset({
+            'admin', 'api', 'static', 'media', 'platform', 'health',
+            'features', 'pricing', 'privacy-policy', 'terms-of-service',
+            'robots.txt', 'sitemap.xml',
+        })
+        if parts[0] in known_routes:
+            # api/<company>/...
+            if parts[0] == 'api' and len(parts) >= 2 and parts[1] != 'platform':
+                return parts[1]
+            return None
+        return parts[0]
 
     @staticmethod
     def _register_tenant_db(alias: str, data_source):

@@ -3,6 +3,7 @@ Utility functions for sending emails
 """
 from django.core.mail import send_mail
 from django.conf import settings
+import hashlib
 import random
 import string
 from datetime import timedelta
@@ -12,6 +13,11 @@ from django.utils import timezone
 def generate_otp(length=6):
     """Generate a random OTP of specified length"""
     return ''.join(random.choices(string.digits, k=length))
+
+
+def _hash_otp(otp):
+    """Hash an OTP for secure storage."""
+    return hashlib.sha256(otp.encode()).hexdigest()
 
 
 def send_otp_email(email, otp, user_type='user'):
@@ -58,28 +64,29 @@ TrackMyTickets Team
 
 def create_reset_otp(user):
     """
-    Create and save OTP for password reset
+    Create and save OTP for password reset.
+    The OTP is hashed (SHA-256) before storage for security.
     
     Args:
         user: User or PlatformAdmin instance
         
     Returns:
-        str: The generated OTP
+        str: The generated OTP (plaintext — for sending via email)
     """
     otp = generate_otp()
-    user.reset_otp = otp
+    user.reset_otp = _hash_otp(otp)
     user.reset_otp_expires_at = timezone.now() + timedelta(minutes=15)
-    user.save()
+    user.save(update_fields=['reset_otp', 'reset_otp_expires_at'])
     return otp
 
 
 def verify_reset_otp(user, otp):
     """
-    Verify if the provided OTP is valid
+    Verify if the provided OTP is valid (compares SHA-256 hashes).
     
     Args:
         user: User or PlatformAdmin instance
-        otp: The OTP to verify
+        otp: The OTP to verify (plaintext from user input)
         
     Returns:
         bool: True if OTP is valid, False otherwise
@@ -87,7 +94,7 @@ def verify_reset_otp(user, otp):
     if not user.reset_otp or not user.reset_otp_expires_at:
         return False
     
-    if user.reset_otp != otp:
+    if user.reset_otp != _hash_otp(otp):
         return False
     
     if timezone.now() > user.reset_otp_expires_at:
@@ -100,4 +107,4 @@ def clear_reset_otp(user):
     """Clear the reset OTP after successful password reset"""
     user.reset_otp = None
     user.reset_otp_expires_at = None
-    user.save()
+    user.save(update_fields=['reset_otp', 'reset_otp_expires_at'])

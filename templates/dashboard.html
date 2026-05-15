@@ -1,9 +1,24 @@
 {% extends "base.html" %}
 
-{% block title %}Dashboard - Ticket Management System{% endblock %}
+{% block title %}Dashboard - TrackMyTickets{% endblock %}
 {% block page_title %}Dashboard{% endblock %}
 
 {% block content %}
+<!-- Greeting & Quick Actions -->
+<div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: var(--spacing-xl); flex-wrap: wrap; gap: var(--spacing-md);">
+    <div>
+        <h2 id="greeting-msg" style="margin-bottom: var(--spacing-xs); color: var(--color-text-primary);">Good Day</h2>
+        <p class="text-secondary" style="margin: 0;">Here's what's happening with your tickets today.</p>
+    </div>
+    <div style="display: flex; gap: var(--spacing-sm);">
+        <a href="/{{ company_name }}/tickets" class="btn btn-secondary">
+            <i class="fas fa-list"></i> View All Tickets
+        </a>
+        <button class="btn btn-primary" onclick="alert('Create Ticket functionality coming soon!')">
+            <i class="fas fa-plus"></i> Create Ticket
+        </button>
+    </div>
+</div>
 <!-- Statistics Cards -->
 <div class="stats-grid">
     <div class="stat-card">
@@ -170,7 +185,6 @@
     let statusChart, priorityChart, trendChart, typeChart;
 
     async function loadDashboard() {
-        // Show skeleton loaders for recent tickets
         const tbody = document.getElementById('recent-tickets');
         tbody.innerHTML = Array(5).fill(0).map(() => `
             <tr>
@@ -183,6 +197,15 @@
                 <td><div class="skeleton skeleton-badge"></div></td>
             </tr>
         `).join('');
+
+        // Set greeting message
+        const hour = new Date().getHours();
+        let greeting = 'Good evening';
+        if (hour < 12) greeting = 'Good morning';
+        else if (hour < 18) greeting = 'Good afternoon';
+        
+        const userName = localStorage.getItem('user_name') || 'there';
+        document.getElementById('greeting-msg').textContent = `${greeting}, ${userName.split(' ')[0]} 👋`;
 
         try {
             // Load stats

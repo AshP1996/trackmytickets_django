@@ -232,6 +232,15 @@ class TicketViewSet(viewsets.ModelViewSet):
         if project.organization_id != self.request.organization.id:
             raise serializers.ValidationError({"project": "Project does not belong to this organization"})
 
+        # RACE-3: Validate attachments BEFORE creating the ticket
+        # to prevent orphaned AuditLog/TicketHistory on validation failure.
+        files = self.request.FILES.getlist('attachments')
+        if files:
+            from rest_framework.exceptions import ValidationError as DRFValidationError
+            ok, err = _validate_attachments(files)
+            if not ok:
+                raise DRFValidationError({'attachments': err})
+
         ticket_id = Ticket.generate_ticket_id(project.key, project.id)
 
         # Pop non-model fields before save
@@ -263,17 +272,10 @@ class TicketViewSet(viewsets.ModelViewSet):
         except SLAPolicy.DoesNotExist:
             pass
 
-        # Handle attachments — AUDIT-FIX HIGH-6: validate before writing
-        files = self.request.FILES.getlist('attachments')
+        # Handle attachments (already validated above)
         if files:
             from django.core.files.storage import default_storage
             from django.core.files.base import ContentFile
-            from rest_framework.exceptions import ValidationError as DRFValidationError
-
-            ok, err = _validate_attachments(files)
-            if not ok:
-                ticket.delete()  # roll back the ticket
-                raise DRFValidationError({'attachments': err})
 
             for f in files:
                 safe_name = _sanitize_filename(f.name)
@@ -1106,8 +1108,9 @@ class CannedResponseViewSet(viewsets.ModelViewSet):
     def use_response(self, request, pk=None, company_name=None):
         """Track usage of a canned response."""
         response_obj = self.get_object()
-        response_obj.usage_count += 1
-        response_obj.save(update_fields=['usage_count'])
+        # SEC-8: Atomic increment to prevent race conditions
+        CannedResponse.objects.filter(pk=response_obj.pk).update(usage_count=models.F('usage_count') + 1)
+        response_obj.refresh_from_db(fields=['usage_count'])
         return Response({'content': response_obj.content, 'usage_count': response_obj.usage_count})
 
 
@@ -1182,8 +1185,9 @@ class KBArticleViewSet(viewsets.ModelViewSet):
     def retrieve(self, request, *args, **kwargs):
         """Increment view count on article view."""
         instance = self.get_object()
-        instance.views_count += 1
-        instance.save(update_fields=['views_count'])
+        # SEC-8: Atomic increment to prevent race conditions
+        KBArticle.objects.filter(pk=instance.pk).update(views_count=models.F('views_count') + 1)
+        instance.refresh_from_db(fields=['views_count'])
         serializer = self.get_serializer(instance)
         return Response(serializer.data)
 
@@ -1191,11 +1195,12 @@ class KBArticleViewSet(viewsets.ModelViewSet):
     def mark_helpful(self, request, pk=None, company_name=None):
         article = self.get_object()
         is_helpful = request.data.get('helpful', True)
+        # SEC-8: Atomic increment to prevent race conditions
         if is_helpful:
-            article.helpful_count += 1
+            KBArticle.objects.filter(pk=article.pk).update(helpful_count=models.F('helpful_count') + 1)
         else:
-            article.not_helpful_count += 1
-        article.save(update_fields=['helpful_count', 'not_helpful_count'])
+            KBArticle.objects.filter(pk=article.pk).update(not_helpful_count=models.F('not_helpful_count') + 1)
+        article.refresh_from_db(fields=['helpful_count', 'not_helpful_count'])
         return Response({
             'helpful_count': article.helpful_count,
             'not_helpful_count': article.not_helpful_count,

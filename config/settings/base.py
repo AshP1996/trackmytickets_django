@@ -102,6 +102,17 @@ DATABASES = {
 # Database Router
 DATABASE_ROUTERS = ['apps.core.routers.TenantDatabaseRouter']
 
+# Cache
+# LocMemCache is per-process — rate limiting won't work across Gunicorn workers.
+# Production MUST override this with Redis in prod_override.py or production.py.
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'KEY_PREFIX': 'ticket_system',
+        'TIMEOUT': 300,
+    }
+}
+
 # Password validation
 # https://docs.djangoproject.com/en/5.0/ref/settings/#auth-password-validators
 

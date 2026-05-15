@@ -58,6 +58,7 @@ class Project(models.Model):
     end_date = models.DateTimeField(null=True, blank=True)
     extension_date = models.DateTimeField(null=True, blank=True)
     default_assignee = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='default_projects')
+    ticket_sequence = models.PositiveIntegerField(default=0, help_text='Atomic counter for generating unique ticket IDs')
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -213,26 +214,24 @@ class Ticket(models.Model):
 
     @classmethod
     def generate_ticket_id(cls, project_key, project_id):
-        """Thread-safe ticket ID generation using select_for_update."""
-        from django.db import transaction
-        with transaction.atomic():
-            last_ticket = cls.objects.filter(
-                project_id=project_id
-            ).select_for_update().order_by('-id').first()
-            
-            if not last_ticket:
-                return f"{project_key}-1"
-                
-            try:
-                parts = last_ticket.ticket_id.split('-')
-                if len(parts) >= 2 and parts[-1].isdigit():
-                    next_num = int(parts[-1]) + 1
-                    return f"{project_key}-{next_num}"
-            except Exception:
-                pass
-                
-            count = cls.objects.filter(project_id=project_id).count()
-            return f"{project_key}-{count + 1}"
+        """Atomic ticket ID generation using Project.ticket_sequence counter.
+        
+        Uses F() expression for a single atomic UPDATE ... SET ticket_sequence =
+        ticket_sequence + 1, which is safe under concurrent access on all backends
+        (including SQLite).
+        """
+        from apps.tickets.models import Project
+        from django.db.models import F
+
+        # Atomically increment and retrieve the new sequence number
+        Project.objects.filter(id=project_id).update(
+            ticket_sequence=F('ticket_sequence') + 1
+        )
+        project = Project.objects.filter(id=project_id).values_list(
+            'ticket_sequence', flat=True
+        ).first()
+        seq = project if project else 1
+        return f"{project_key}-{seq}"
 
 # ============================================================================
 # TICKET WATCHER MODEL

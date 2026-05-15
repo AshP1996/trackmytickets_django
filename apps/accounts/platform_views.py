@@ -235,7 +235,7 @@ class PlatformOrganizationsView(views.APIView):
             'admin_user': {
                 'email': admin_user.email,
                 'full_name': admin_user.full_name,
-                'password': admin_password,  # Only returned on creation
+                # Password sent via email only — never in API response
             },
             'access_urls': {
                 'login': f'/{org.subdomain}/login',
@@ -252,6 +252,17 @@ class PublicOrganizationRegisterView(views.APIView):
     permission_classes = [permissions.AllowAny]
 
     def post(self, request):
+        # SEC-2: Rate limit public registration (5 per IP per hour)
+        from django.core.cache import cache
+        client_ip = request.META.get('HTTP_X_FORWARDED_FOR', '').split(',')[0].strip() or request.META.get('REMOTE_ADDR', '')
+        rate_key = f'register_rate:{client_ip}'
+        attempts = cache.get(rate_key, 0)
+        if attempts >= 5:
+            return Response({
+                'error': 'Too many registration attempts. Please try again later.'
+            }, status=429)
+        cache.set(rate_key, attempts + 1, timeout=3600)  # 1 hour window
+
         name = request.data.get('name')
         subdomain = request.data.get('subdomain')
         email = request.data.get('email')
@@ -320,7 +331,7 @@ class PublicOrganizationRegisterView(views.APIView):
             'admin_user': {
                 'email': admin_user.email,
                 'full_name': admin_user.full_name,
-                'password': admin_password,  # Only returned on creation so UI can show it
+                # Password sent via email only — never in API response
             },
             'access_urls': {
                 'login': f'/{org.subdomain}/login',
@@ -723,38 +734,57 @@ class PlatformForgotPasswordView(views.APIView):
 
 class PlatformResetPasswordView(views.APIView):
     """
-    Reset platform admin password using OTP verification
+    Reset platform admin password using OTP verification.
+    AUDIT-FIX SEC-4: Brute-force guard on OTP verification.
+    AUDIT-FIX SEC-5: Password strength validation.
     """
     permission_classes = [permissions.AllowAny]
 
     def post(self, request):
         from .email_utils import verify_reset_otp, clear_reset_otp
-        
+        from django.core.cache import cache
+
         email = request.data.get('email')
         otp = request.data.get('otp')
         new_password = request.data.get('new_password')
-        
+
         if not email or not otp or not new_password:
             return Response({
                 'error': 'Email, OTP, and new password are required'
             }, status=400)
-        
+
+        # SEC-5: Password strength validation
+        if len(new_password) < 8:
+            return Response({'error': 'Password must be at least 8 characters'}, status=400)
+
         # Find platform admin
         try:
             admin = PlatformAdmin.objects.get(email=email)
         except PlatformAdmin.DoesNotExist:
             return Response({'error': 'Invalid credentials'}, status=401)
-        
+
+        # SEC-4: Brute-force guard on OTP verification
+        otp_attempts_key = f'platform_otp_attempts:{admin.id}'
+        attempts = cache.get(otp_attempts_key, 0)
+        MAX_OTP_ATTEMPTS = 5
+        if attempts >= MAX_OTP_ATTEMPTS:
+            logger.warning('platform_otp_brute_force_blocked admin_id=%s', admin.id)
+            return Response({
+                'error': 'Too many failed attempts. Please request a new OTP.'
+            }, status=429)
+
         # Verify OTP
         if not verify_reset_otp(admin, otp):
+            cache.set(otp_attempts_key, attempts + 1, timeout=900)
             return Response({
                 'error': 'Invalid or expired OTP'
             }, status=401)
-        
-        # Reset password
+
+        # Success — clear attempt counter and reset password
+        cache.delete(otp_attempts_key)
         admin.set_password(new_password)
         clear_reset_otp(admin)
-        
+
         return Response({
             'message': 'Password has been reset successfully'
         }, status=200)

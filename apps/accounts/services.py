@@ -17,27 +17,40 @@ class UserProvisionService:
         email = email.lower().strip()
         # Ensure organization_id is set for shared default DB and for consistency
         tenant_fields.setdefault('organization_id', organization.id)
+
+        from apps.core.routers import get_current_db_alias
+        db_alias = get_current_db_alias()
+
         try:
-            with transaction.atomic():
-                # 1) Create TenantUser in current DB (default or tenant_X from router)
+            # 1) Create TenantUser in tenant DB (or default if no BYODB)
+            with transaction.atomic(using=db_alias):
                 tenant_user = User.objects.create_user(
                     email=email,
                     password=password,
                     **tenant_fields
                 )
-                
-                # 2) Create GlobalUser entry in Platform DB
-                # Note: TenantDatabaseRouter automatically enforces GlobalUser to always 
-                # reside in the 'default' DB, keeping it logically separated.
-                global_user = GlobalUser.objects.using('default').create(
-                    email=email,
-                    organization=organization,
-                    tenant_user_id=tenant_user.id,
-                    status='active'
-                )
-                
-                return tenant_user, global_user
-                
+
+            # 2) Create GlobalUser entry in Platform DB
+            try:
+                with transaction.atomic(using='default'):
+                    global_user = GlobalUser.objects.using('default').create(
+                        email=email,
+                        organization=organization,
+                        tenant_user_id=tenant_user.id,
+                        status='active'
+                    )
+            except IntegrityError:
+                # Rollback: remove orphaned tenant user
+                try:
+                    tenant_user.delete()
+                except Exception:
+                    logger.error(f"Failed to rollback tenant user {email} after GlobalUser conflict")
+                raise ValueError("A user with this email already exists in this organization.")
+
+            return tenant_user, global_user
+
+        except ValueError:
+            raise
         except IntegrityError as e:
             logger.error(f"Integrity error provisioning user {email} for org {organization.id}: {e}")
             raise ValueError("A user with this email already exists in this organization.")

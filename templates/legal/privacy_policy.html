@@ -1,0 +1,323 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Privacy Policy — TrackMyTickets</title>
+    <meta name="description" content="Privacy Policy for TrackMyTickets — learn how we collect, use, and protect your data.">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://trackmytickets.in/privacy-policy">
+
+    <link rel="icon" type="image/png" href="{% static 'images/logo.png' %}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --text-dark: #1f2937;
+            --text-body: #4b5563;
+            --text-light: #6b7280;
+            --bg-light: #f9fafb;
+            --border: #e5e7eb;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            color: var(--text-dark);
+            line-height: 1.7;
+            background: var(--bg-light);
+        }
+
+        /* Navbar */
+        .navbar {
+            background: rgba(255,255,255,0.97);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            padding: 1rem 0;
+        }
+
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: var(--primary);
+            text-decoration: none;
+        }
+
+        .logo img { height: 36px; width: auto; }
+
+        .nav-back {
+            color: var(--text-light);
+            text-decoration: none;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: color 0.2s;
+        }
+
+        .nav-back:hover { color: var(--primary); }
+
+        /* Hero */
+        .legal-hero {
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a78bfa 100%);
+            color: white;
+            padding: 4rem 2rem;
+            text-align: center;
+        }
+
+        .legal-hero h1 {
+            font-size: 2.75rem;
+            font-weight: 800;
+            margin-bottom: 0.75rem;
+        }
+
+        .legal-hero p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            font-weight: 300;
+        }
+
+        /* Content */
+        .legal-content {
+            max-width: 800px;
+            margin: -2rem auto 4rem;
+            background: white;
+            border-radius: 1rem;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+            padding: 3rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .legal-content h2 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-dark);
+            margin: 2.5rem 0 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid var(--border);
+        }
+
+        .legal-content h2:first-of-type {
+            margin-top: 0;
+        }
+
+        .legal-content h3 {
+            font-size: 1.15rem;
+            font-weight: 600;
+            color: var(--text-dark);
+            margin: 1.5rem 0 0.75rem;
+        }
+
+        .legal-content p {
+            color: var(--text-body);
+            margin-bottom: 1rem;
+        }
+
+        .legal-content ul {
+            color: var(--text-body);
+            margin: 0.5rem 0 1rem 1.5rem;
+        }
+
+        .legal-content ul li {
+            margin-bottom: 0.5rem;
+        }
+
+        .legal-content a {
+            color: var(--primary);
+            text-decoration: none;
+            border-bottom: 1px solid transparent;
+            transition: border-color 0.2s;
+        }
+
+        .legal-content a:hover {
+            border-bottom-color: var(--primary);
+        }
+
+        .effective-date {
+            display: inline-block;
+            background: #f0f0ff;
+            color: var(--primary);
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            font-size: 0.9rem;
+            margin-bottom: 1.5rem;
+        }
+
+        /* Footer */
+        .legal-footer {
+            background: #1e1b4b;
+            color: rgba(255,255,255,0.7);
+            text-align: center;
+            padding: 2rem;
+            font-size: 0.9rem;
+        }
+
+        .legal-footer a {
+            color: rgba(255,255,255,0.9);
+            text-decoration: none;
+            margin: 0 0.75rem;
+        }
+
+        .legal-footer a:hover { color: white; }
+
+        @media (max-width: 768px) {
+            .legal-hero h1 { font-size: 2rem; }
+            .legal-content { margin: -1rem 1rem 2rem; padding: 2rem 1.5rem; }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="/" class="logo">
+                <img src="{% static 'images/logo.png' %}" alt="TrackMyTickets" onerror="this.style.display='none'">
+                <span>TrackMyTickets</span>
+            </a>
+            <a href="/" class="nav-back"><i class="fas fa-arrow-left"></i> Back to Home</a>
+        </div>
+    </nav>
+
+    <!-- Hero -->
+    <section class="legal-hero">
+        <h1>Privacy Policy</h1>
+        <p>Your privacy is important to us. Here's how we handle your data.</p>
+    </section>
+
+    <!-- Content -->
+    <article class="legal-content">
+        <div class="effective-date"><i class="fas fa-calendar-alt"></i> Effective Date: April 24, 2026</div>
+
+        <h2>1. Introduction</h2>
+        <p>TrackMyTickets ("we," "our," or "us") operates the TrackMyTickets platform at <a href="https://trackmytickets.in">trackmytickets.in</a>. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our service.</p>
+        <p>By using TrackMyTickets, you agree to the collection and use of information in accordance with this policy.</p>
+
+        <h2>2. Information We Collect</h2>
+
+        <h3>2.1 Information You Provide</h3>
+        <ul>
+            <li><strong>Account Information:</strong> Name, email address, organization name, and password when you register</li>
+            <li><strong>Ticket Data:</strong> Support tickets, comments, attachments, and related content you create</li>
+            <li><strong>Contact Information:</strong> Information you provide through our enquiry form (name, email, company, phone, message)</li>
+            <li><strong>Feedback:</strong> Ratings, bug reports, and feature requests submitted through the platform</li>
+        </ul>
+
+        <h3>2.2 Information Collected Automatically</h3>
+        <ul>
+            <li><strong>Log Data:</strong> IP address, browser type, pages visited, time of access, and referring URLs</li>
+            <li><strong>Device Information:</strong> Device type, operating system, and screen resolution</li>
+            <li><strong>Cookies:</strong> Session cookies for authentication and preferences (see Section 6)</li>
+        </ul>
+
+        <h2>3. How We Use Your Information</h2>
+        <p>We use the information we collect to:</p>
+        <ul>
+            <li>Provide, maintain, and improve the TrackMyTickets platform</li>
+            <li>Authenticate users and manage access control</li>
+            <li>Process and route support tickets within your organization</li>
+            <li>Send transactional emails (OTP codes, ticket notifications, welcome emails)</li>
+            <li>Respond to enquiries and support requests</li>
+            <li>Monitor and analyze usage patterns to improve user experience</li>
+            <li>Detect, prevent, and address technical issues and security threats</li>
+        </ul>
+
+        <h2>4. Data Storage & Security</h2>
+
+        <h3>4.1 Multi-Tenant Architecture</h3>
+        <p>TrackMyTickets uses a secure multi-tenant architecture with dedicated database isolation for each organization. Your data is logically separated from other organizations' data.</p>
+
+        <h3>4.2 Security Measures</h3>
+        <ul>
+            <li>All data is encrypted in transit using TLS/SSL</li>
+            <li>Passwords are hashed using industry-standard algorithms (PBKDF2)</li>
+            <li>JWT tokens with short expiration times and token blacklisting</li>
+            <li>Rate limiting to prevent brute-force attacks</li>
+            <li>Database credentials encrypted using Fernet symmetric encryption</li>
+            <li>Regular security audits and vulnerability assessments</li>
+        </ul>
+
+        <h3>4.3 Data Retention</h3>
+        <p>We retain your data for as long as your account is active or as needed to provide our services. If you request account deletion, we will delete your data within 30 days, except where retention is required by law.</p>
+
+        <h2>5. Data Sharing & Disclosure</h2>
+        <p>We do <strong>not</strong> sell, trade, or rent your personal information to third parties. We may share information only in the following circumstances:</p>
+        <ul>
+            <li><strong>Within Your Organization:</strong> Ticket data is visible to members of your organization based on their role and permissions</li>
+            <li><strong>Service Providers:</strong> We use third-party email services (SMTP) to deliver transactional emails</li>
+            <li><strong>Legal Requirements:</strong> When required by law, subpoena, or legal process</li>
+            <li><strong>Protection of Rights:</strong> To protect the safety, rights, or property of TrackMyTickets, our users, or the public</li>
+        </ul>
+
+        <h2>6. Cookies</h2>
+        <p>We use cookies and similar technologies for:</p>
+        <ul>
+            <li><strong>Essential Cookies:</strong> Authentication tokens (JWT) stored in localStorage for session management</li>
+            <li><strong>Preference Cookies:</strong> Theme preferences (light/dark mode)</li>
+        </ul>
+        <p>We do not use advertising or third-party tracking cookies. You can control cookie settings through your browser preferences.</p>
+
+        <h2>7. Your Rights</h2>
+        <p>You have the right to:</p>
+        <ul>
+            <li><strong>Access:</strong> Request a copy of the data we hold about you</li>
+            <li><strong>Correction:</strong> Update or correct inaccurate personal information</li>
+            <li><strong>Deletion:</strong> Request deletion of your account and associated data</li>
+            <li><strong>Data Portability:</strong> Request your data in a structured, machine-readable format</li>
+            <li><strong>Objection:</strong> Object to processing of your data for specific purposes</li>
+        </ul>
+        <p>To exercise any of these rights, contact us at <a href="mailto:support@trackmytickets.in">support@trackmytickets.in</a>.</p>
+
+        <h2>8. International Data Transfers</h2>
+        <p>Your data may be stored and processed in servers located in different regions. By using our service, you consent to the transfer of your information to countries outside your country of residence, where data protection laws may differ.</p>
+
+        <h2>9. Children's Privacy</h2>
+        <p>TrackMyTickets is not intended for children under 16 years of age. We do not knowingly collect personal information from children. If we become aware that a child has provided us with personal data, we will take steps to delete it.</p>
+
+        <h2>10. Changes to This Policy</h2>
+        <p>We may update this Privacy Policy from time to time. We will notify you of significant changes by posting a notice on our platform or sending you an email. Continued use of the service after changes constitutes acceptance of the updated policy.</p>
+
+        <h2>11. Contact Us</h2>
+        <p>If you have questions about this Privacy Policy or our data practices, please contact us:</p>
+        <ul>
+            <li><strong>Email:</strong> <a href="mailto:support@trackmytickets.in">support@trackmytickets.in</a></li>
+            <li><strong>Website:</strong> <a href="https://trackmytickets.in/#enquiry">Contact Form</a></li>
+        </ul>
+    </article>
+
+    <!-- Footer -->
+    <footer class="legal-footer">
+        <p>
+            <a href="/privacy-policy">Privacy Policy</a> ·
+            <a href="/terms-of-service">Terms of Service</a> ·
+            <a href="/">Home</a>
+        </p>
+        <p style="margin-top: 0.75rem;">&copy; 2026 TrackMyTickets. All rights reserved.</p>
+    </footer>
+</body>
+</html>

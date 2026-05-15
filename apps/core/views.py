@@ -24,6 +24,14 @@ logger = logging.getLogger('apps')
 class ExternalDataSourceViewSet(viewsets.ModelViewSet):
     serializer_class = ExternalDataSourceSerializer
     permission_classes = [permissions.IsAuthenticated]
+
+    def get_permissions(self):
+        """Only org admins can create/update/delete data sources."""
+        if self.action in ('create', 'update', 'partial_update', 'destroy',
+                           'test_connection', 'test'):
+            from apps.tickets.permissions import IsOrgAdmin
+            return [permissions.IsAuthenticated(), IsOrgAdmin()]
+        return super().get_permissions()
     
     def get_queryset(self):
         if not hasattr(self.request, 'organization') or not self.request.organization:

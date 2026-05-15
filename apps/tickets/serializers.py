@@ -345,4 +345,11 @@ class AuditLogSerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'created_at']
 
     def get_user_name(self, obj):
-        return obj.user.full_name if obj.user else 'System'
+        if not obj.user_id:
+            return 'System'
+        try:
+            from apps.accounts.models import User
+            user = User.objects.filter(id=obj.user_id).values_list('full_name', flat=True).first()
+            return user or f'User #{obj.user_id}'
+        except Exception:
+            return f'User #{obj.user_id}'

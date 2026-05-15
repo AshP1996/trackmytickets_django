@@ -33,36 +33,43 @@ def robots_txt(request):
 def sitemap_xml(request):
     """Generate dynamic sitemap.xml"""
     base_url = f"{request.scheme}://{request.get_host()}"
+    today = datetime.now().strftime('%Y-%m-%d')
     
-    # Define all public pages with their priorities and change frequencies
+    # Only include real, crawlable pages (not hash fragments)
     urls = [
         {
             'loc': base_url + '/',
-            'lastmod': datetime.now().strftime('%Y-%m-%d'),
+            'lastmod': today,
             'changefreq': 'weekly',
             'priority': '1.0'
         },
         {
-            'loc': base_url + '/#features',
-            'lastmod': datetime.now().strftime('%Y-%m-%d'),
+            'loc': base_url + '/features',
+            'lastmod': today,
             'changefreq': 'monthly',
             'priority': '0.8'
         },
         {
-            'loc': base_url + '/#about',
-            'lastmod': datetime.now().strftime('%Y-%m-%d'),
+            'loc': base_url + '/pricing',
+            'lastmod': today,
             'changefreq': 'monthly',
-            'priority': '0.7'
+            'priority': '0.8'
         },
         {
-            'loc': base_url + '/#promotion',
-            'lastmod': datetime.now().strftime('%Y-%m-%d'),
-            'changefreq': 'weekly',
-            'priority': '0.9'
+            'loc': base_url + '/privacy-policy',
+            'lastmod': today,
+            'changefreq': 'monthly',
+            'priority': '0.5'
         },
         {
-            'loc': base_url + '/#enquiry',
-            'lastmod': datetime.now().strftime('%Y-%m-%d'),
+            'loc': base_url + '/terms-of-service',
+            'lastmod': today,
+            'changefreq': 'monthly',
+            'priority': '0.5'
+        },
+        {
+            'loc': base_url + '/platform/login',
+            'lastmod': today,
             'changefreq': 'monthly',
             'priority': '0.6'
         },
@@ -74,3 +81,4 @@ def sitemap_xml(request):
         {'urls': urls},
         content_type='application/xml'
     )
+
