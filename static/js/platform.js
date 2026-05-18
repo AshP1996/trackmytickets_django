@@ -132,23 +132,23 @@ const platformAPI = new PlatformAPIClient();
 function showSuccess(message) {
     const alert = document.getElementById('success-message');
     const text = document.getElementById('success-text');
+    const err = document.getElementById('error-message');
+    if (err) err.classList.remove('show');
     if (alert && text) {
         text.textContent = message;
-        alert.style.display = 'block';
-        setTimeout(() => {
-            if (alert) alert.style.display = 'none';
-        }, 5000);
+        alert.classList.add('show');
+        setTimeout(() => alert.classList.remove('show'), 5000);
     }
-    // Also show toast if available
-    console.log('Success:', message);
 }
 
 function showError(message) {
     const alert = document.getElementById('error-message');
     const text = document.getElementById('error-text');
+    const ok = document.getElementById('success-message');
+    if (ok) ok.classList.remove('show');
     if (alert && text) {
         text.textContent = message;
-        alert.style.display = 'block';
+        alert.classList.add('show');
     }
     console.error('Error:', message);
 }
@@ -177,34 +177,22 @@ async function checkPlatformAuth() {
 async function loadPlatformStats() {
     try {
         const stats = await platformAPI.getStats();
-        console.log('Platform stats:', stats); // Debug
-        document.getElementById('total-orgs').textContent = stats.organizations?.total || stats.total_organizations || 0;
-        document.getElementById('total-users').textContent = stats.users?.total || stats.total_users || 0;
-        document.getElementById('total-tickets').textContent = stats.tickets?.total || stats.total_tickets || 0;
-        document.getElementById('active-orgs').textContent = stats.organizations?.active || stats.active_organizations || 0;
-
-        // Update enquiries stats if elements exist
-        const totalEnquiriesEl = document.getElementById('total-enquiries');
-        const unreadEnquiriesEl = document.getElementById('unread-enquiries');
-        if (totalEnquiriesEl) {
-            totalEnquiriesEl.textContent = stats.enquiries?.total || 0;
+        if (typeof window.renderPlatformAnalytics === 'function') {
+            window.renderPlatformAnalytics(stats);
+            return;
         }
-        if (unreadEnquiriesEl) {
-            const unread = stats.enquiries?.unread || 0;
-            unreadEnquiriesEl.textContent = `${unread} unread`;
-        }
+        const set = (id, val) => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = val;
+        };
+        set('total-orgs', stats.organizations?.total ?? stats.total_organizations ?? 0);
+        set('total-users', stats.users?.total ?? stats.total_users ?? 0);
+        set('total-tickets', stats.tickets?.total ?? stats.total_tickets ?? 0);
+        set('total-enquiries', stats.enquiries?.total ?? 0);
+        set('unread-enquiries', `${stats.enquiries?.unread ?? 0} unread`);
     } catch (error) {
         console.error('Error loading stats:', error);
-        const fallback = '0';
-        const ids = ['total-orgs', 'total-users', 'total-tickets', 'active-orgs'];
-        ids.forEach(id => {
-            const el = document.getElementById(id);
-            if (el) el.textContent = fallback;
-        });
-        const totalEnquiriesEl = document.getElementById('total-enquiries');
-        const unreadEnquiriesEl = document.getElementById('unread-enquiries');
-        if (totalEnquiriesEl) totalEnquiriesEl.textContent = fallback;
-        if (unreadEnquiriesEl) unreadEnquiriesEl.textContent = '0 unread';
+        showError('Failed to load platform analytics.');
     }
 }
 let currentOrgPage = 1;
@@ -249,16 +237,16 @@ async function loadOrganizations(page = 1, pageSize = 10) {
 
         let html = `
             <div class="table-responsive">
-                <table class="table table-hover" style="margin: 0; vertical-align: middle;">
-                    <thead class="bg-light">
+                <table class="pd-table table table-hover">
+                    <thead>
                         <tr>
-                            <th class="border-0 px-4 py-3 text-tertiary font-medium">Organization</th>
-                            <th class="border-0 px-4 py-3 text-tertiary font-medium">Subdomain</th>
-                            <th class="border-0 px-4 py-3 text-tertiary font-medium">Access URL</th>
-                            <th class="border-0 px-4 py-3 text-tertiary font-medium">Plan</th>
-                            <th class="border-0 px-4 py-3 text-tertiary font-medium">Status</th>
-                            <th class="border-0 px-4 py-3 text-tertiary font-medium">Stats</th>
-                            <th class="border-0 px-4 py-3 text-tertiary font-medium text-end">Actions</th>
+                            <th>Organization</th>
+                            <th>Subdomain</th>
+                            <th>Access URL</th>
+                            <th>Plan</th>
+                            <th>Status</th>
+                            <th>Stats</th>
+                            <th class="text-end">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -704,17 +692,17 @@ async function loadEnquiries(unreadOnly = false, page = 1, pageSize = 10) {
 
         let html = `
             <div class="table-responsive">
-                <table class="table table-hover" style="margin: 0; vertical-align: middle;">
-                    <thead class="bg-light">
+                <table class="pd-table table table-hover">
+                    <thead>
                         <tr>
-                            <th class="border-0 px-4 py-3 text-tertiary font-medium">Name</th>
-                            <th class="border-0 px-4 py-3 text-tertiary font-medium">Email</th>
-                            <th class="border-0 px-4 py-3 text-tertiary font-medium">Company</th>
-                            <th class="border-0 px-4 py-3 text-tertiary font-medium">Phone</th>
-                            <th class="border-0 px-4 py-3 text-tertiary font-medium">Message</th>
-                            <th class="border-0 px-4 py-3 text-tertiary font-medium">Date</th>
-                            <th class="border-0 px-4 py-3 text-tertiary font-medium">Status</th>
-                            <th class="border-0 px-4 py-3 text-tertiary font-medium text-end">Actions</th>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Company</th>
+                            <th>Phone</th>
+                            <th>Message</th>
+                            <th>Date</th>
+                            <th>Status</th>
+                            <th class="text-end">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -926,16 +914,18 @@ document.addEventListener('DOMContentLoaded', async function () {
         });
     }
 
-    // Search
+    // Search (server-side via API)
     const searchInput = document.getElementById('search-orgs');
     if (searchInput) {
+        let searchDebounce;
         searchInput.addEventListener('input', function () {
-            const searchTerm = this.value.toLowerCase();
-            const rows = document.querySelectorAll('#orgs-container tbody tr');
-            rows.forEach(row => {
-                const text = row.textContent.toLowerCase();
-                row.style.display = text.includes(searchTerm) ? '' : 'none';
-            });
+            clearTimeout(searchDebounce);
+            searchDebounce = setTimeout(() => {
+                currentOrgSearch = this.value.trim();
+                loadOrganizations(1, currentOrgPageSize);
+            }, 350);
         });
     }
 });
+
+window.loadPlatformStats = loadPlatformStats;

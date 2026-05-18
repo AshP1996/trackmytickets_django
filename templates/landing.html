@@ -68,7 +68,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap"
         rel="stylesheet">
 
     <!-- JSON-LD Structured Data for SEO -->
@@ -202,19 +202,20 @@
     <header>
     <nav class="navbar" id="navbar" aria-label="Main navigation">
         <div class="nav-container">
-            <a href="/" class="logo" style="display: flex; align-items: center; gap: 12px; text-decoration: none;">
-                <img src="{% static 'images/logo.png' %}" alt="TrackMyTickets Logo"
-                    style="height: 48px; width: auto; object-fit: contain; display: block;"
-                    onerror="this.style.display='none'; this.nextElementSibling.style.marginLeft='0';">
-                <span style="font-size: 20px; font-weight: 700;">TrackMyTickets</span>
+            <a href="/" class="logo">
+                <img src="{% static 'images/logo.png' %}" alt="TrackMyTickets Logo" class="logo-img"
+                    onerror="this.style.display='none';">
+                <span>TrackMyTickets</span>
             </a>
-            <div class="nav-links">
+            <button type="button" class="nav-toggle" id="nav-toggle" aria-label="Toggle menu" aria-expanded="false">
+                <span></span><span></span><span></span>
+            </button>
+            <div class="nav-links" id="nav-links">
                 <a href="#features">Features</a>
                 <a href="#how-it-works">How it Works</a>
                 <a href="#testimonials">Testimonials</a>
                 <a href="#faq">FAQ</a>
-                <a href="#" class="btn-login" onclick="openRegisterModal(event)"
-                    style="margin-right: -1rem; background: var(--gradient-hero);">Add Your Organization</a>
+                <a href="#" class="btn-login btn-glow" onclick="openRegisterModal(event)">Add Your Organization</a>
                 <a href="/platform/login" class="btn-login">Super Admin Login</a>
             </div>
         </div>
@@ -224,56 +225,111 @@
     <!-- SEO: Semantic <main> landmark -->
     <main>
     <!-- Hero Section -->
-    <section class="hero" style="background: url('{% static "images/hero-bg.png" %}') center/cover no-repeat;">
-        <div class="hero-content">
-            <h1>The Helpdesk Software Built for Speed and Scale<br><span class="typewriter-text"></span><span
-                    class="cursor">|</span></h1>
-            <p class="subtitle">Secure, multi-tenant helpdesk software designed for internal IT teams and customer
-                support workflows.</p>
-            <p class="description">
-                Traditional ticketing systems are bloated, slow, and hard to manage. TrackMyTickets is the lightweight,
-                developer-friendly alternative. Deploy a secure, multi-tenant SaaS ticket management system in minutes,
-                with dedicated database isolation and distraction-free workflows.
-            </p>
-            <div class="hero-buttons">
-                <a href="#enquiry" class="btn-primary">
-                    Start Free Trial <i class="fas fa-arrow-right"></i>
-                </a>
-                <a href="#features" class="btn-secondary">
-                    Explore Features
-                </a>
-            </div>
-            <div class="trust-badges">
-                <div class="trust-badge">
-                    <i class="fas fa-check-circle"></i>
-                    <span>No Credit Card Required</span>
+    <section class="hero" id="top">
+        <div class="hero-bg" aria-hidden="true">
+            <div class="hero-grid"></div>
+            <div class="hero-blob hero-blob-1"></div>
+            <div class="hero-blob hero-blob-2"></div>
+            <div class="hero-blob hero-blob-3"></div>
+        </div>
+        <div class="hero-inner">
+            <div class="hero-content">
+                <div class="hero-badge">
+                    <span class="hero-badge-dot"></span>
+                    100% free · No credit card required
                 </div>
-
-                <div class="trust-badge">
-                    <i class="fas fa-check-circle"></i>
-                    <span>Setup in 5 Minutes</span>
+                <h1>
+                    Helpdesk software built for
+                    <span class="gradient-text typewriter-wrap"><span class="typewriter-text"></span><span class="cursor">|</span></span>
+                </h1>
+                <p class="subtitle">Secure, multi-tenant ticketing for IT teams and customer support — deploy in minutes, scale without limits.</p>
+                <p class="description">
+                    Ditch bloated legacy tools. TrackMyTickets gives you dedicated tenant isolation, real-time analytics, and a distraction-free workspace your team will actually enjoy.
+                </p>
+                <div class="hero-buttons">
+                    <a href="#" class="btn-primary btn-glow" onclick="openRegisterModal(event)">
+                        Start Free <i class="fas fa-arrow-right"></i>
+                    </a>
+                    <a href="#showcase" class="btn-secondary">
+                        <i class="fas fa-play-circle"></i> See it in action
+                    </a>
+                </div>
+                <div class="trust-badges">
+                    <div class="trust-badge"><i class="fas fa-shield-halved"></i><span>Enterprise-grade security</span></div>
+                    <div class="trust-badge"><i class="fas fa-bolt"></i><span>5-minute setup</span></div>
+                    <div class="trust-badge"><i class="fas fa-infinity"></i><span>Unlimited tickets</span></div>
+                </div>
+            </div>
+            <div class="hero-visual">
+                <div class="floating-card floating-card-1"><i class="fas fa-chart-line"></i> 99.9% uptime</div>
+                <div class="floating-card floating-card-2"><i class="fas fa-users"></i> Multi-tenant</div>
+                <div class="hero-mockup" data-tilt>
+                    <div class="mockup-header">
+                        <span class="mockup-dot red"></span>
+                        <span class="mockup-dot yellow"></span>
+                        <span class="mockup-dot green"></span>
+                        <span class="mockup-title">TrackMyTickets — Inbox</span>
+                    </div>
+                    <div class="ticket-row">
+                        <span class="ticket-priority high"></span>
+                        <div class="ticket-info"><strong>VPN access request</strong><span>IT · 2m ago</span></div>
+                        <span class="ticket-status progress">In progress</span>
+                    </div>
+                    <div class="ticket-row">
+                        <span class="ticket-priority medium"></span>
+                        <div class="ticket-info"><strong>Password reset — Sales</strong><span>Support · 14m ago</span></div>
+                        <span class="ticket-status open">Open</span>
+                    </div>
+                    <div class="ticket-row">
+                        <span class="ticket-priority low"></span>
+                        <div class="ticket-info"><strong>Feature: export reports</strong><span>Product · 1h ago</span></div>
+                        <span class="ticket-status open">Open</span>
+                    </div>
+                    <div class="ticket-row">
+                        <span class="ticket-priority high"></span>
+                        <div class="ticket-info"><strong>Server latency spike</strong><span>DevOps · 3h ago</span></div>
+                        <span class="ticket-status resolved">Resolved</span>
+                    </div>
                 </div>
             </div>
         </div>
     </section>
 
+    <section class="logo-marquee" aria-hidden="true">
+        <div class="marquee-track">
+            <span><i class="fas fa-building"></i> Multi-tenant SaaS</span>
+            <span><i class="fas fa-database"></i> Dedicated DB isolation</span>
+            <span><i class="fas fa-lock"></i> Role-based access</span>
+            <span><i class="fas fa-chart-pie"></i> Real-time analytics</span>
+            <span><i class="fas fa-clock"></i> SLA tracking</span>
+            <span><i class="fas fa-mobile-screen"></i> Mobile-friendly</span>
+            <span><i class="fas fa-building"></i> Multi-tenant SaaS</span>
+            <span><i class="fas fa-database"></i> Dedicated DB isolation</span>
+            <span><i class="fas fa-lock"></i> Role-based access</span>
+            <span><i class="fas fa-chart-pie"></i> Real-time analytics</span>
+            <span><i class="fas fa-clock"></i> SLA tracking</span>
+            <span><i class="fas fa-mobile-screen"></i> Mobile-friendly</span>
+        </div>
+    </section>
+
+
     <!-- Stats Section -->
     <section class="stats">
         <div class="stats-container">
-            <div class="stat-item">
-                <div class="stat-number">1,250+</div>
+            <div class="stat-item reveal">
+                <div class="stat-number" data-count="1250" data-suffix="+">0</div>
                 <div class="stat-label">Active Teams</div>
             </div>
-            <div class="stat-item">
-                <div class="stat-number">50K+</div>
+            <div class="stat-item reveal">
+                <div class="stat-number" data-count="50" data-suffix="K+">0</div>
                 <div class="stat-label">Tickets Resolved</div>
             </div>
-            <div class="stat-item">
-                <div class="stat-number">99.9%</div>
+            <div class="stat-item reveal">
+                <div class="stat-number" data-count="99.9" data-suffix="%" data-decimals="1">0</div>
                 <div class="stat-label">Uptime</div>
             </div>
-            <div class="stat-item">
-                <div class="stat-number">4.8/5</div>
+            <div class="stat-item reveal">
+                <div class="stat-number" data-count="4.8" data-suffix="/5" data-decimals="1">0</div>
                 <div class="stat-label">Customer Rating</div>
             </div>
         </div>
@@ -282,12 +338,12 @@
     <!-- Features Section -->
     <section class="features" id="features">
         <div class="container">
-            <h2 class="section-title">Enterprise-Grade Ticket Management</h2>
+            <h2 class="section-title">Enterprise-Grade <span class="gradient-text">Ticket Management</span></h2>
             <p class="section-subtitle">
                 A complete B2B ticketing platform designed for scalability, security, and performance
             </p>
             <div class="features-grid">
-                <div class="feature-card fade-in-section">
+                <div class="feature-card featured" data-tilt>
                     <div class="feature-icon">
                         <i class="fas fa-smile"></i>
                     </div>
@@ -295,7 +351,7 @@
                     <p>Clean, intuitive interfaces designed for human workflows. Minimize the learning curve and
                         maximize productivity from day one.</p>
                 </div>
-                <div class="feature-card fade-in-section">
+                <div class="feature-card" data-tilt>
                     <div class="feature-icon">
                         <i class="fas fa-rocket"></i>
                     </div>
@@ -303,7 +359,7 @@
                     <p>Built with robust simplicity in mind. Our fully dockerized modern stack ensures fast, highly
                         available deployment and effortless scale.</p>
                 </div>
-                <div class="feature-card fade-in-section">
+                <div class="feature-card" data-tilt>
                     <div class="feature-icon">
                         <i class="fas fa-building"></i>
                     </div>
@@ -311,7 +367,7 @@
                     <p>Enterprise-grade data isolation. Securely host isolated environments for distinct organizations
                         or departments from a single cloud platform.</p>
                 </div>
-                <div class="feature-card fade-in-section">
+                <div class="feature-card" data-tilt>
                     <div class="feature-icon">
                         <i class="fas fa-database"></i>
                     </div>
@@ -319,7 +375,7 @@
                     <p>Maximum security and compliance with dedicated database routing. Complete tenant separation with
                         zero data leakage.</p>
                 </div>
-                <div class="feature-card fade-in-section">
+                <div class="feature-card" data-tilt>
                     <div class="feature-icon">
                         <i class="fas fa-user-shield"></i>
                     </div>
@@ -327,7 +383,7 @@
                     <p>Granular permissions for Admins, Managers, and Agents. Ensure precisely the right people have the
                         right access securely.</p>
                 </div>
-                <div class="feature-card fade-in-section">
+                <div class="feature-card" data-tilt>
                     <div class="feature-icon">
                         <i class="fas fa-clock"></i>
                     </div>
@@ -335,7 +391,7 @@
                     <p>Define clear service level agreements (SLAs) and orchestrate entire ticket lifecycles from
                         creation to resolution.</p>
                 </div>
-                <div class="feature-card fade-in-section">
+                <div class="feature-card" data-tilt>
                     <div class="feature-icon">
                         <i class="fas fa-chart-line"></i>
                     </div>
@@ -343,7 +399,7 @@
                     <p>Actionable insights driven by live data points. Monitor agent workloads, resolution times, and
                         team performance.</p>
                 </div>
-                <div class="feature-card fade-in-section">
+                <div class="feature-card" data-tilt>
                     <div class="feature-icon">
                         <i class="fas fa-eye-slash"></i>
                     </div>
@@ -355,13 +411,37 @@
         </div>
     </section>
 
-    <!-- Clean UI Section -->
-    <section class="clean-ui" style="background: white; padding: 6rem 2rem;">
+
+    <section class="how-it-works" id="how-it-works">
         <div class="container">
-            <div style="display: flex; align-items: center; gap: 4rem; flex-wrap: wrap;">
-                <div class="fade-in-section" style="flex: 1; min-width: 300px;">
-                    <h2 class="section-title" style="text-align: left; margin-bottom: 1.5rem;">Distraction-Free Design
-                        for Maximum Focus</h2>
+            <h2 class="section-title">How It <span class="gradient-text">Works</span></h2>
+            <p class="section-subtitle">Go from signup to resolving tickets in three simple steps</p>
+            <div class="steps-grid">
+                <div class="step-card reveal">
+                    <div class="step-number">1</div>
+                    <h3>Create your organization</h3>
+                    <p>Register in seconds with your own secure tenant URL. No credit card, no sales calls.</p>
+                </div>
+                <div class="step-card reveal">
+                    <div class="step-number">2</div>
+                    <h3>Invite your team</h3>
+                    <p>Add agents, set roles, and configure departments. Everyone gets the right access from day one.</p>
+                </div>
+                <div class="step-card reveal">
+                    <div class="step-number">3</div>
+                    <h3>Start resolving tickets</h3>
+                    <p>Track SLAs, collaborate on issues, and watch real-time analytics light up your dashboard.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Clean UI Section -->
+    <section class="clean-ui">
+        <div class="container">
+            <div class="clean-ui-grid">
+                <div class="clean-ui-content reveal">
+                    <h2 class="section-title">Distraction-Free Design for <span class="gradient-text">Maximum Focus</span></h2>
                     <p style="font-size: 1.125rem; color: var(--text-light); margin-bottom: 2rem; line-height: 1.8;">
                         We believe that powerful software doesn't have to be complicated. TrackMyTickets features a
                         clean, minimalist interface designed to help you focus on what matters most - resolving issues.
@@ -403,7 +483,7 @@
     <!-- Screenshot Showcase Section -->
     <section class="showcase" id="showcase" style="padding: 6rem 2rem; background: var(--bg-white);">
         <div class="container">
-            <h2 class="section-title">See It in Action</h2>
+            <h2 class="section-title">See It <span class="gradient-text">in Action</span></h2>
             <p class="section-subtitle">
                 Experience the clean, intuitive interface designed for modern support teams
             </p>
@@ -487,58 +567,7 @@
                     style="width: 12px; height: 12px; background: var(--primary-color); border-radius: 50%; cursor: pointer; opacity: 0.3; transition: opacity 0.3s;"></span>
             </div>
 
-            <script>
-                document.addEventListener('DOMContentLoaded', function () {
-                    const track = document.querySelector('.carousel-track');
-                    const slides = document.querySelectorAll('.carousel-slide');
-                    const nextBtn = document.querySelector('.carousel-btn.next');
-                    const prevBtn = document.querySelector('.carousel-btn.prev');
-                    const indicators = document.querySelectorAll('.indicator');
-
-                    let currentIndex = 0;
-
-                    function updateSlide(index) {
-                        track.style.transform = `translateX(-${index * 100}%)`;
-                        indicators.forEach((ind, i) => {
-                            ind.style.opacity = i === index ? '1' : '0.3';
-                        });
-                        currentIndex = index;
-                    }
-
-                    nextBtn.addEventListener('click', () => {
-                        currentIndex = (currentIndex + 1) % slides.length;
-                        updateSlide(currentIndex);
-                    });
-
-                    prevBtn.addEventListener('click', () => {
-                        currentIndex = (currentIndex - 1 + slides.length) % slides.length;
-                        updateSlide(currentIndex);
-                    });
-
-                    indicators.forEach((ind, i) => {
-                        ind.addEventListener('click', () => updateSlide(i));
-                    });
-
-                    // Auto-advance every 5 seconds
-                    setInterval(() => {
-                        currentIndex = (currentIndex + 1) % slides.length;
-                        updateSlide(currentIndex);
-                    }, 5000);
-
-                    // Hover effect for carousel buttons
-                    [nextBtn, prevBtn].forEach(btn => {
-                        btn.addEventListener('mouseenter', () => {
-                            btn.style.background = 'white';
-                            btn.style.transform = 'translateY(-50%) scale(1.1)';
-                        });
-                        btn.addEventListener('mouseleave', () => {
-                            btn.style.background = 'rgba(255,255,255,0.9)';
-                            btn.style.transform = 'translateY(-50%) scale(1)';
-                        });
-                    });
-                });
-            </script>
-        </div>
+</div>
     </section>
 
     <!-- Benefits Section -->
@@ -580,6 +609,40 @@
                     <h3>For Support Teams</h3>
                     <p>Empower agents with shared inboxes, SLA alerts, and collaboration tools to resolve issues faster.
                     </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+
+    <section class="social-proof" id="testimonials">
+        <div class="container">
+            <h2 class="section-title">Loved by <span class="gradient-text">Support Teams</span></h2>
+            <p class="section-subtitle">See why teams switch to TrackMyTickets</p>
+            <div class="testimonials-grid">
+                <div class="testimonial-card reveal">
+                    <div class="testimonial-rating"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i></div>
+                    <p class="testimonial-text">"We replaced a clunky enterprise tool in one afternoon. Our agents actually enjoy using the inbox now."</p>
+                    <div class="testimonial-author">
+                        <div class="author-avatar">SK</div>
+                        <div class="author-info"><h4>Sarah K.</h4><p>IT Director, FinTech</p></div>
+                    </div>
+                </div>
+                <div class="testimonial-card reveal">
+                    <div class="testimonial-rating"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i></div>
+                    <p class="testimonial-text">"Multi-tenant setup was exactly what we needed for our agency clients. Isolated, secure, and fast."</p>
+                    <div class="testimonial-author">
+                        <div class="author-avatar">MR</div>
+                        <div class="author-info"><h4>Marco R.</h4><p>Founder, CloudOps Agency</p></div>
+                    </div>
+                </div>
+                <div class="testimonial-card reveal">
+                    <div class="testimonial-rating"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i></div>
+                    <p class="testimonial-text">"Free, full-featured, and deployable with Docker. Perfect for our startup support stack."</p>
+                    <div class="testimonial-author">
+                        <div class="author-avatar">JL</div>
+                        <div class="author-info"><h4>Jess L.</h4><p>Head of Support, SaaS Startup</p></div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -663,7 +726,7 @@
         </div>
     </section>
 
-    <!-- Promotion Section -->
+    <!-- Prodiv Section -->
     <section class="promotion" id="promotion">
         <div class="promotion-content">
             <h2>Ready to Transform Your Support Workflow?</h2>
@@ -885,8 +948,9 @@
         </div>
     </div>
 
+    <script src="{% static 'js/landing.js' %}"></script>
     <script>
-        // Navbar scroll effect
+        // Enquiry & registration
         window.addEventListener('scroll', function () {
             const navbar = document.getElementById('navbar');
             if (window.scrollY > 50) {
@@ -894,56 +958,6 @@
             } else {
                 navbar.classList.remove('scrolled');
             }
-        });
-
-        // Smooth scrolling
-        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-            anchor.addEventListener('click', function (e) {
-                e.preventDefault();
-                const target = document.querySelector(this.getAttribute('href'));
-                if (target) {
-                    target.scrollIntoView({
-                        behavior: 'smooth',
-                        block: 'start'
-                    });
-                }
-            });
-        });
-
-        // Scroll Animations (Intersection Observer)
-        const observerOptions = {
-            threshold: 0.1,
-            rootMargin: '0px 0px -50px 0px'
-        };
-
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    entry.target.classList.add('visible');
-                    observer.unobserve(entry.target);
-                }
-            });
-        }, observerOptions);
-
-        document.querySelectorAll('.fade-in-section, .feature-card, .testimonial-card, .benefit-item, .section-title, .section-subtitle').forEach(el => {
-            el.classList.add('fade-in-section');
-            observer.observe(el);
-        });
-
-        // FAQ Accordion
-        document.querySelectorAll('.faq-item').forEach(item => {
-            const question = item.querySelector('.faq-question');
-            question.addEventListener('click', () => {
-                const isActive = item.classList.contains('active');
-
-                // Close all items
-                document.querySelectorAll('.faq-item').forEach(i => i.classList.remove('active'));
-
-                // Open clicked item if it wasn't active
-                if (!isActive) {
-                    item.classList.add('active');
-                }
-            });
         });
 
         // Enquiry form submission
@@ -1132,53 +1146,6 @@
             });
         }
     </script>
-    <script>
-        // Typewriter Effect
-        document.addEventListener('DOMContentLoaded', function () {
-            const textElement = document.querySelector('.typewriter-text');
-            if (!textElement) return;
-
-            const phrases = [
-                "High-Growth Enterprises",
-                "Internal IT Teams",
-                "Customer Support Leads",
-                "SaaS Startups"
-            ];
-
-            let phraseIndex = 0;
-            let charIndex = 0;
-            let isDeleting = false;
-            let typeSpeed = 100;
-
-            function type() {
-                const currentPhrase = phrases[phraseIndex];
-
-                if (isDeleting) {
-                    textElement.textContent = currentPhrase.substring(0, charIndex - 1);
-                    charIndex--;
-                    typeSpeed = 50; // Deleting speed
-                } else {
-                    textElement.textContent = currentPhrase.substring(0, charIndex + 1);
-                    charIndex++;
-                    typeSpeed = 100; // Typing speed
-                }
-
-                if (!isDeleting && charIndex === currentPhrase.length) {
-                    isDeleting = true;
-                    typeSpeed = 2000; // Pause at end
-                } else if (isDeleting && charIndex === 0) {
-                    isDeleting = false;
-                    phraseIndex = (phraseIndex + 1) % phrases.length;
-                    typeSpeed = 500; // Pause before new word
-                }
-
-                setTimeout(type, typeSpeed);
-            }
-
-            type();
-        });
-    </script>
-
     <!-- Cookie Consent Banner -->
     <div id="cookie-consent" style="display:none; position:fixed; bottom:0; left:0; right:0; z-index:9999; background:rgba(15,23,42,0.97); backdrop-filter:blur(12px); padding:1.25rem 2rem; box-shadow:0 -4px 24px rgba(0,0,0,0.15); animation: slideUp 0.4s ease-out;">
         <div style="max-width:1200px; margin:0 auto; display:flex; align-items:center; justify-content:space-between; gap:1.5rem; flex-wrap:wrap;">

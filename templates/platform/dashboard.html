@@ -1,385 +1,237 @@
 {% load static %}
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Platform Admin Dashboard - Ticket Management System</title>
-
-    <!-- Font Awesome -->
+    <title>Platform Dashboard | TrackMyTickets</title>
+    <link rel="icon" type="image/png" href="{% static 'images/logo.png' %}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
-    <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-
-    <!-- Modern Design System -->
-    <link rel="stylesheet" href="{% static 'css/design-system.css' %}">
-    <link rel="stylesheet" href="{% static 'css/animations.css' %}">
+    <link rel="stylesheet" href="{% static 'css/platform-dashboard.css' %}">
 </head>
-
-<body>
-    <div class="app-container">
-        <!-- Sidebar -->
-        <aside class="app-sidebar"
-            style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; position: fixed; height: 100vh; overflow-y: auto;">
-            <div class="sidebar-header"
-                style="padding: var(--spacing-lg); border-bottom: 1px solid rgba(255,255,255,0.2);">
-                <a href="/platform/dashboard" class="sidebar-logo"
-                    style="color: white; text-decoration: none; display: flex; align-items: center; gap: 12px;">
-                    <img src="{% static 'images/logo.png' %}" alt="TrackMyTicket Logo"
-                        style="height: 48px; width: auto; object-fit: contain; display: block; filter: brightness(0) invert(1);"
-                        onerror="this.style.display='none';">
-                    <span style="font-weight: 600; font-size: 18px;">TrackMyTicket</span>
-                </a>
-            </div>
-
-            <nav class="sidebar-nav" style="padding: var(--spacing-md);">
-                <div class="nav-section">
-                    <a href="/platform/dashboard" class="nav-item active"
-                        style="color: white; padding: var(--spacing-md); border-radius: 8px; margin-bottom: var(--spacing-xs); display: flex; align-items: center; text-decoration: none; background: rgba(255,255,255,0.15); transition: all 0.2s;">
-                        <i class="fas fa-tachometer-alt" style="margin-right: var(--spacing-sm); width: 20px;"></i>
-                        <span>Dashboard</span>
-                    </a>
-                    <a href="/platform/dashboard" class="nav-item"
-                        style="color: white; padding: var(--spacing-md); border-radius: 8px; margin-bottom: var(--spacing-xs); display: flex; align-items: center; text-decoration: none; opacity: 0.8; transition: all 0.2s;"
-                        onmouseover="this.style.opacity='1'; this.style.background='rgba(255,255,255,0.1)'"
-                        onmouseout="this.style.opacity='0.8'; this.style.background='transparent'">
-                        <i class="fas fa-building" style="margin-right: var(--spacing-sm); width: 20px;"></i>
-                        <span>Organizations</span>
-                    </a>
-                </div>
+<body class="pd-body">
+    <div class="pd-app">
+        <aside class="pd-sidebar" id="pd-sidebar">
+            <a href="/platform/dashboard" class="pd-sidebar-brand">
+                <img src="{% static 'images/logo.png' %}" alt="TrackMyTickets" onerror="this.style.display='none'">
+                <span>TrackMyTickets</span>
+            </a>
+            <nav class="pd-nav">
+                <div class="pd-nav-label">Main</div>
+                <button type="button" class="pd-nav-item active" data-panel="overview"><i class="fas fa-chart-pie"></i> Overview</button>
+                <button type="button" class="pd-nav-item" data-panel="organizations"><i class="fas fa-building"></i> Organizations</button>
+                <button type="button" class="pd-nav-item" data-panel="enquiries"><i class="fas fa-envelope"></i> Enquiries <span id="nav-unread-badge" class="pd-badge pd-badge-danger ms-1" style="display:none">0</span></button>
             </nav>
-
-            <div class="sidebar-footer"
-                style="padding: var(--spacing-lg); border-top: 1px solid rgba(255,255,255,0.2); position: sticky; bottom: 0; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
-                <div style="padding: var(--spacing-sm); margin-bottom: var(--spacing-md);">
-                    <div style="font-weight: 600; margin-bottom: var(--spacing-xs); font-size: 14px;"
-                        id="platform-admin-email-sidebar">platform@admin.com</div>
-                    <div style="font-size: 12px; opacity: 0.8;">SuperAdmin</div>
+            <div class="pd-sidebar-footer">
+                <div class="pd-user-card">
+                    <div class="pd-user-email" id="platform-admin-email-sidebar">Loading…</div>
+                    <div class="pd-user-role">Platform Super Admin</div>
                 </div>
-                <button class="btn btn-light btn-sm" onclick="logout()" style="width: 100%;">
-                    <i class="fas fa-sign-out-alt"></i> Logout
-                </button>
+                <button type="button" class="pd-btn-logout" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Logout</button>
             </div>
         </aside>
 
-        <!-- Main Content -->
-        <main class="app-main" style="padding: var(--spacing-lg); margin-left: 240px;">
-            <div class="app-content">
-                <!-- Toast Container -->
-                <div id="toast-container"></div>
-
-                <!-- Alerts -->
-                <div id="success-message" class="alert alert-success" style="display: none;" role="alert">
-                    <button type="button" class="btn-close" onclick="closeAlert(this.parentElement)"></button>
-                    <span id="success-text"></span>
+        <div class="pd-main">
+            <header class="pd-header">
+                <div>
+                    <button type="button" class="pd-btn pd-btn-secondary pd-mobile-toggle" id="pd-menu-toggle" aria-label="Menu"><i class="fas fa-bars"></i></button>
+                    <h1 id="pd-page-title">Platform overview</h1>
+                    <p class="pd-header-sub">Monitor tenants, users, tickets, and landing-page leads in real time.</p>
+                    <p class="pd-last-updated" id="stats-updated-at"></p>
                 </div>
-
-                <div id="error-message" class="alert alert-error" style="display: none;" role="alert">
-                    <button type="button" class="btn-close" onclick="closeAlert(this.parentElement)"></button>
-                    <span id="error-text"></span>
+                <div class="pd-header-actions">
+                    <button type="button" class="pd-btn pd-btn-secondary" id="refresh-all-btn"><i class="fas fa-sync-alt"></i> Refresh</button>
+                    <button type="button" class="pd-btn pd-btn-primary" id="create-org-btn"><i class="fas fa-plus"></i> New organization</button>
                 </div>
+            </header>
 
-                <!-- Page Header -->
-                <div class="d-flex justify-content-between align-items-center mb-4">
-                    <h1 style="margin: 0;">Platform Admin Dashboard</h1>
-                    <button class="btn btn-primary" id="create-org-btn">
-                        <i class="fas fa-plus"></i>
-                        Create Organization
-                    </button>
-                </div>
+            <div class="pd-content">
+                <div id="success-message" class="pd-alert-banner pd-alert-success"><i class="fas fa-check-circle"></i><span id="success-text"></span></div>
+                <div id="error-message" class="pd-alert-banner pd-alert-error"><i class="fas fa-circle-exclamation"></i><span id="error-text"></span></div>
 
-                <!-- Platform Stats -->
-                <div
-                    style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: var(--spacing-lg); margin-bottom: var(--spacing-xl);">
-                    <div class="card">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div>
-                                    <div class="text-tertiary text-sm mb-1">Total Organizations</div>
-                                    <div class="font-semibold" style="font-size: 24px;" id="total-orgs">-</div>
-                                </div>
-                                <div
-                                    style="width: 48px; height: 48px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 12px; display: flex; align-items: center; justify-content: center;">
-                                    <i class="fas fa-building" style="color: white; font-size: 20px;"></i>
-                                </div>
-                            </div>
+                <section id="panel-overview" class="pd-panel active">
+                    <div class="pd-kpi-grid">
+                        <div class="pd-kpi" style="--pd-kpi-accent:#6366f1">
+                            <div class="pd-kpi-label">Organizations</div>
+                            <div class="pd-kpi-value" id="total-orgs">—</div>
+                            <div class="pd-kpi-meta" id="meta-orgs">— active</div>
+                            <div class="pd-kpi-icon" style="background:linear-gradient(135deg,#6366f1,#8b5cf6)"><i class="fas fa-building"></i></div>
+                        </div>
+                        <div class="pd-kpi" style="--pd-kpi-accent:#ec4899">
+                            <div class="pd-kpi-label">Users</div>
+                            <div class="pd-kpi-value" id="total-users">—</div>
+                            <div class="pd-kpi-meta" id="meta-users">across all tenants</div>
+                            <div class="pd-kpi-icon" style="background:linear-gradient(135deg,#ec4899,#f43f5e)"><i class="fas fa-users"></i></div>
+                        </div>
+                        <div class="pd-kpi" style="--pd-kpi-accent:#0ea5e9">
+                            <div class="pd-kpi-label">Tickets</div>
+                            <div class="pd-kpi-value" id="total-tickets">—</div>
+                            <div class="pd-kpi-meta" id="meta-tickets">platform-wide</div>
+                            <div class="pd-kpi-icon" style="background:linear-gradient(135deg,#0ea5e9,#06b6d4)"><i class="fas fa-ticket-alt"></i></div>
+                        </div>
+                        <div class="pd-kpi" style="--pd-kpi-accent:#10b981">
+                            <div class="pd-kpi-label">Projects</div>
+                            <div class="pd-kpi-value" id="total-projects">—</div>
+                            <div class="pd-kpi-meta">active workspaces</div>
+                            <div class="pd-kpi-icon" style="background:linear-gradient(135deg,#10b981,#34d399)"><i class="fas fa-folder-open"></i></div>
+                        </div>
+                        <div class="pd-kpi" style="--pd-kpi-accent:#f59e0b">
+                            <div class="pd-kpi-label">Enquiries</div>
+                            <div class="pd-kpi-value" id="total-enquiries">—</div>
+                            <div class="pd-kpi-meta" id="unread-enquiries">— unread</div>
+                            <div class="pd-kpi-icon" style="background:linear-gradient(135deg,#f59e0b,#fbbf24)"><i class="fas fa-envelope"></i></div>
+                        </div>
+                        <div class="pd-kpi" style="--pd-kpi-accent:#8b5cf6">
+                            <div class="pd-kpi-label">New orgs (30d)</div>
+                            <div class="pd-kpi-value" id="orgs-30d">—</div>
+                            <div class="pd-kpi-meta" id="meta-suspended">— suspended</div>
+                            <div class="pd-kpi-icon" style="background:linear-gradient(135deg,#8b5cf6,#a78bfa)"><i class="fas fa-chart-line"></i></div>
                         </div>
                     </div>
 
-                    <div class="card">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div>
-                                    <div class="text-tertiary text-sm mb-1">Total Users</div>
-                                    <div class="font-semibold" style="font-size: 24px;" id="total-users">-</div>
-                                </div>
-                                <div
-                                    style="width: 48px; height: 48px; background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); border-radius: 12px; display: flex; align-items: center; justify-content: center;">
-                                    <i class="fas fa-users" style="color: white; font-size: 20px;"></i>
-                                </div>
-                            </div>
+                    <div class="pd-charts-row">
+                        <div class="pd-card">
+                            <div class="pd-card-header"><h3>Organization growth</h3></div>
+                            <div class="pd-card-body"><div class="pd-chart-wrap"><canvas id="chart-org-growth"></canvas></div></div>
+                        </div>
+                        <div class="pd-card">
+                            <div class="pd-card-header"><h3>Tickets by status</h3></div>
+                            <div class="pd-card-body"><div class="pd-chart-wrap pd-chart-wrap--sm"><canvas id="chart-ticket-status"></canvas></div></div>
+                        </div>
+                        <div class="pd-card">
+                            <div class="pd-card-header"><h3>Plan distribution</h3></div>
+                            <div class="pd-card-body"><div class="pd-chart-wrap pd-chart-wrap--sm"><canvas id="chart-plan"></canvas></div></div>
                         </div>
                     </div>
 
-                    <div class="card">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div>
-                                    <div class="text-tertiary text-sm mb-1">Total Tickets</div>
-                                    <div class="font-semibold" style="font-size: 24px;" id="total-tickets">-</div>
-                                </div>
-                                <div
-                                    style="width: 48px; height: 48px; background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); border-radius: 12px; display: flex; align-items: center; justify-content: center;">
-                                    <i class="fas fa-ticket-alt" style="color: white; font-size: 20px;"></i>
-                                </div>
-                            </div>
+                    <div class="pd-split-row">
+                        <div class="pd-card">
+                            <div class="pd-card-header"><h3>Top organizations</h3><span class="pd-badge pd-badge-muted">by tickets</span></div>
+                            <div class="pd-card-body" id="top-orgs-list"><div class="pd-loading"><div class="pd-spinner"></div><div>Loading…</div></div></div>
+                        </div>
+                        <div class="pd-card">
+                            <div class="pd-card-header"><h3>Recent enquiries</h3><button type="button" class="pd-btn pd-btn-secondary btn-sm" data-panel-jump="enquiries">View all</button></div>
+                            <div class="pd-card-body" id="recent-enquiries-list"><div class="pd-loading"><div class="pd-spinner"></div><div>Loading…</div></div></div>
                         </div>
                     </div>
 
-                    <div class="card">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div>
-                                    <div class="text-tertiary text-sm mb-1">Active Organizations</div>
-                                    <div class="font-semibold" style="font-size: 24px;" id="active-orgs">-</div>
-                                </div>
-                                <div
-                                    style="width: 48px; height: 48px; background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); border-radius: 12px; display: flex; align-items: center; justify-content: center;">
-                                    <i class="fas fa-check-circle" style="color: white; font-size: 20px;"></i>
-                                </div>
+                    <div class="pd-mini-stats" id="pd-mini-stats"></div>
+                </section>
+
+                <section id="panel-organizations" class="pd-panel">
+                    <div class="pd-card pd-section-card">
+                        <div class="pd-toolbar">
+                            <h3 style="margin:0;font-family:var(--pd-display)">Organizations</h3>
+                            <div class="d-flex gap-2 flex-wrap">
+                                <input type="search" class="pd-search" id="search-orgs" placeholder="Search name, subdomain, email…">
+                                <button type="button" class="pd-btn pd-btn-secondary" onclick="loadOrganizations()"><i class="fas fa-sync-alt"></i> Refresh</button>
                             </div>
                         </div>
+                        <div id="orgs-container" class="pd-table-wrap"><div class="pd-loading"><div class="pd-spinner"></div><div>Loading organizations…</div></div></div>
                     </div>
+                </section>
 
-                    <div class="card">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div>
-                                    <div class="text-tertiary text-sm mb-1">Enquiries</div>
-                                    <div class="font-semibold" style="font-size: 24px;" id="total-enquiries">-</div>
-                                    <div class="text-tertiary text-xs mt-1" id="unread-enquiries">- unread</div>
-                                </div>
-                                <div
-                                    style="width: 48px; height: 48px; background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); border-radius: 12px; display: flex; align-items: center; justify-content: center;">
-                                    <i class="fas fa-envelope" style="color: white; font-size: 20px;"></i>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Organizations Table -->
-                <div class="card mb-4">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center mb-4">
-                            <h3 style="margin: 0;">Organizations</h3>
+                <section id="panel-enquiries" class="pd-panel">
+                    <div class="pd-card pd-section-card">
+                        <div class="pd-toolbar">
+                            <h3 style="margin:0;font-family:var(--pd-display)">Landing page enquiries</h3>
                             <div class="d-flex gap-2">
-                                <input type="text" class="form-control" id="search-orgs"
-                                    placeholder="Search organizations..." style="width: 250px;">
-                                <button class="btn btn-secondary" onclick="loadOrganizations()">
-                                    <i class="fas fa-sync-alt"></i> Refresh
-                                </button>
+                                <button type="button" class="pd-btn pd-btn-secondary" id="show-unread-btn" onclick="loadEnquiries(true)"><i class="fas fa-filter"></i> Unread only</button>
+                                <button type="button" class="pd-btn pd-btn-secondary" onclick="loadEnquiries()"><i class="fas fa-sync-alt"></i> Refresh</button>
                             </div>
                         </div>
-
-                        <div id="orgs-container">
-                            <div class="loading">
-                                <div class="spinner"></div>
-                                <span style="margin-left: var(--spacing-sm);">Loading organizations...</span>
-                            </div>
-                        </div>
+                        <div id="enquiries-container" class="pd-table-wrap"><div class="pd-loading"><div class="pd-spinner"></div><div>Loading enquiries…</div></div></div>
                     </div>
-                </div>
-
-                <!-- Enquiries Table -->
-                <div class="card">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center mb-4">
-                            <h3 style="margin: 0;">Landing Page Enquiries</h3>
-                            <div class="d-flex gap-2">
-                                <button class="btn btn-sm btn-secondary" onclick="loadEnquiries(true)"
-                                    id="show-unread-btn">
-                                    <i class="fas fa-filter"></i> Show Unread Only
-                                </button>
-                                <button class="btn btn-secondary" onclick="loadEnquiries()">
-                                    <i class="fas fa-sync-alt"></i> Refresh
-                                </button>
-                            </div>
-                        </div>
-
-                        <div id="enquiries-container">
-                            <div class="loading">
-                                <div class="spinner"></div>
-                                <span style="margin-left: var(--spacing-sm);">Loading enquiries...</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                </section>
             </div>
-        </main>
+        </div>
     </div>
 
-    <!-- Organization Created Success Modal -->
-    <div class="modal fade" id="orgCreatedModal" tabindex="-1" aria-labelledby="orgCreatedModalLabel"
-        aria-hidden="true">
+    <div class="modal fade" id="orgCreatedModal" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered modal-lg">
             <div class="modal-content">
                 <div class="modal-header bg-success text-white">
-                    <h5 class="modal-title" id="orgCreatedModalLabel">
-                        <i class="fas fa-check-circle"></i> Organization Created Successfully!
-                    </h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
-                        aria-label="Close"></button>
+                    <h5 class="modal-title"><i class="fas fa-check-circle"></i> Organization created</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
-                <div class="modal-body">
-                    <div id="org-created-details">
-                        <!-- Details will be populated by JavaScript -->
-                    </div>
-                </div>
+                <div class="modal-body"><div id="org-created-details"></div></div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    <button type="button" class="btn btn-primary" id="copy-credentials-btn">
-                        <i class="fas fa-copy"></i> Copy Credentials
-                    </button>
+                    <button type="button" class="btn btn-primary" id="copy-credentials-btn"><i class="fas fa-copy"></i> Copy credentials</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Create Organization Modal -->
-    <div class="modal fade" id="createOrgModal" tabindex="-1" aria-labelledby="createOrgModalLabel" aria-hidden="true">
+    <div class="modal fade" id="createOrgModal" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="createOrgModalLabel">Create New Organization</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <h5 class="modal-title">Create organization</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <form id="create-org-form">
                     <div class="modal-body">
                         <div class="row">
-                            <div class="col-md-6">
-                                <div class="form-group mb-3">
-                                    <label class="form-label required">Organization Name</label>
-                                    <input type="text" class="form-control" id="org-name" name="name" required
-                                        placeholder="e.g., Acme Corporation">
-                                </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Organization name *</label>
+                                <input type="text" class="form-control" id="org-name" name="name" required>
                             </div>
-                            <div class="col-md-6">
-                                <div class="form-group mb-3">
-                                    <label class="form-label required">Subdomain</label>
-                                    <input type="text" class="form-control" id="org-subdomain" name="subdomain" required
-                                        placeholder="e.g., acme" pattern="[a-z0-9-]+">
-                                    <small class="form-text text-tertiary">3-100 characters, lowercase letters, numbers,
-                                        and hyphens only</small>
-                                </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Subdomain *</label>
+                                <input type="text" class="form-control" id="org-subdomain" name="subdomain" required pattern="[a-z0-9-]+">
                             </div>
                         </div>
-
-                        <div class="form-group mb-3">
-                            <label class="form-label required">Contact Email</label>
-                            <input type="email" class="form-control" id="org-email" name="email" required
-                                placeholder="contact@acme.com">
+                        <div class="mb-3">
+                            <label class="form-label">Contact email *</label>
+                            <input type="email" class="form-control" id="org-email" name="email" required>
                         </div>
-
-                        <hr>
-                        <h6 class="mb-3">Admin User</h6>
-
+                        <hr><h6>Admin user</h6>
                         <div class="row">
-                            <div class="col-md-6">
-                                <div class="form-group mb-3">
-                                    <label class="form-label required">Admin Email</label>
-                                    <input type="email" class="form-control" id="admin-email" name="admin_email"
-                                        required placeholder="admin@acme.com">
-                                </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Admin email *</label>
+                                <input type="email" class="form-control" id="admin-email" name="admin_email" required>
                             </div>
-                            <div class="col-md-6">
-                                <div class="form-group mb-3">
-                                    <label class="form-label required">Admin Name</label>
-                                    <input type="text" class="form-control" id="admin-name" name="admin_name" required
-                                        placeholder="John Doe">
-                                </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Admin name *</label>
+                                <input type="text" class="form-control" id="admin-name" name="admin_name" required>
                             </div>
                         </div>
-
-                        <div class="form-group mb-3">
-                            <label class="form-label required">Admin Password</label>
-                            <input type="password" class="form-control" id="admin-password" name="admin_password"
-                                required placeholder="Minimum 8 characters">
+                        <div class="mb-3">
+                            <label class="form-label">Admin password *</label>
+                            <input type="password" class="form-control" id="admin-password" name="admin_password" required minlength="8">
                         </div>
-
                         <hr>
-                        <h6 class="mb-3">Plan & Configuration</h6>
-
                         <div class="row">
-                            <div class="col-md-6">
-                                <div class="form-group mb-3">
-                                    <label class="form-label">Plan</label>
-                                    <select class="form-select" id="org-plan" name="plan">
-                                        <option value="starter_trial">Starter Trial (Free - 30 Users)</option>
-                                        <option value="growth_cluster">Growth Cluster (₹699 - 200 Users)</option>
-                                    </select>
-                                    <small class="form-text text-tertiary" id="plan-help">
-                                        Starter: 1 Month Free. Growth: 6 Months Access.
-                                    </small>
-                                </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Plan</label>
+                                <select class="form-select" id="org-plan" name="plan">
+                                    <option value="starter_trial">Starter Trial</option>
+                                    <option value="growth_cluster">Growth Cluster</option>
+                                </select>
                             </div>
-                            <div class="col-md-6">
-                                <div class="form-group mb-3">
-                                    <label class="form-label">Cluster ID</label>
-                                    <input type="text" class="form-control" id="org-cluster" name="cluster_id"
-                                        placeholder="e.g., us-east-1 (optional)">
-                                </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Cluster ID</label>
+                                <input type="text" class="form-control" id="org-cluster" name="cluster_id">
                             </div>
                         </div>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                        <button type="submit" class="btn btn-primary" id="create-org-btn-submit">
-                            <i class="fas fa-plus"></i> Create Organization
-                        </button>
+                        <button type="submit" class="btn btn-primary" id="create-org-btn-submit"><i class="fas fa-plus"></i> Create</button>
                     </div>
                 </form>
             </div>
         </div>
     </div>
 
-    <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-
-    <!-- Platform API Client -->
-    <script src="{% static 'js/platform.js' %}"></script>
-
-    <script>
-        function closeAlert(alert) {
-            alert.style.display = 'none';
-        }
-
-        function logout() {
-            localStorage.removeItem('platform_access_token');
-            window.location.href = '/platform/login';
-        }
-
-        // Initialize
-        document.addEventListener('DOMContentLoaded', async function () {
-            // Load admin email
-            try {
-                const platformAPI = new PlatformAPIClient();
-                const me = await platformAPI.getMe();
-                const email = me.email;
-                // Update sidebar email
-                const sidebarEmail = document.getElementById('platform-admin-email-sidebar');
-                if (sidebarEmail) sidebarEmail.textContent = email;
-            } catch (error) {
-                console.error('Error loading admin info:', error);
-                // Auth check is also handled in platform.js
-                if (window.location.pathname !== '/platform/login') {
-                    window.location.href = '/platform/login';
-                }
-            }
-        });
-    </script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script src="{% static 'js/platform.js' %}?v=20260518"></script>
+    <script src="{% static 'js/platform-dashboard.js' %}?v=20260518"></script>
 </body>
-
 </html>

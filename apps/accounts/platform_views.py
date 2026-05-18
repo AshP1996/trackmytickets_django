@@ -88,6 +88,13 @@ class PlatformOrganizationsView(views.APIView):
         """List all organizations"""
         try:
             orgs = Organization.objects.all().order_by('-created_at')
+            search = (request.query_params.get('search') or '').strip()
+            if search:
+                orgs = orgs.filter(
+                    Q(name__icontains=search)
+                    | Q(subdomain__icontains=search)
+                    | Q(email__icontains=search)
+                )
         except Exception as e:
             logger.exception("PlatformOrganizationsView: failed to list organizations")
             return Response({'error': 'Failed to load organizations', 'detail': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -519,9 +526,18 @@ class PlatformStatsView(views.APIView):
     permission_classes = [permissions.IsAuthenticated, IsPlatformAdmin]
 
     def get(self, request):
+        from datetime import timedelta
+        from django.db.models import Count
+        from django.db.models.functions import TruncMonth
+        from django.utils import timezone
         from apps.accounts.models import GlobalUser
         from apps.core.models import ExternalDataSource
-        
+        from apps.tickets.models import Project
+
+        now = timezone.now()
+        thirty_days_ago = now - timedelta(days=30)
+        seven_days_ago = now - timedelta(days=7)
+
         try:
             org_count = Organization.objects.count()
             active_org_count = Organization.objects.filter(is_active=True).count()
@@ -529,99 +545,194 @@ class PlatformStatsView(views.APIView):
             logger.warning(f"PlatformStatsView: org count failed: {e}")
             org_count = 0
             active_org_count = 0
-        
+        suspended_org_count = max(0, org_count - active_org_count)
+
         try:
             user_count = GlobalUser.objects.count()
+            active_user_count = GlobalUser.objects.filter(status='active').count()
         except Exception as e:
             logger.warning(f"PlatformStatsView: user count failed: {e}")
             user_count = 0
-        
+            active_user_count = 0
+
         try:
             enquiry_count = Enquiry.objects.count()
             unread_enquiry_count = Enquiry.objects.filter(is_read=False).count()
+            enquiries_last_7_days = Enquiry.objects.filter(created_at__gte=seven_days_ago).count()
         except Exception as e:
             logger.warning(f"PlatformStatsView: enquiry count failed: {e}")
             enquiry_count = 0
             unread_enquiry_count = 0
-        
-        # Ticket stats (Tenant model - aggregated from all sources)
+            enquiries_last_7_days = 0
+
+        try:
+            project_count = Project.objects.count()
+        except Exception as e:
+            logger.warning(f"PlatformStatsView: project count failed: {e}")
+            project_count = 0
+
+        try:
+            orgs_last_30_days = Organization.objects.filter(created_at__gte=thirty_days_ago).count()
+        except Exception as e:
+            orgs_last_30_days = 0
+
+        try:
+            orgs_by_plan = {
+                row['plan']: row['count']
+                for row in Organization.objects.values('plan').annotate(count=Count('id'))
+            }
+        except Exception as e:
+            logger.warning(f"PlatformStatsView: orgs by plan failed: {e}")
+            orgs_by_plan = {}
+
+        try:
+            org_growth = list(
+                Organization.objects.annotate(month=TruncMonth('created_at'))
+                .values('month')
+                .annotate(count=Count('id'))
+                .order_by('month')
+            )
+            org_growth_series = [
+                {
+                    'label': row['month'].strftime('%b %Y') if row['month'] else 'Unknown',
+                    'count': row['count'],
+                }
+                for row in org_growth[-6:]
+            ]
+        except Exception as e:
+            logger.warning(f"PlatformStatsView: org growth failed: {e}")
+            org_growth_series = []
+
         from apps.core.connectors import get_connector
-        
-        # 1. Get IDs of organizations with active external data sources
+
         try:
             external_ds = list(ExternalDataSource.objects.filter(is_active=True, connection_status='connected'))
             external_org_ids = [ds.organization_id for ds in external_ds]
+            external_ds_count = len(external_ds)
         except Exception as e:
             logger.warning(f"PlatformStatsView: failed to load external data sources: {e}")
             external_ds = []
             external_org_ids = []
-        
-        # 2. Count tickets in Default DB (for orgs NOT in external_org_ids)
+            external_ds_count = 0
+
+        tickets_by_status = {}
+        tickets_by_priority = {}
         try:
             if external_org_ids:
-                default_db_ticket_count = Ticket.objects.exclude(organization_id__in=external_org_ids).count()
+                ticket_qs = Ticket.objects.exclude(organization_id__in=external_org_ids)
             else:
-                default_db_ticket_count = Ticket.objects.count()
+                ticket_qs = Ticket.objects.all()
+            default_db_ticket_count = ticket_qs.count()
+            tickets_by_status = {
+                row['status']: row['count']
+                for row in ticket_qs.values('status').annotate(count=Count('id'))
+            }
+            tickets_by_priority = {
+                row['priority']: row['count']
+                for row in ticket_qs.values('priority').annotate(count=Count('id'))
+            }
         except Exception as e:
             logger.warning(f"PlatformStatsView: default DB ticket count failed: {e}")
             default_db_ticket_count = 0
-        
+
         total_tickets = default_db_ticket_count
-        
-        # 3. Count tickets in External DBs
+
         for ds in external_ds:
             try:
-                # Decrypt password
                 password = ds.get_password()
-                
                 config = {
                     'host': ds.host,
                     'port': ds.port,
                     'database': ds.database,
                     'username': ds.username,
-                    'password': password
+                    'password': password,
                 }
-                
                 connector = get_connector(ds.type, config)
-                
-                # Check if tickets table exists first? Or just try query
-                # Different DBs might have different schemas if not managed by us.
-                # Assuming standard schema for "Bring Your Own Database" feature implies we manage schema there too 
-                # or user mapped it. 
-                # If mapped, we should check SchemaMapping.
-                # For this task, assuming standard table name 'tickets' or checking existence.
-                
-                # Simple count query
-                # Note: This assumes the table is named 'tickets'.
-                # In a real BYODB scenario, we might fallback to `connector.get_tables()` check.
                 try:
                     results = connector.fetch_data("SELECT COUNT(*) as count FROM tickets")
                     if results:
-                        # Result format depends on connector, usually list of dicts or tuples
-                        # fetch_data returns list of dicts
                         count = results[0].get('count', 0)
                         total_tickets += count
                 except Exception as e:
                     logger.warning(f"Error counting tickets for DS {ds.id}: {e}")
-                    
             except Exception as e:
                 logger.warning(f"Error connecting to DS {ds.id}: {e}")
+
+        try:
+            top_orgs_qs = (
+                Ticket.objects.values('organization_id')
+                .annotate(ticket_count=Count('id'))
+                .order_by('-ticket_count')[:5]
+            )
+            org_ids = [row['organization_id'] for row in top_orgs_qs if row['organization_id']]
+            org_map = {o.id: o for o in Organization.objects.filter(id__in=org_ids)}
+            top_organizations = []
+            for row in top_orgs_qs:
+                org = org_map.get(row['organization_id'])
+                if not org:
+                    continue
+                user_total = GlobalUser.objects.filter(organization=org).count()
+                top_organizations.append({
+                    'id': org.id,
+                    'name': org.name,
+                    'subdomain': org.subdomain,
+                    'tickets': row['ticket_count'],
+                    'users': user_total,
+                    'is_active': org.is_active,
+                })
+        except Exception as e:
+            logger.warning(f"PlatformStatsView: top orgs failed: {e}")
+            top_organizations = []
+
+        try:
+            recent_enquiries = list(
+                Enquiry.objects.order_by('-created_at')[:5].values(
+                    'id', 'name', 'email', 'company', 'is_read', 'created_at'
+                )
+            )
+            for item in recent_enquiries:
+                if item.get('created_at'):
+                    item['created_at'] = item['created_at'].isoformat()
+        except Exception as e:
+            logger.warning(f"PlatformStatsView: recent enquiries failed: {e}")
+            recent_enquiries = []
 
         return Response({
             'organizations': {
                 'total': org_count,
-                'active': active_org_count
+                'active': active_org_count,
+                'suspended': suspended_org_count,
+                'last_30_days': orgs_last_30_days,
+                'by_plan': orgs_by_plan,
+                'growth': org_growth_series,
             },
             'users': {
-                'total': user_count
+                'total': user_count,
+                'active': active_user_count,
+            },
+            'projects': {
+                'total': project_count,
             },
             'tickets': {
-                'total': total_tickets
+                'total': total_tickets,
+                'by_status': tickets_by_status,
+                'by_priority': tickets_by_priority,
             },
             'enquiries': {
                 'total': enquiry_count,
-                'unread': unread_enquiry_count
-            }
+                'unread': unread_enquiry_count,
+                'last_7_days': enquiries_last_7_days,
+                'recent': recent_enquiries,
+            },
+            'integrations': {
+                'external_databases': external_ds_count,
+            },
+            'top_organizations': top_organizations,
+            # Legacy flat keys for backward compatibility
+            'total_organizations': org_count,
+            'active_organizations': active_org_count,
+            'total_users': user_count,
+            'total_tickets': total_tickets,
         })
 
 class PlatformEnquiriesView(views.APIView):

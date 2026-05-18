@@ -10,30 +10,42 @@
     const ui = {
         showError: (message) => {
             const el = document.getElementById('error-message');
+            const success = document.getElementById('success-message');
+            if (success) success.classList.remove('is-visible');
             if (el) {
-                el.textContent = message;
-                el.style.display = 'block';
-                // Auto-hide after 5 seconds
-                setTimeout(() => el.style.display = 'none', 5000);
+                const text = el.querySelector('.auth-alert-text');
+                if (text) text.textContent = message;
+                else el.textContent = message;
+                el.classList.add('is-visible');
+                setTimeout(() => el.classList.remove('is-visible'), 6000);
             } else {
                 alert(message);
             }
         },
         showSuccess: (message) => {
             const el = document.getElementById('success-message');
+            const error = document.getElementById('error-message');
+            if (error) error.classList.remove('is-visible');
             if (el) {
-                el.textContent = message;
-                el.style.display = 'block';
-                setTimeout(() => el.style.display = 'none', 3000);
+                const text = el.querySelector('.auth-alert-text');
+                if (text) text.textContent = message;
+                else el.textContent = message;
+                el.classList.add('is-visible');
             }
         },
-        setLoading: (btn, isLoading, originalText) => {
+        setLoading: (btn, isLoading, originalHtml) => {
+            if (!btn) return;
+            if (window.AuthLoginUI && typeof window.AuthLoginUI.setSubmitLoading === 'function') {
+                window.AuthLoginUI.setSubmitLoading(btn, isLoading, originalHtml);
+                return;
+            }
             if (isLoading) {
                 btn.disabled = true;
-                btn.textContent = 'Please wait...';
+                btn.dataset.defaultHtml = btn.dataset.defaultHtml || btn.innerHTML;
+                btn.innerHTML = 'Please wait…';
             } else {
                 btn.disabled = false;
-                btn.textContent = originalText || 'Submit';
+                btn.innerHTML = originalHtml || btn.dataset.defaultHtml || 'Sign in';
             }
         }
     };
@@ -71,7 +83,7 @@
                 const emailInput = document.getElementById('email');
                 const passwordInput = document.getElementById('password');
                 const submitBtn = loginForm.querySelector('button[type="submit"]');
-                const btnText = submitBtn.textContent;
+                const btnText = submitBtn.innerHTML;
 
                 const email = emailInput.value.trim();
                 const password = passwordInput.value;
