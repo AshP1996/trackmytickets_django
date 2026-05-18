@@ -8,6 +8,8 @@ __pycache__/
 dist/
 build/
 .eggs/
+logs/
+nginx/logs/
 
 # ─── Environment ──────────────────────────────────────────────────────
 .env
