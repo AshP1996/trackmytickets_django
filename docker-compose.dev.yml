@@ -1,0 +1,22 @@
+# Local development overrides (live code reload on Windows/macOS/Linux)
+# Usage: docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
+
+services:
+  web:
+    volumes:
+      - .:/app
+      - static_volume:/app/staticfiles
+      - media_volume:/app/media
+      - ./logs:/app/logs
+    environment:
+      DEBUG: "True"
+      ALLOWED_HOSTS: localhost,127.0.0.1,web,nginx,0.0.0.0
+
+  celery:
+    volumes:
+      - .:/app
+      - ./logs:/app/logs
+
+  nginx:
+    ports:
+      - "8080:80"

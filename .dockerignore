@@ -50,3 +50,14 @@ htmlcov/
 *.sql
 *.dump
 backups/
+
+# Frontend (Node) — built in optional spa profile
+frontend/node_modules/
+frontend/dist/
+frontend/.env
+frontend/.env.*
+
+# Git / docs
+.git/
+*.md
+!README.md

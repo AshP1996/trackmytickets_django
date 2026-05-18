@@ -1,5 +1,8 @@
+# Production stack: PostgreSQL, Redis, PgBouncer, Django (API + templates), Celery, Nginx
+# Dev with live code reload: docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
+# Optional SPA (when frontend/package.json exists): docker compose --profile spa up --build
+
 services:
-  # Redis Cache
   redis:
     image: redis:alpine
     container_name: ticket_system_redis
@@ -9,93 +12,38 @@ services:
       - ticket_network
     restart: unless-stopped
 
-  # PostgreSQL Database
   db:
     image: postgres:15-alpine
     container_name: ticket_system_db
     volumes:
       - postgres_data:/var/lib/postgresql/data
     environment:
-      - POSTGRES_DB=${DB_NAME:-trackmytickets}
-      - POSTGRES_USER=${DB_USER:-ticketuser}
-      - POSTGRES_PASSWORD=${DB_PASSWORD:-TrackMyTickets2026!}
+      POSTGRES_DB: ${DB_NAME:-trackmytickets}
+      POSTGRES_USER: ${DB_USER:-ticketuser}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-TrackMyTickets2026!}
     networks:
       - ticket_network
     restart: unless-stopped
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U ${DB_USER:-ticketuser} -d ${DB_NAME:-trackmytickets}" ]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-ticketuser} -d ${DB_NAME:-trackmytickets}"]
       interval: 10s
       timeout: 5s
       retries: 5
 
-  # Django Application
-  web:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: ticket_system_web
-    entrypoint: ["sh", "/app/scripts/docker-entrypoint.sh"]
-    command: gunicorn --config gunicorn.conf.py config.wsgi:application
-    volumes:
-      - static_volume:/app/staticfiles
-      - media_volume:/app/media
-      - ./logs:/app/logs
-      - .:/app
-    # user: appuser (set in Dockerfile — do NOT override with root)
-    environment:
-      - DJANGO_SETTINGS_MODULE=config.settings.prod_override
-      - DEBUG=False
-      - SECRET_KEY=${SECRET_KEY:-change-me-in-production}
-      - DB_NAME=${DB_NAME:-trackmytickets}
-      - DB_USER=${DB_USER:-ticketuser}
-      - DB_PASSWORD=${DB_PASSWORD:-TrackMyTickets2026!}
-      - DB_HOST=pgbouncer
-      - DB_PORT=6432
-      - SERVER_IP=${SERVER_IP:-localhost}
-      # Email Configuration
-      - EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend
-      - EMAIL_HOST=${EMAIL_HOST:-smtp.gmail.com}
-      - EMAIL_PORT=${EMAIL_PORT:-587}
-      - EMAIL_USE_TLS=True
-      - EMAIL_HOST_USER=${EMAIL_HOST_USER}
-      - EMAIL_HOST_PASSWORD=${EMAIL_HOST_PASSWORD}
-      - DEFAULT_FROM_EMAIL=${DEFAULT_FROM_EMAIL:-noreply@trackmytickets.in}
-      # JWT Configuration
-      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
-      - DB_CREDENTIALS_ENCRYPTION_KEY=${DB_CREDENTIALS_ENCRYPTION_KEY}
-
-    networks:
-      - ticket_network
-    restart: unless-stopped
-    healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:8000/" ]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
-    depends_on:
-      db:
-        condition: service_healthy
-      redis:
-        condition: service_started
-      pgbouncer:
-        condition: service_started
-
-  # Connection Pooler
   pgbouncer:
     image: edoburu/pgbouncer
     container_name: ticket_system_pgbouncer
     environment:
-      - DB_USER=${DB_USER:-ticketuser}
-      - DB_PASSWORD=${DB_PASSWORD:-TrackMyTickets2026!}
-      - DB_HOST=db
-      - DB_NAME=${DB_NAME:-trackmytickets}
-      - LISTEN_PORT=6432
-      - AUTH_TYPE=scram-sha-256
-      - POOL_MODE=transaction
-      - MAX_CLIENT_CONN=1000
-      - DEFAULT_POOL_SIZE=20
-      - ADMIN_USERS=${DB_USER:-ticketuser}
+      DB_USER: ${DB_USER:-ticketuser}
+      DB_PASSWORD: ${DB_PASSWORD:-TrackMyTickets2026!}
+      DB_HOST: db
+      DB_NAME: ${DB_NAME:-trackmytickets}
+      LISTEN_PORT: 6432
+      AUTH_TYPE: scram-sha-256
+      POOL_MODE: transaction
+      MAX_CLIENT_CONN: 1000
+      DEFAULT_POOL_SIZE: 20
+      ADMIN_USERS: ${DB_USER:-ticketuser}
     ports:
       - "6432:6432"
     depends_on:
@@ -105,45 +53,121 @@ services:
       - ticket_network
     restart: unless-stopped
 
-  # Celery Worker
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ticket_system_web
+    entrypoint: ["/bin/bash", "/app/scripts/docker-entrypoint.sh"]
+    command: ["gunicorn", "--config", "gunicorn.conf.py", "config.wsgi:application"]
+    volumes:
+      - static_volume:/app/staticfiles
+      - media_volume:/app/media
+      - ./logs:/app/logs
+    environment:
+      DJANGO_SETTINGS_MODULE: config.settings.prod_override
+      DEBUG: "False"
+      SECRET_KEY: ${SECRET_KEY:-change-me-in-production}
+      ALLOWED_HOSTS: ${ALLOWED_HOSTS:-localhost,127.0.0.1,web,nginx}
+      DB_NAME: ${DB_NAME:-trackmytickets}
+      DB_USER: ${DB_USER:-ticketuser}
+      DB_PASSWORD: ${DB_PASSWORD:-TrackMyTickets2026!}
+      DB_HOST: pgbouncer
+      DB_PORT: "6432"
+      SERVER_IP: ${SERVER_IP:-localhost}
+      USE_REDIS: "true"
+      REDIS_URL: redis://redis:6379/1
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/0
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:8080,http://127.0.0.1:8080}
+      EMAIL_BACKEND: django.core.mail.backends.smtp.EmailBackend
+      EMAIL_HOST: ${EMAIL_HOST:-smtp.gmail.com}
+      EMAIL_PORT: ${EMAIL_PORT:-587}
+      EMAIL_USE_TLS: "True"
+      EMAIL_HOST_USER: ${EMAIL_HOST_USER:-}
+      EMAIL_HOST_PASSWORD: ${EMAIL_HOST_PASSWORD:-}
+      DEFAULT_FROM_EMAIL: ${DEFAULT_FROM_EMAIL:-noreply@trackmytickets.in}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-}
+      DB_CREDENTIALS_ENCRYPTION_KEY: ${DB_CREDENTIALS_ENCRYPTION_KEY:-}
+    networks:
+      - ticket_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health/"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 90s
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      pgbouncer:
+        condition: service_started
+
   celery:
     build:
       context: .
       dockerfile: Dockerfile
     container_name: ticket_system_celery
-    command: celery -A config worker --loglevel=info
+    entrypoint: ["/bin/bash", "/app/scripts/docker-entrypoint.sh"]
+    command: ["celery", "-A", "config", "worker", "--loglevel=info"]
     volumes:
-      - .:/app
-    # user: appuser (set in Dockerfile — do NOT override with root)
+      - ./logs:/app/logs
     environment:
-      - DJANGO_SETTINGS_MODULE=config.settings.prod_override
-      - DEBUG=False
-      - SECRET_KEY=${SECRET_KEY:-change-me-in-production}
-      - DB_NAME=${DB_NAME:-trackmytickets}
-      - DB_USER=${DB_USER:-ticketuser}
-      - DB_PASSWORD=${DB_PASSWORD:-TrackMyTickets2026!}
-      - DB_HOST=pgbouncer
-      - DB_PORT=6432
-      - REDIS_URL=redis://ticket_system_redis:6379/1
-      - CELERY_BROKER_URL=redis://ticket_system_redis:6379/0
-      # Email Configuration
-      - EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend
-      - EMAIL_HOST=${EMAIL_HOST:-smtp.gmail.com}
-      - EMAIL_PORT=${EMAIL_PORT:-587}
-      - EMAIL_USE_TLS=True
-      - EMAIL_HOST_USER=${EMAIL_HOST_USER}
-      - EMAIL_HOST_PASSWORD=${EMAIL_HOST_PASSWORD}
-      - DEFAULT_FROM_EMAIL=${DEFAULT_FROM_EMAIL:-noreply@trackmytickets.in}
-      - DB_CREDENTIALS_ENCRYPTION_KEY=${DB_CREDENTIALS_ENCRYPTION_KEY}
+      DJANGO_SETTINGS_MODULE: config.settings.prod_override
+      DEBUG: "False"
+      SECRET_KEY: ${SECRET_KEY:-change-me-in-production}
+      DB_NAME: ${DB_NAME:-trackmytickets}
+      DB_USER: ${DB_USER:-ticketuser}
+      DB_PASSWORD: ${DB_PASSWORD:-TrackMyTickets2026!}
+      DB_HOST: pgbouncer
+      DB_PORT: "6432"
+      USE_REDIS: "true"
+      REDIS_URL: redis://redis:6379/1
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/0
+      EMAIL_BACKEND: django.core.mail.backends.smtp.EmailBackend
+      EMAIL_HOST: ${EMAIL_HOST:-smtp.gmail.com}
+      EMAIL_PORT: ${EMAIL_PORT:-587}
+      EMAIL_USE_TLS: "True"
+      EMAIL_HOST_USER: ${EMAIL_HOST_USER:-}
+      EMAIL_HOST_PASSWORD: ${EMAIL_HOST_PASSWORD:-}
+      DEFAULT_FROM_EMAIL: ${DEFAULT_FROM_EMAIL:-noreply@trackmytickets.in}
+      DB_CREDENTIALS_ENCRYPTION_KEY: ${DB_CREDENTIALS_ENCRYPTION_KEY:-}
+      RUN_MIGRATIONS: "false"
+      RUN_COLLECTSTATIC: "false"
     depends_on:
-      - redis
-      - pgbouncer
-      - db
+      web:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      pgbouncer:
+        condition: service_started
+    networks:
+      - ticket_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "celery -A config inspect ping --timeout 10 2>/dev/null | grep -q pong || exit 1"]
+      interval: 30s
+      timeout: 15s
+      retries: 3
+      start_period: 60s
+
+  # Optional Node/Vite SPA — only built when frontend/package.json exists
+  frontend:
+    profiles: ["spa"]
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-/api}
+    container_name: ticket_system_frontend
     networks:
       - ticket_network
     restart: unless-stopped
 
-  # Nginx Reverse Proxy
   nginx:
     image: nginx:alpine
     container_name: ticket_system_nginx
@@ -156,23 +180,21 @@ services:
       - media_volume:/app/media:ro
       - ./nginx/logs:/var/log/nginx
     depends_on:
-      - web
+      web:
+        condition: service_healthy
     networks:
       - ticket_network
     restart: unless-stopped
     healthcheck:
-      test: [ "CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/health/" ]
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/health/"]
       interval: 30s
       timeout: 10s
       retries: 3
 
 volumes:
   postgres_data:
-    driver: local
   static_volume:
-    driver: local
   media_volume:
-    driver: local
 
 networks:
   ticket_network:

@@ -1,19 +1,29 @@
 #!/bin/bash
-set -e
+set -euo pipefail
 
-# Wait for DB to be ready (handles pgbouncer/db startup race)
 echo "Waiting for database..."
-until python manage.py showmigrations 2>/dev/null | head -1 > /dev/null; do
+until python - <<'PY'
+import os
+import django
+
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", os.environ.get("DJANGO_SETTINGS_MODULE", "config.settings.prod_override"))
+django.setup()
+from django.db import connection
+
+connection.ensure_connection()
+PY
+do
   sleep 2
 done
 echo "Database is ready."
 
-# Run migrations (creates global_users, etc. if missing)
-echo "Running migrations..."
-python manage.py migrate --noinput
+if [ "${RUN_MIGRATIONS:-true}" = "true" ]; then
+  echo "Running migrations..."
+  python manage.py migrate --noinput
+fi
 
-# Collect static (idempotent; needed if volume is empty)
-python manage.py collectstatic --noinput 2>/dev/null || true
+if [ "${RUN_COLLECTSTATIC:-true}" = "true" ]; then
+  python manage.py collectstatic --noinput 2>/dev/null || true
+fi
 
-# Start the main process
 exec "$@"
