@@ -951,7 +951,15 @@ class ProjectViewSet(viewsets.ModelViewSet):
         if not hasattr(self.request, 'organization') or not self.request.organization:
             return Project.objects.none()
 
-        queryset = Project.objects.filter(organization_id=self.request.organization.id)
+        queryset = Project.objects.filter(
+            organization_id=self.request.organization.id
+        ).annotate(
+            ticket_count_annotated=Count('tickets'),
+            open_ticket_count_annotated=Count(
+                'tickets',
+                filter=Q(tickets__status__in=['open', 'in_progress', 'waiting']),
+            ),
+        )
 
         active_only = self.request.query_params.get('active_only', 'true')
         if active_only.lower() == 'true':

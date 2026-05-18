@@ -8,7 +8,11 @@ import json
 # FEEDBACK MODEL
 # ============================================================================
 class Feedback(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='feedback')
+    # AUDIT-FIX H2: Replaced ForeignKey(User) with plain integer + email.
+    # Feedback lives in core app (always 'default' DB) but User lives in
+    # tenant DB under BYODB.  Cross-DB FKs are unsupported by Django.
+    user_id = models.IntegerField(db_index=True)
+    user_email = models.EmailField(max_length=254, blank=True, default='')
     type = models.CharField(max_length=50) # 'bug', 'feature', 'improvement'
     message = models.TextField()
     rating = models.IntegerField(null=True, blank=True) # 1-5 stars
@@ -18,7 +22,7 @@ class Feedback(models.Model):
         db_table = 'feedback'
 
     def __str__(self):
-        return f"Feedback from {self.user} ({self.type})"
+        return f"Feedback from user#{self.user_id} ({self.type})"
 
 # ============================================================================
 # ENQUIRY MODEL (Landing Page Contact Form)

@@ -58,7 +58,7 @@ class RegisterSerializer(serializers.ModelSerializer):
 
     def validate_role(self, value):
         """Ensure role is valid."""
-        valid_roles = ('admin', 'manager', 'department_head', 'agent')
+        valid_roles = ('admin', 'manager', 'department_head', 'agent', 'customer')
         if value not in valid_roles:
             raise serializers.ValidationError(f'Role must be one of: {", ".join(valid_roles)}')
         return value

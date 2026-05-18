@@ -783,6 +783,7 @@ class PlatformResetPasswordView(views.APIView):
         # Success — clear attempt counter and reset password
         cache.delete(otp_attempts_key)
         admin.set_password(new_password)
+        admin.save(update_fields=['password'])
         clear_reset_otp(admin)
 
         return Response({

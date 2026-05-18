@@ -29,7 +29,7 @@ class ExternalDataSourceViewSet(viewsets.ModelViewSet):
         """Only org admins can create/update/delete data sources."""
         if self.action in ('create', 'update', 'partial_update', 'destroy',
                            'test_connection', 'test'):
-            from apps.tickets.permissions import IsOrgAdmin
+            from apps.core.permissions import IsOrgAdmin
             return [permissions.IsAuthenticated(), IsOrgAdmin()]
         return super().get_permissions()
     
@@ -207,10 +207,13 @@ class FeedbackViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
     
     def get_queryset(self):
-        return Feedback.objects.filter(user=self.request.user)
+        return Feedback.objects.filter(user_id=self.request.user.id)
     
     def perform_create(self, serializer):
-        feedback = serializer.save(user=self.request.user)
+        feedback = serializer.save(
+            user_id=self.request.user.id,
+            user_email=self.request.user.email,
+        )
         try:
             from apps.notifications.email_service import send_feedback_email
             if hasattr(self.request, 'organization'):
@@ -219,9 +222,14 @@ class FeedbackViewSet(viewsets.ModelViewSet):
             logger.warning(f'Failed to send feedback email: {e}')
 
 class EnquiryViewSet(viewsets.ModelViewSet):
-    """Enquiries are only accessible by authenticated users (org admins)."""
+    """Enquiries are only accessible by platform admins (no org scoping)."""
     serializer_class = EnquirySerializer
     permission_classes = [permissions.IsAuthenticated]
+
+    def get_permissions(self):
+        """Only platform admins can access enquiries."""
+        from apps.core.permissions import IsPlatformAdmin
+        return [permissions.IsAuthenticated(), IsPlatformAdmin()]
 
     def get_queryset(self):
         return Enquiry.objects.all().order_by('-created_at')

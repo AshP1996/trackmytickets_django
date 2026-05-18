@@ -51,8 +51,8 @@ class SchemaMappingSerializer(serializers.ModelSerializer):
 class FeedbackSerializer(serializers.ModelSerializer):
     class Meta:
         model = Feedback
-        fields = ['id', 'user', 'type', 'message', 'rating', 'created_at']
-        read_only_fields = ['id', 'created_at']
+        fields = ['id', 'user_id', 'user_email', 'type', 'message', 'rating', 'created_at']
+        read_only_fields = ['id', 'user_id', 'user_email', 'created_at']
 
 class EnquirySerializer(serializers.ModelSerializer):
     class Meta:

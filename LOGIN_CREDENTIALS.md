@@ -1,20 +1,21 @@
 # TrackMyTickets - Login Credentials
 
-## 🌐 Production Server (HTTPS - Secure)
+##  Production Server (HTTPS - Secure)
 
 **Domain**: https://trackmytickets.in  
 **Server IP**: 72.60.101.189  
-**SSL**: ✅ Enabled (Let's Encrypt)
+**SSL**:  Enabled (Let's Encrypt)
 
 ---
 
-## 🔐 Platform Admin Login
+##  Platform Admin Login
 
 **URL**: https://trackmytickets.in/platform/login
 
 | Role | Email | Password |
 |------|-------|----------|
-| Platform Admin | `admin@trackmytickets.in` | `Admin@2026` |
+| Platform Super Admin | `superadmin@platform.com` | `Admin@2026` |
+| Platform Admin | `admin@platform.com` | `Admin@2026` |
 
 **Dashboard**: https://trackmytickets.in/platform/dashboard
 
@@ -26,23 +27,17 @@
 
 ---
 
-## 🏢 Organization Logins
+##  Organization Logins
 
 ### Demo Organization
 **URL**: https://trackmytickets.in/demo/login
 
-| Role | Email | Password |
-|------|-------|----------|
-| Admin | `admin@demo.com` | `password123` |
-| Department Head (IT) | `head.it@demo.com` | `password123` |
-| Department Head (HR) | `head.hr@demo.com` | `password123` |
-| Department Head (Sales) | `head.sales@demo.com` | `password123` |
-| Department Head (Support) | `head.support@demo.com` | `password123` |
-| Department Head (Finance) | `head.finance@demo.com` | `password123` |
-| Department Head (Marketing) | `head.marketing@demo.com` | `password123` |
-| Agent (IT) | `agent.it1@demo.com` | `password123` |
-| Agent (Support) | `agent.support1@demo.com` | `password123` |
-| Customer | `customer1@client.com` | `password123` |
+| Role | Email | Password | Status |
+|------|-------|----------|--------|
+| Admin | `admin@demo.com` | `Admin@2026` | ✅ Verified |
+| Agent | `testagent1@demo.com` | _(set via admin)_ | Active |
+| Agent | `testmanager1@demo.com` | _(set via admin)_ | Active |
+| Agent | `testuser999@demo.com` | _(set via admin)_ | Active |
 
 **Admin Dashboard**: https://trackmytickets.in/demo/admin/dashboard  
 **User Dashboard**: https://trackmytickets.in/demo/dashboard  
@@ -63,7 +58,7 @@
 
 ---
 
-## 🔑 Password Reset (OTP via Email)
+##  Password Reset (OTP via Email)
 
 ### Platform Admin Password Reset
 **Forgot Password**: https://trackmytickets.in/platform/api/forgot-password
@@ -118,7 +113,7 @@ curl -X POST https://trackmytickets.in/demo/api/reset-password/ \
 
 ---
 
-## 📧 Email Configuration
+##  Email Configuration
 
 **SMTP Server**: smtp.gmail.com  
 **SMTP Port**: 587  
@@ -127,7 +122,7 @@ curl -X POST https://trackmytickets.in/demo/api/reset-password/ \
 
 ---
 
-## 🌐 Local Development Server
+##  Local Development Server
 
 **URL**: http://127.0.0.1:9000
 
@@ -171,7 +166,7 @@ curl -X POST https://trackmytickets.in/demo/api/reset-password/ \
 
 ---
 
-## 📝 Notes
+##  Notes
 
 ### URL Structure
 - **Platform**: `https://trackmytickets.in/platform/<page>`
@@ -183,11 +178,11 @@ curl -X POST https://trackmytickets.in/demo/api/reset-password/ \
 All test accounts use: `password123`
 
 ### Security
-- ✅ HTTPS enabled with Let's Encrypt SSL
-- ✅ Secure cookies enabled
-- ✅ CSRF protection enabled
-- ✅ Password reset via OTP
-- ✅ Auto-renewal for SSL certificate
+-  HTTPS enabled with Let's Encrypt SSL
+-  Secure cookies enabled
+-  CSRF protection enabled
+-  Password reset via OTP
+-  Auto-renewal for SSL certificate
 
 ### Server Access
 **SSH**: `ssh root@72.60.101.189`  
@@ -196,23 +191,23 @@ All test accounts use: `password123`
 
 ---
 
-## 🚀 Quick Access Links
+##  Quick Access Links
 
 ### Production (HTTPS - Secure)
-- 🏠 **Landing Page**: https://trackmytickets.in
-- 🔐 **Platform Login**: https://trackmytickets.in/platform/login
-- 🏢 **Demo Login**: https://trackmytickets.in/demo/login
-- 🏢 **TechFlow Login**: https://trackmytickets.in/techflow/login
+-  **Landing Page**: https://trackmytickets.in
+-  **Platform Login**: https://trackmytickets.in/platform/login
+-  **Demo Login**: https://trackmytickets.in/demo/login
+-  **TechFlow Login**: https://trackmytickets.in/techflow/login
 
 ### Local Development
-- 🏠 **Landing Page**: http://127.0.0.1:9000
-- 🔐 **Platform Login**: http://127.0.0.1:9000/platform/login
-- 🏢 **Demo Login**: http://127.0.0.1:9000/demo/login
-- 🏢 **TechFlow Login**: http://127.0.0.1:9000/techflow/login
+-  **Landing Page**: http://127.0.0.1:9000
+-  **Platform Login**: http://127.0.0.1:9000/platform/login
+-  **Demo Login**: http://127.0.0.1:9000/demo/login
+-  **TechFlow Login**: http://127.0.0.1:9000/techflow/login
 
 ---
 
-## 📊 Database Credentials
+##  Database Credentials
 
 ### Production PostgreSQL
 **Host**: localhost  
@@ -233,7 +228,7 @@ sudo -u postgres psql trackmytickets
 
 ---
 
-## 🔧 Environment Variables
+##  Environment Variables
 
 ### Production (.env location)
 `/var/www/trackmytickets/.env`

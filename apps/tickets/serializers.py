@@ -47,9 +47,13 @@ class ProjectSerializer(serializers.ModelSerializer):
         return obj.lead_user.full_name if obj.lead_user else None
 
     def get_ticket_count(self, obj):
+        if hasattr(obj, 'ticket_count_annotated'):
+            return obj.ticket_count_annotated
         return obj.tickets.count()
 
     def get_open_ticket_count(self, obj):
+        if hasattr(obj, 'open_ticket_count_annotated'):
+            return obj.open_ticket_count_annotated
         return obj.tickets.exclude(status__in=['resolved', 'closed']).count()
 
 
