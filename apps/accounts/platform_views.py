@@ -15,6 +15,18 @@ from apps.core.permissions import IsPlatformAdmin
 
 logger = logging.getLogger('apps')
 
+
+def _org_access_urls(org):
+    """Path-based tenant URLs: https://trackmyticket.luminoai.online/<org>/login"""
+    base = getattr(settings, 'SITE_URL', '').rstrip('/')
+    prefix = f'{base}/' if base else '/'
+    slug = org.subdomain
+    return {
+        'login': f'{prefix}{slug}/login',
+        'dashboard': f'{prefix}{slug}/dashboard',
+    }
+
+
 class PlatformLoginView(views.APIView):
     permission_classes = [permissions.AllowAny]
 
@@ -237,10 +249,7 @@ class PlatformOrganizationsView(views.APIView):
                 'full_name': admin_user.full_name,
                 # Password sent via email only — never in API response
             },
-            'access_urls': {
-                'login': f'/{org.subdomain}/login',
-                'dashboard': f'/{org.subdomain}/dashboard',
-            },
+            'access_urls': _org_access_urls(org),
             'message': 'Organization created successfully'
         }, status=201)
 
@@ -333,10 +342,7 @@ class PublicOrganizationRegisterView(views.APIView):
                 'full_name': admin_user.full_name,
                 # Password sent via email only — never in API response
             },
-            'access_urls': {
-                'login': f'/{org.subdomain}/login',
-                'dashboard': f'/{org.subdomain}/dashboard',
-            },
+            'access_urls': _org_access_urls(org),
             'message': 'Organization registered successfully'
         }, status=201)
 
@@ -426,10 +432,7 @@ class PlatformOrganizationDetailView(views.APIView):
                 'is_active': admin_user.is_active if admin_user else None,
             },
             'detailed_stats': stats,
-            'access_urls': {
-                'login': f'/{org.subdomain}/login',
-                'dashboard': f'/{org.subdomain}/dashboard',
-            }
+            'access_urls': _org_access_urls(org),
         })
 
     def put(self, request, pk):

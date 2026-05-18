@@ -80,9 +80,8 @@ DEBUG = False
 
 # Domain configuration
 ALLOWED_HOSTS = [
-    'trackmytickets.in',
-    'www.trackmytickets.in',
-    '.trackmytickets.in',  # All subdomains
+    'trackmyticket.luminoai.online',
+    'www.trackmyticket.luminoai.online',
     '72.60.101.189',  # Server IP
 ]
 
@@ -119,15 +118,13 @@ USE_X_FORWARDED_PORT = True
 
 # CORS Settings
 CORS_ALLOWED_ORIGINS = [
-    'https://trackmytickets.in',
-    'https://www.trackmytickets.in',
+    'https://trackmyticket.luminoai.online',
 ]
 CORS_ALLOW_CREDENTIALS = True
 
 # CSRF Trusted Origins
 CSRF_TRUSTED_ORIGINS = [
-    'https://trackmytickets.in',
-    'https://*.trackmytickets.in',
+    'https://trackmyticket.luminoai.online',
 ]
 
 # Static files
@@ -204,9 +201,9 @@ echo "Testing URLs..."
 echo ""
 
 # Test a few URLs
-curl -s -o /dev/null -w "Platform Login: %{http_code}\n" https://trackmytickets.in/platform/login
-curl -s -o /dev/null -w "Demo Login: %{http_code}\n" https://trackmytickets.in/demo/login
-curl -s -o /dev/null -w "Demo Dashboard: %{http_code}\n" https://trackmytickets.in/demo/dashboard
+curl -s -o /dev/null -w "Platform Login: %{http_code}\n" https://trackmyticket.luminoai.online/platform/login
+curl -s -o /dev/null -w "Demo Login: %{http_code}\n" https://trackmyticket.luminoai.online/demo/login
+curl -s -o /dev/null -w "Demo Dashboard: %{http_code}\n" https://trackmyticket.luminoai.online/demo/dashboard
 
 echo ""
 echo -e "${YELLOW}Please run the full URL test script to verify all URLs are working.${NC}"

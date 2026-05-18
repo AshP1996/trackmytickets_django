@@ -8,7 +8,7 @@
     <title>Terms of Service — TrackMyTickets</title>
     <meta name="description" content="Terms of Service for TrackMyTickets — read the terms governing your use of our platform.">
     <meta name="robots" content="index, follow">
-    <link rel="canonical" href="https://trackmytickets.in/terms-of-service">
+    <link rel="canonical" href="{{ site_url }}/terms-of-service">
 
     <link rel="icon" type="image/png" href="{% static 'images/logo.png' %}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -281,7 +281,7 @@
 
         <h2>9. Termination</h2>
         <h3>9.1 By You</h3>
-        <p>You may stop using the Service at any time. Organization administrators may request account deletion by contacting us at <a href="mailto:support@trackmytickets.in">support@trackmytickets.in</a>.</p>
+        <p>You may stop using the Service at any time. Organization administrators may request account deletion by contacting us at <a href="mailto:{{ support_email }}">{{ support_email }}</a>.</p>
 
         <h3>9.2 By Us</h3>
         <p>We may suspend or terminate your access if you violate these Terms or if your use poses a risk to the Service or other users. We will provide reasonable notice when possible.</p>
@@ -301,8 +301,8 @@
         <h2>13. Contact</h2>
         <p>For questions about these Terms, please contact us:</p>
         <ul>
-            <li><strong>Email:</strong> <a href="mailto:support@trackmytickets.in">support@trackmytickets.in</a></li>
-            <li><strong>Website:</strong> <a href="https://trackmytickets.in/#enquiry">Contact Form</a></li>
+            <li><strong>Email:</strong> <a href="mailto:{{ support_email }}">{{ support_email }}</a></li>
+            <li><strong>Website:</strong> <a href="{{ site_url }}/#enquiry">Contact Form</a></li>
         </ul>
     </article>
 

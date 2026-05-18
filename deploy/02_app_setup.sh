@@ -51,9 +51,9 @@ python manage.py shell <<EOF
 from apps.accounts.models import PlatformAdmin
 from django.contrib.auth.hashers import make_password
 
-if not PlatformAdmin.objects.filter(email='admin@trackmytickets.in').exists():
+if not PlatformAdmin.objects.filter(email='admin@luminoai.online').exists():
     PlatformAdmin.objects.create(
-        email='admin@trackmytickets.in',
+        email='admin@luminoai.online',
         password=make_password('Admin@2026')
     )
     print("Platform admin created successfully")

@@ -1,5 +1,5 @@
 #!/bin/bash
-# VPS Deployment Checklist for trackmytickets.in
+# VPS Deployment Checklist for trackmyticket.luminoai.online
 # Run this ON THE SERVER (ssh root@72.60.101.189) after deploying
 
 set -e

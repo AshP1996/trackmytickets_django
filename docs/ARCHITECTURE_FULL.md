@@ -8,7 +8,7 @@ This document describes the complete architecture, request flow, and multi-tenan
 
 **TrackMyTickets** is a multi-tenant SaaS ticket management system. It supports:
 
-- **Path-based routing**: URLs like `trackmytickets.in/acme/dashboard` and `api/acme/tickets`
+- **Path-based routing**: URLs like `trackmyticket.luminoai.online/acme/dashboard` and `api/acme/tickets`
 - **Hybrid multi-tenancy**: Shared database (default) or Bring-Your-Own-Database (BYODB) per organization
 - **Role-based access**: Platform Admin, Org Admin, Manager, Agent
 

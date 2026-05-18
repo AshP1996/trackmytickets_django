@@ -13,15 +13,15 @@
     <meta name="keywords"
         content="helpdesk software features, ticket management features, multi-tenant helpdesk, RBAC ticketing system, SLA tracking software, IT support features">
     <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large">
-    <link rel="canonical" href="https://trackmytickets.in/features">
+    <link rel="canonical" href="{{ site_url }}/features">
 
     <!-- Open Graph -->
     <meta property="og:type" content="website">
-    <meta property="og:url" content="https://trackmytickets.in/features">
+    <meta property="og:url" content="{{ site_url }}/features">
     <meta property="og:title" content="Helpdesk Software Features — TrackMyTickets">
     <meta property="og:description"
         content="Multi-tenant ticket management with dedicated databases, RBAC, SLA tracking, and real-time analytics. Free forever.">
-    <meta property="og:image" content="https://trackmytickets.in{% static 'images/og-image.png' %}">
+    <meta property="og:image" content="{{ site_url }}{% static 'images/og-image.png' %}">
     <meta property="og:site_name" content="TrackMyTickets">
 
     <!-- Twitter Card -->
@@ -82,13 +82,13 @@
                 "@type": "ListItem",
                 "position": 1,
                 "name": "Home",
-                "item": "https://trackmytickets.in/"
+                "item": "{{ site_url }}/"
             },
             {
                 "@type": "ListItem",
                 "position": 2,
                 "name": "Features",
-                "item": "https://trackmytickets.in/features"
+                "item": "{{ site_url }}/features"
             }
         ]
     }
@@ -256,7 +256,7 @@
                 <ul>
                     <li><i class="fas fa-check"></i> Tenant-level data isolation with per-organization routing</li>
                     <li><i class="fas fa-check"></i> Centralized platform admin for managing all tenants</li>
-                    <li><i class="fas fa-check"></i> Custom subdomain per organization (e.g., acme.trackmytickets.in)</li>
+                    <li><i class="fas fa-check"></i> Dedicated org URL path (e.g., {{ site_url }}/acme/login)</li>
                     <li><i class="fas fa-check"></i> Independent user management per tenant</li>
                 </ul>
             </div>
@@ -417,7 +417,7 @@
                     <h3>Company</h3>
                     <ul>
                         <li><a href="/#enquiry">Contact Us</a></li>
-                        <li><a href="mailto:support@trackmytickets.in">Support Email</a></li>
+                        <li><a href="mailto:{{ support_email }}">Support Email</a></li>
                     </ul>
                 </div>
                 <div class="footer-section">

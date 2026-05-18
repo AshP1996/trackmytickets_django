@@ -1,6 +1,6 @@
 #!/bin/bash
 # Deploy Email OTP Fixes to Production Server
-# Server: 72.60.101.189 (trackmytickets.in)
+# Server: 72.60.101.189 (trackmyticket.luminoai.online)
 
 set -e
 
@@ -9,7 +9,7 @@ APP_DIR="/var/www/trackmytickets/ticket_system_django"
 
 echo "========================================="
 echo "Deploying Email OTP Fixes to Production"
-echo "Server: trackmytickets.in"
+echo "Server: trackmyticket.luminoai.online"
 echo "========================================="
 echo ""
 
@@ -115,23 +115,23 @@ echo "✅ Deployment Complete!"
 echo "========================================="
 echo ""
 echo "Email OTP functionality is now live at:"
-echo "  🌐 https://trackmytickets.in"
+echo "  🌐 https://trackmyticket.luminoai.online"
 echo ""
 echo "API Endpoints:"
 echo "  📧 Platform Admin Forgot Password:"
-echo "     POST https://trackmytickets.in/platform/api/forgot-password"
+echo "     POST https://trackmyticket.luminoai.online/platform/api/forgot-password"
 echo ""
 echo "  🔑 Platform Admin Reset Password:"
-echo "     POST https://trackmytickets.in/platform/api/reset-password"
+echo "     POST https://trackmyticket.luminoai.online/platform/api/reset-password"
 echo ""
 echo "  📧 User Forgot Password:"
-echo "     POST https://trackmytickets.in/{company}/api/forgot-password/"
+echo "     POST https://trackmyticket.luminoai.online/{company}/api/forgot-password/"
 echo ""
 echo "  🔑 User Reset Password:"
-echo "     POST https://trackmytickets.in/{company}/api/reset-password/"
+echo "     POST https://trackmyticket.luminoai.online/{company}/api/reset-password/"
 echo ""
 echo "Test the functionality:"
-echo "  curl -X POST https://trackmytickets.in/platform/api/forgot-password \\"
+echo "  curl -X POST https://trackmyticket.luminoai.online/platform/api/forgot-password \\"
 echo "    -H 'Content-Type: application/json' \\"
-echo "    -d '{\"email\": \"admin@trackmytickets.in\"}'"
+echo "    -d '{\"email\": \"admin@trackmyticket.luminoai.online\"}'"
 echo ""

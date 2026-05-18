@@ -439,11 +439,15 @@
         select.style.display = '';
         select.innerHTML = '<option value="">Loading...</option>';
         try {
-            const res = await api.getDepartments();
-            const departments = Array.isArray(res) ? res : (res && res.results) ? res.results : [];
-            select.innerHTML = '<option value="">Select Department...</option>' + (departments || []).map(dept =>
-                `<option value="${(dept.name || '').replace(/"/g, '&quot;')}">${(dept.name || '').replace(/</g, '&lt;')}</option>`
-            ).join('');
+            const departments = await api.getDepartmentsList({ page_size: 200 });
+            if (!departments.length) {
+                select.innerHTML = '<option value="">Select Department...</option>' +
+                    '<option value="" disabled>No departments yet — create one under Admin → Departments</option>';
+            } else {
+                select.innerHTML = '<option value="">Select Department...</option>' + departments.map(dept =>
+                    `<option value="${(dept.name || '').replace(/"/g, '&quot;')}">${(dept.name || '').replace(/</g, '&lt;')}</option>`
+                ).join('');
+            }
 
             if (window.SearchableDropdown) {
                 new SearchableDropdown(select);

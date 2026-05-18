@@ -1,4 +1,4 @@
-# VPS Deployment Guide — trackmytickets.in
+# VPS Deployment Guide — trackmyticket.luminoai.online
 
 ## Fix: "Site Just Loading" / Hang
 
@@ -37,7 +37,7 @@ DB_PASSWORD=your_db_password
 # Server IP (for ALLOWED_HOSTS)
 SERVER_IP=72.60.101.189
 
-# Optional: SITE_URL for email login links (defaults to https://trackmytickets.in)
+# Optional: SITE_URL for email login links (defaults to https://trackmyticket.luminoai.online)
 ```
 
 Generate keys:

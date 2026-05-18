@@ -21,11 +21,9 @@ print_status "Installing Certbot..."
 apt install -y certbot python3-certbot-nginx
 
 # Obtain SSL certificate
-print_warning "Obtaining SSL certificate for trackmytickets.in..."
-print_warning "Note: Wildcard certificates require DNS validation"
+print_warning "Obtaining SSL certificate for trackmyticket.luminoai.online..."
 
-# For main domain and www
-certbot --nginx -d trackmytickets.in -d www.trackmytickets.in --non-interactive --agree-tos --email admin@trackmytickets.in
+certbot --nginx -d trackmyticket.luminoai.online --non-interactive --agree-tos --email admin@luminoai.online
 
 print_status "SSL certificate obtained successfully!"
 

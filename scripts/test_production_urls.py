@@ -10,7 +10,7 @@ from urllib.parse import urljoin
 from datetime import datetime
 
 # Production server base URL
-BASE_URL = "https://trackmytickets.in"
+BASE_URL = "https://trackmyticket.luminoai.online"
 
 # Color codes for terminal output
 GREEN = '\033[92m'

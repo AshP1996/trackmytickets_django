@@ -18,11 +18,11 @@ EOF
 
 echo ""
 echo "2. HTTP Request Test (via Nginx):"
-curl -s -I https://trackmytickets.in/demo/login | head -3
+curl -s -I https://trackmyticket.luminoai.online/demo/login | head -3
 
 echo ""
 echo "3. HTTP Request Test (direct to Gunicorn socket):"
-ssh root@72.60.101.189 "curl -s --unix-socket /run/gunicorn.sock -H 'Host: trackmytickets.in' -H 'X-Forwarded-Proto: https' http://localhost/demo/login -I | head -3"
+ssh root@72.60.101.189 "curl -s --unix-socket /run/gunicorn.sock -H 'Host: trackmyticket.luminoai.online' -H 'X-Forwarded-Proto: https' http://localhost/demo/login -I | head -3"
 
 echo ""
 echo "4. Check current Django settings in running Gunicorn:"
@@ -30,4 +30,4 @@ ssh root@72.60.101.189 "cat /proc/2001918/environ | tr '\\0' '\\n' | grep DJANGO
 
 echo ""
 echo "5. Test with platform URL for comparison:"
-curl -s -I https://trackmytickets.in/platform/login | head -3
+curl -s -I https://trackmyticket.luminoai.online/platform/login | head -3

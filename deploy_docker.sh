@@ -44,9 +44,9 @@ docker-compose exec -T web python manage.py shell <<EOF
 from apps.accounts.models import PlatformAdmin
 from django.contrib.auth.hashers import make_password
 
-if not PlatformAdmin.objects.filter(email='admin@trackmytickets.in').exists():
+if not PlatformAdmin.objects.filter(email='admin@luminoai.online').exists():
     PlatformAdmin.objects.create(
-        email='admin@trackmytickets.in',
+        email='admin@luminoai.online',
         password=make_password('Admin@2026')
     )
     print("✅ Platform admin created successfully")
@@ -65,9 +65,9 @@ echo "✅ Deployment Complete!"
 echo "========================================="
 echo ""
 echo "Access your application at:"
-echo "  🌐 Main Site: http://localhost"
-echo "  🔐 Platform Admin: http://localhost/platform/login"
-echo "     Email: admin@trackmytickets.in"
+echo "  🌐 Main Site: https://trackmyticket.luminoai.online (or http://localhost:8080 locally)"
+echo "  🔐 Platform Admin: /platform/login"
+echo "     Email: admin@luminoai.online"
 echo "     Password: Admin@2026"
 echo ""
 echo "Useful commands:"

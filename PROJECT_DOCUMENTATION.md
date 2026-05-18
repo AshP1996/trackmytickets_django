@@ -66,7 +66,7 @@ graph TD
 ```
 
 ## 4. Key Features
--   **Path-Based Routing**: Clean URLs like `trackmytickets.in/acme/dashboard` and `api/acme/tickets`.
+-   **Path-Based Routing**: Clean URLs like `trackmyticket.luminoai.online/acme/dashboard` and `api/acme/tickets`.
 -   **Role-Based Access**: Granular permissions (Platform Admin, Org Admin, Manager, Agent, Customer).
 -   **Dynamic Settings**: Tenants can configure operational limits and feature flags.
 -   **Security**:

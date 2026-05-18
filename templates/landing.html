@@ -14,15 +14,15 @@
         content="ticket management system, helpdesk software, SaaS ticketing system, customer support ticket system, IT helpdesk software, support workflow automation, multi tenant helpdesk software">
     <meta name="author" content="TrackMyTickets">
     <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
-    <link rel="canonical" href="https://trackmytickets.in/">
+    <link rel="canonical" href="{{ site_url }}/">
 
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website">
-    <meta property="og:url" content="https://trackmytickets.in/">
+    <meta property="og:url" content="{{ site_url }}/">
     <meta property="og:title" content="SaaS Ticket Management System & IT Helpdesk | TrackMyTickets">
     <meta property="og:description"
         content="Modern multi-tenant SaaS ticket management system for internal IT and customer support. Secure, scalable helpdesk software with dedicated databases.">
-    <meta property="og:image" content="https://trackmytickets.in{% static 'images/og-image.png' %}">
+    <meta property="og:image" content="{{ site_url }}{% static 'images/og-image.png' %}">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
     <meta property="og:site_name" content="TrackMyTickets">
@@ -30,11 +30,11 @@
 
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:url" content="https://trackmytickets.in/">
+    <meta name="twitter:url" content="{{ site_url }}/">
     <meta name="twitter:title" content="SaaS Ticket Management System & IT Helpdesk | TrackMyTickets">
     <meta name="twitter:description"
         content="Modern multi-tenant SaaS ticket management system for internal IT and customer support. Secure, scalable helpdesk software with dedicated databases.">
-    <meta name="twitter:image" content="https://trackmytickets.in{% static 'images/twitter-card.png' %}">
+    <meta name="twitter:image" content="{{ site_url }}{% static 'images/twitter-card.png' %}">
     <meta name="twitter:creator" content="@trackmytickets">
 
     <!-- Additional Meta Tags -->
@@ -77,14 +77,14 @@
         "@context": "https://schema.org",
         "@type": "Organization",
         "name": "TrackMyTickets",
-        "url": "https://trackmytickets.in",
-        "logo": "https://trackmytickets.in{% static 'images/logo.png' %}",
+        "url": "{{ site_url }}",
+        "logo": "{{ site_url }}{% static 'images/logo.png' %}",
         "description": "Modern ticket management and customer support platform for teams",
         "foundingDate": "2026",
         "contactPoint": {
             "@type": "ContactPoint",
             "contactType": "Customer Support",
-            "email": "support@trackmytickets.in",
+            "email": "{{ support_email }}",
             "availableLanguage": ["English"]
         },
         "sameAs": [
@@ -186,7 +186,7 @@
                 "@type": "ListItem",
                 "position": 1,
                 "name": "Home",
-                "item": "https://trackmytickets.in/"
+                "item": "{{ site_url }}/"
             }
         ]
     }
@@ -769,7 +769,7 @@
                     <h3>Company</h3>
                     <ul>
                         <li><a href="/#enquiry">Contact Us</a></li>
-                        <li><a href="mailto:support@trackmytickets.in">Support Email</a></li>
+                        <li><a href="mailto:{{ support_email }}">Support Email</a></li>
                         <li><a href="/platform/login">Platform Login</a></li>
                     </ul>
                 </div>
@@ -809,7 +809,7 @@
                             <input type="text" id="orgSubdomain" name="subdomain" placeholder="acme"
                                 style="margin-bottom:0;" required pattern="[a-z0-9-]+"
                                 title="Only lowercase letters, numbers, and hyphens">
-                            <span style="color:var(--text-light); white-space:nowrap;">.trackmytickets.in</span>
+                            <span style="color:var(--text-light); white-space:nowrap;">→ {{ site_url }}/</span>
                         </div>
                     </div>
 

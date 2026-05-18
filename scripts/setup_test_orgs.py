@@ -24,14 +24,14 @@ def create_platform_admin():
     print("\n=== Creating Platform Admin ===")
     
     admin, created = PlatformAdmin.objects.get_or_create(
-        email='admin@trackmytickets.in'
+        email='admin@luminoai.online'
     )
     if created or not admin.check_password('Admin@2026'):
         admin.set_password('Admin@2026')
         admin.save()
-        print(f"✓ Platform Admin: admin@trackmytickets.in / Admin@2026")
+        print(f"✓ Platform Admin: admin@luminoai.online / Admin@2026")
     else:
-        print(f"✓ Platform Admin exists: admin@trackmytickets.in")
+        print(f"✓ Platform Admin exists: admin@luminoai.online")
     
     return admin
 

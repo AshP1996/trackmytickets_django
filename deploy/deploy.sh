@@ -50,9 +50,10 @@ print_status "Creating environment file..."
 ssh $SERVER "cat > $REMOTE_DIR/.env" <<'EOF'
 DEBUG=False
 SECRET_KEY=$(python3 -c 'from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())')
-ALLOWED_HOSTS=trackmytickets.in,*.trackmytickets.in,72.60.101.189
+ALLOWED_HOSTS=trackmyticket.luminoai.online,localhost,127.0.0.1
+SITE_URL=https://trackmyticket.luminoai.online
 DATABASE_URL=postgresql://ticketuser:TrackMyTickets2026!@localhost/trackmytickets
-CSRF_TRUSTED_ORIGINS=https://trackmytickets.in,https://*.trackmytickets.in
+CSRF_TRUSTED_ORIGINS=https://trackmyticket.luminoai.online
 SECURE_SSL_REDIRECT=False
 SESSION_COOKIE_SECURE=False
 CSRF_COOKIE_SECURE=False
@@ -75,11 +76,11 @@ echo "Deployment Complete!"
 echo "========================================="
 echo ""
 echo "Your application is now running at:"
-echo "  http://trackmytickets.in"
+echo "  https://trackmyticket.luminoai.online"
 echo ""
 echo "Platform Admin Login:"
-echo "  URL: http://trackmytickets.in/platform/login"
-echo "  Email: admin@trackmytickets.in"
+echo "  URL: https://trackmyticket.luminoai.online/platform/login"
+echo "  Email: admin@luminoai.online"
 echo "  Password: Admin@2026"
 echo ""
 echo "To enable HTTPS, run:"

@@ -111,7 +111,7 @@ class SearchableDropdown {
 
     init() {
         // Prevent double initialization
-        if (this.select.parentNode.classList.contains('searchable-dropdown')) {
+        if (this.select.closest('.searchable-dropdown')) {
             return;
         }
 
@@ -171,10 +171,10 @@ class SearchableDropdown {
         // Event Listeners
         this.input.addEventListener('input', () => this.filterOptions());
 
-        this.input.addEventListener('focus', () => {
-            if (this.input.value.trim().length > 0) {
-                this.filterOptions();
-            }
+        this.input.addEventListener('focus', () => this.showAllOptions());
+        this.input.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.showAllOptions();
         });
 
         // Close when clicking outside
@@ -198,11 +198,27 @@ class SearchableDropdown {
         }
     }
 
+    getSelectableOptions() {
+        return this.options.filter(opt =>
+            opt.value &&
+            opt.value.trim() !== '' &&
+            !opt.text.toLowerCase().includes('select ')
+        );
+    }
+
+    showAllOptions() {
+        this.options = Array.from(this.select.options);
+        const selectable = this.getSelectableOptions();
+        this.renderOptions(selectable);
+        if (selectable.length > 0) {
+            this.dropdown.classList.add('show');
+            this.dropdown.style.display = 'block';
+        }
+    }
+
     renderOptions(options) {
         this.dropdown.innerHTML = '';
 
-        // Filter out placeholder option (empty value) for the list
-        // Also filter out options that act as placeholders (text includes 'Select')
         const validOptions = options.filter(opt =>
             opt.value &&
             opt.value.trim() !== '' &&
@@ -237,12 +253,11 @@ class SearchableDropdown {
     }
 
     filterOptions() {
+        this.options = Array.from(this.select.options);
         const query = this.input.value.toLowerCase().trim();
 
-        // If input is empty, hide dropdown (Autocomplete styled)
         if (query.length === 0) {
-            this.dropdown.classList.remove('show');
-            this.dropdown.style.display = 'none';
+            this.showAllOptions();
             return;
         }
 

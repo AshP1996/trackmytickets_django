@@ -64,7 +64,7 @@ docker-compose ps
 echo ""
 echo "Application is running at:"
 echo "  - http://localhost (HTTP)"
-echo "  - https://trackmytickets.in (HTTPS)"
+echo "  - https://trackmyticket.luminoai.online (HTTPS)"
 echo ""
 echo "View logs with: docker-compose logs -f"
 echo "Stop services with: docker-compose down"

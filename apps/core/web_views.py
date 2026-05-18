@@ -11,9 +11,9 @@ class BaseWebContextMixin:
 
         # ── BASE_URL / BASE_DOMAIN ──────────────────────────────────────────────
         # Use Host header as the most reliable source (works for localhost:8000,
-        # trackmytickets.in, etc.).  Fall back to the first ALLOWED_HOSTS entry
+        # trackmyticket.luminoai.online, etc.).  Fall back to the first ALLOWED_HOSTS entry
         # only if the header is missing, and ultimately to 'localhost'.
-        host_header = self.request.get_host()  # e.g. "localhost:8000" or "trackmytickets.in"
+        host_header = self.request.get_host()  # e.g. "localhost:8000" or "trackmyticket.luminoai.online"
 
         if ':' in host_header:
             host_part, port_str = host_header.rsplit(':', 1)

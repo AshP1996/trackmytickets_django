@@ -1,6 +1,6 @@
 """
 Production Settings for Ticket System
-Domain: trackmytickets.in
+Domain: trackmyticket.luminoai.online (path-based tenants: /acme/login)
 
 Bare VPS (non-Docker): Set DB_HOST=127.0.0.1, REDIS_URL=redis://127.0.0.1:6379/1
 Or set USE_REDIS=False to use database sessions + LocMem cache (no Redis required).
@@ -11,16 +11,31 @@ from .base import *
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
-# Domain configuration (Django does not support *. in ALLOWED_HOSTS; use .domain for subdomains)
-_SERVER_IP = os.environ.get('SERVER_IP', '72.60.101.189').strip()
+# Public site (path-based org URLs: https://trackmyticket.luminoai.online/<org>/login)
+PRIMARY_DOMAIN = os.environ.get('PRIMARY_DOMAIN', 'trackmyticket.luminoai.online').strip()
+SITE_URL = os.environ.get('SITE_URL', f'https://{PRIMARY_DOMAIN}').rstrip('/')
+SUPPORT_EMAIL = os.environ.get('SUPPORT_EMAIL', 'support@luminoai.online')
+
+_SERVER_IP = os.environ.get('SERVER_IP', '').strip()
 ALLOWED_HOSTS = [
-    'trackmytickets.in',
-    'www.trackmytickets.in',
-    '.trackmytickets.in',  # Subdomains: demo.trackmytickets.in, etc.
+    PRIMARY_DOMAIN,
+    f'www.{PRIMARY_DOMAIN}',
+    'luminoai.online',
+    'www.luminoai.online',
 ]
 if _SERVER_IP:
     ALLOWED_HOSTS.append(_SERVER_IP)
-ALLOWED_HOSTS.extend(['localhost', 'demo.localhost', '127.0.0.1'])
+ALLOWED_HOSTS.extend(['localhost', 'demo.localhost', '127.0.0.1', 'web', 'nginx'])
+
+_env_hosts = [h.strip() for h in os.environ.get('ALLOWED_HOSTS', '').split(',') if h.strip()]
+if _env_hosts:
+    ALLOWED_HOSTS = list(dict.fromkeys(ALLOWED_HOSTS + _env_hosts))
+
+_env_csrf = [o.strip() for o in os.environ.get('CSRF_TRUSTED_ORIGINS', '').split(',') if o.strip()]
+CSRF_TRUSTED_ORIGINS = _env_csrf or [SITE_URL]
+
+_env_cors = [o.strip() for o in os.environ.get('CORS_ALLOWED_ORIGINS', '').split(',') if o.strip()]
+CORS_ALLOWED_ORIGINS = _env_cors or [SITE_URL]
 
 # Database — default to 127.0.0.1 for bare VPS (Docker uses DB_HOST=db)
 USE_SQLITE = os.environ.get('USE_SQLITE', '').lower() in ('1', 'true', 'yes')
@@ -71,14 +86,6 @@ SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 USE_X_FORWARDED_HOST = True
 USE_X_FORWARDED_PORT = True
 
-# Site URL for emails (login links, etc.) — use production domain in prod
-SITE_URL = os.environ.get('SITE_URL', 'https://trackmytickets.in')
-
-# CORS Settings
-CORS_ALLOWED_ORIGINS = [
-    'https://trackmytickets.in',
-    'https://www.trackmytickets.in',
-]
 CORS_ALLOW_CREDENTIALS = True
 
 # Static files (CSS, JavaScript, Images)
@@ -99,7 +106,7 @@ EMAIL_PORT = int(os.environ.get('EMAIL_PORT', 587))
 EMAIL_USE_TLS = True
 EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', '')
 EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
-DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'noreply@trackmytickets.in')
+DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'noreply@luminoai.online')
 SERVER_EMAIL = DEFAULT_FROM_EMAIL
 
 # Logging Configuration
@@ -202,7 +209,7 @@ else:
 
 # Admin Configuration
 ADMINS = [
-    ('Admin', os.environ.get('ADMIN_EMAIL', 'admin@trackmytickets.in')),
+    ('Admin', os.environ.get('ADMIN_EMAIL', 'admin@luminoai.online')),
 ]
 MANAGERS = ADMINS
 

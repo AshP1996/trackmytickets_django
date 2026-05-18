@@ -13,15 +13,15 @@
     <meta name="keywords"
         content="free helpdesk software, free ticket management system, open source ticketing, free IT helpdesk, free customer support software, free SaaS helpdesk">
     <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large">
-    <link rel="canonical" href="https://trackmytickets.in/pricing">
+    <link rel="canonical" href="{{ site_url }}/pricing">
 
     <!-- Open Graph -->
     <meta property="og:type" content="website">
-    <meta property="og:url" content="https://trackmytickets.in/pricing">
+    <meta property="og:url" content="{{ site_url }}/pricing">
     <meta property="og:title" content="Free Helpdesk Software — TrackMyTickets Pricing">
     <meta property="og:description"
         content="100% free ticket management with unlimited tickets, users, and full feature access. No credit card required.">
-    <meta property="og:image" content="https://trackmytickets.in{% static 'images/og-image.png' %}">
+    <meta property="og:image" content="{{ site_url }}{% static 'images/og-image.png' %}">
     <meta property="og:site_name" content="TrackMyTickets">
 
     <!-- Twitter Card -->
@@ -82,13 +82,13 @@
                 "@type": "ListItem",
                 "position": 1,
                 "name": "Home",
-                "item": "https://trackmytickets.in/"
+                "item": "{{ site_url }}/"
             },
             {
                 "@type": "ListItem",
                 "position": 2,
                 "name": "Pricing",
-                "item": "https://trackmytickets.in/pricing"
+                "item": "{{ site_url }}/pricing"
             }
         ]
     }
@@ -553,7 +553,7 @@
                     <h3>Company</h3>
                     <ul>
                         <li><a href="/#enquiry">Contact Us</a></li>
-                        <li><a href="mailto:support@trackmytickets.in">Support Email</a></li>
+                        <li><a href="mailto:{{ support_email }}">Support Email</a></li>
                     </ul>
                 </div>
                 <div class="footer-section">
