@@ -3,7 +3,7 @@
 These credentials have been verified and are ready for use.
 
 ## Platform Admin
-- **URL**: [https://trackmytickets.in/platform/login](https://trackmytickets.in/platform/login) (Production)
+- **URL**: [https://trackmyticket.luminoai.online/platform/login](https://trackmyticket.luminoai.online/platform/login) (Production)
 - **Local URL**: [http://localhost:8080/platform/login](http://localhost:8080/platform/login)
 - **Email**: `superadmin@platform.com`
 - **Password**: `password123`

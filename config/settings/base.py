@@ -203,7 +203,13 @@ EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS', 'True') == 'True'
 EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', os.environ.get('SMTP_USERNAME', ''))
 EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', os.environ.get('SMTP_PASSWORD', ''))
 DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', EMAIL_HOST_USER)
-SITE_URL = os.environ.get('SITE_URL', 'http://localhost:8000')
+PRIMARY_DOMAIN = os.environ.get('PRIMARY_DOMAIN', 'trackmyticket.luminoai.online').strip()
+SITE_URL = os.environ.get('SITE_URL', 'http://localhost:8000').rstrip('/')
+# Google Search Console HTML tag verification (public marketing pages)
+GOOGLE_SITE_VERIFICATION = os.environ.get(
+    'GOOGLE_SITE_VERIFICATION',
+    'c_3t9p8yc45XhZ4a9kVyDBiXcngjaYaUSDsqJPLiv6I',
+)
 
 # JWT Configuration
 JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY', SECRET_KEY)

@@ -43,8 +43,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="format-detection" content="telephone=no">
 
-    <!-- Google Search Console Verification (replace with your actual verification code) -->
-    <!-- <meta name="google-site-verification" content="YOUR_VERIFICATION_CODE_HERE"> -->
+    {% include 'includes/google_site_verification.html' %}
 
     <!-- Google Analytics GA4 (replace G-XXXXXXXXXX with your Measurement ID) -->
     <!-- <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
@@ -107,14 +106,8 @@
             "priceCurrency": "USD",
             "description": "Completely free SaaS system with no hidden costs"
         },
-        "aggregateRating": {
-            "@type": "AggregateRating",
-            "ratingValue": "4.8",
-            "ratingCount": "1250",
-            "bestRating": "5",
-            "worstRating": "1"
-        },
-        "description": "Smart ticket tracking and customer support management system with multi-tenant architecture, real-time analytics, and seamless workflows."
+        "description": "Smart ticket tracking and customer support management system with multi-tenant architecture, real-time analytics, and seamless workflows.",
+        "url": "{{ site_url }}/"
     }
     </script>
 

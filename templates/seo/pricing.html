@@ -34,6 +34,7 @@
     <link rel="icon" type="image/png" href="{% static 'images/logo.png' %}">
     <link rel="apple-touch-icon" href="{% static 'images/logo.png' %}">
     <meta name="theme-color" content="#6366f1">
+    {% include 'includes/google_site_verification.html' %}
 
     <!-- Fonts & Icons -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -61,14 +62,10 @@
             "price": "0",
             "priceCurrency": "USD",
             "availability": "https://schema.org/InStock",
-            "description": "Free forever plan with unlimited tickets, users, and all features included."
+            "description": "Free forever plan with unlimited tickets, users, and all features included.",
+            "url": "{{ site_url }}/pricing"
         },
-        "aggregateRating": {
-            "@type": "AggregateRating",
-            "ratingValue": "4.8",
-            "ratingCount": "1250",
-            "bestRating": "5"
-        }
+        "url": "{{ site_url }}/pricing"
     }
     </script>
 
