@@ -62,6 +62,15 @@
                 <h1 class="auth-welcome">Sign in</h1>
                 <p class="auth-subtitle">Use your work email and password to access your workspace.</p>
 
+                <div class="auth-trust-banner" role="note">
+                    <i class="fas fa-shield-halved" aria-hidden="true"></i>
+                    <div>
+                        <strong>Official TrackMyTickets sign-in</strong>
+                        <span id="auth-trust-org">{% if company_name %}Workspace: <code>{{ company_name }}</code> on {% endif %}{{ site_url }}</span>
+                        <span class="auth-trust-note">This page is not affiliated with Google, Microsoft, PayPal, or other third-party brands.</span>
+                    </div>
+                </div>
+
                 <div class="auth-org-chip" id="org-context-chip" style="display: none;">
                     <i class="fas fa-link" aria-hidden="true"></i>
                     <div>

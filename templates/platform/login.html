@@ -61,6 +61,14 @@
                 <h1 class="auth-welcome">Admin sign in</h1>
                 <p class="auth-subtitle">Restricted access for platform operators only.</p>
 
+                <div class="auth-trust-banner auth-trust-banner--platform" role="note">
+                    <i class="fas fa-user-shield" aria-hidden="true"></i>
+                    <div>
+                        <strong>TrackMyTickets platform administration</strong>
+                        <span>Sign in at {{ site_url }}/platform/login only. Not a third-party service login.</span>
+                    </div>
+                </div>
+
                 <div id="error-message" class="auth-alert auth-alert--error" role="alert">
                     <i class="fas fa-circle-exclamation" aria-hidden="true"></i>
                     <span class="auth-alert-text"></span>

@@ -208,8 +208,8 @@
                 <a href="#how-it-works">How it Works</a>
                 <a href="#testimonials">Testimonials</a>
                 <a href="#faq">FAQ</a>
-                <a href="#" class="btn-login btn-glow" onclick="openRegisterModal(event)">Add Your Organization</a>
-                <a href="/platform/login" class="btn-login">Super Admin Login</a>
+                <a href="#" class="btn-login btn-glow" onclick="openRegisterModal(event)">Create organization</a>
+                <a href="/platform/login" class="btn-login">Platform admin</a>
             </div>
         </div>
     </nav>
@@ -306,24 +306,28 @@
     </section>
 
 
-    <!-- Stats Section -->
-    <section class="stats">
+    <!-- Product highlights (factual — no inflated metrics) -->
+    <section class="stats stats--highlights" aria-label="Product highlights">
         <div class="stats-container">
             <div class="stat-item reveal">
-                <div class="stat-number" data-count="1250" data-suffix="+">0</div>
-                <div class="stat-label">Active Teams</div>
+                <div class="stat-icon-wrap"><i class="fas fa-building" aria-hidden="true"></i></div>
+                <div class="stat-label">Multi-tenant workspaces</div>
+                <p class="stat-desc">Isolated org paths on one platform</p>
             </div>
             <div class="stat-item reveal">
-                <div class="stat-number" data-count="50" data-suffix="K+">0</div>
-                <div class="stat-label">Tickets Resolved</div>
+                <div class="stat-icon-wrap"><i class="fas fa-shield-halved" aria-hidden="true"></i></div>
+                <div class="stat-label">Role-based access</div>
+                <p class="stat-desc">Admins, agents, and customers</p>
             </div>
             <div class="stat-item reveal">
-                <div class="stat-number" data-count="99.9" data-suffix="%" data-decimals="1">0</div>
-                <div class="stat-label">Uptime</div>
+                <div class="stat-icon-wrap"><i class="fas fa-clock" aria-hidden="true"></i></div>
+                <div class="stat-label">SLA tracking</div>
+                <p class="stat-desc">Deadlines and breach visibility</p>
             </div>
             <div class="stat-item reveal">
-                <div class="stat-number" data-count="4.8" data-suffix="/5" data-decimals="1">0</div>
-                <div class="stat-label">Customer Rating</div>
+                <div class="stat-icon-wrap"><i class="fas fa-chart-line" aria-hidden="true"></i></div>
+                <div class="stat-label">Analytics built in</div>
+                <p class="stat-desc">Reports for support teams</p>
             </div>
         </div>
     </section>
@@ -610,8 +614,8 @@
 
     <section class="social-proof" id="testimonials">
         <div class="container">
-            <h2 class="section-title">Loved by <span class="gradient-text">Support Teams</span></h2>
-            <p class="section-subtitle">See why teams switch to TrackMyTickets</p>
+            <h2 class="section-title">Built for <span class="gradient-text">Support Teams</span></h2>
+            <p class="section-subtitle">Illustrative examples of typical workflows — not verified customer reviews.</p>
             <div class="testimonials-grid">
                 <div class="testimonial-card reveal">
                     <div class="testimonial-rating"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i></div>
@@ -724,8 +728,7 @@
         <div class="promotion-content">
             <h2>Ready to Transform Your Support Workflow?</h2>
             <p>
-                Join the fast-growing list of teams ditching legacy IT helpdesk software. It is completely
-                free to use!
+                Set up a dedicated helpdesk workspace for your team on TrackMyTickets. Free tier available.
             </p>
             <div class="hero-buttons">
                 <a href="#enquiry" class="btn-primary">
@@ -735,8 +738,8 @@
             </div>
             <div class="promotion-stats">
                 <div class="promo-stat">
-                    <div class="promo-stat-number">99.9%</div>
-                    <div class="promo-stat-label">Uptime Guarantee</div>
+                    <div class="promo-stat-number">Docker</div>
+                    <div class="promo-stat-label">Self-host ready</div>
                 </div>
                 <div class="promo-stat">
                     <div class="promo-stat-number">5 min</div>
@@ -892,6 +895,13 @@
                             minlength="8" required>
                     </div>
 
+                    <div class="form-group" style="margin-top:0.5rem;">
+                        <label style="display:flex;align-items:flex-start;gap:0.5rem;font-size:0.85rem;font-weight:400;cursor:pointer;">
+                            <input type="checkbox" id="registerTerms" required style="margin-top:0.2rem;">
+                            <span>I confirm this registration is for my organization. Sign-in is only at <strong>{{ site_url }}</strong> (not affiliated with other brands).</span>
+                        </label>
+                    </div>
+
                     <div id="registerError" class="form-message error" style="display:none; margin-bottom:1rem;"></div>
 
                     <button type="submit" class="form-submit" id="registerSubmitBtn">
@@ -907,33 +917,24 @@
                 <h2 class="modal-title">Organization Created!</h2>
                 <p class="modal-subtitle">Your tenant environment is fully provisioned and ready to go.</p>
 
-                <div class="credentials-box">
+                <div class="credentials-box credentials-box--safe">
                     <div class="credential-row">
-                        <span class="credential-label">Subdomain</span>
+                        <span class="credential-label">Organization</span>
                         <span class="credential-value" id="successSubdomain"></span>
                     </div>
                     <div class="credential-row">
-                        <span class="credential-label">Admin Email</span>
+                        <span class="credential-label">Admin email</span>
                         <span class="credential-value" id="successEmail"></span>
                     </div>
                     <div class="credential-row">
-                        <span class="credential-label">Password</span>
-                        <span class="credential-value" id="successPassword"></span>
-                    </div>
-                    <div class="credential-row">
-                        <span class="credential-label">Login URL</span>
-                        <span class="credential-value" id="successLoginUrl" style="word-break: break-all;"></span>
+                        <span class="credential-label">Sign-in page</span>
+                        <a class="credential-value credential-link" id="successLoginUrl" href="#" style="word-break: break-all;"></a>
                     </div>
                 </div>
 
-                <p style="margin-bottom: 1rem; color: var(--text-light); font-size: 0.9rem;">
-                    We've also sent these details to <strong id="successEmailRef"></strong>.
+                <p id="successEmailNotice" style="margin-bottom: 1rem; color: var(--text-light); font-size: 0.9rem;">
+                    For your security, your password is <strong>not shown here</strong>. Use the password you just created, or check your inbox at <strong id="successEmailRef"></strong> if we sent a welcome email.
                 </p>
-
-                <button type="button" id="downloadCredentialsBtn" class="btn-secondary"
-                    style="width: 100%; justify-content: center; margin-bottom: 0.75rem;">
-                    <i class="fas fa-download"></i> Download Credentials
-                </button>
                 <a href="#" id="successDashboardLink" class="btn-primary" style="width: 100%; justify-content: center;">
                     Go to Your Dashboard <i class="fas fa-arrow-right"></i>
                 </a>
@@ -1092,38 +1093,17 @@
                         document.getElementById('registerFormContainer').style.display = 'none';
                         document.getElementById('registerSuccessContainer').style.display = 'block';
 
-                        document.getElementById('successSubdomain').textContent = data.subdomain;
+                        document.getElementById('successSubdomain').textContent = data.name || data.subdomain;
                         document.getElementById('successEmail').textContent = data.admin_user.email;
-                        document.getElementById('successPassword').textContent = data.admin_user.password;
-                        document.getElementById('successLoginUrl').textContent = loginUrl;
+                        const loginLink = document.getElementById('successLoginUrl');
+                        loginLink.textContent = loginUrl;
+                        loginLink.href = loginPath;
                         document.getElementById('successEmailRef').textContent = data.admin_user.email;
                         document.getElementById('successDashboardLink').href = dashboardPath;
-
-                        // Download credentials button
-                        const creds = {
-                            subdomain: data.subdomain,
-                            adminEmail: data.admin_user.email,
-                            password: data.admin_user.password,
-                            loginUrl: loginUrl,
-                            dashboardUrl: dashboardUrl
-                        };
-                        const downloadBtn = document.getElementById('downloadCredentialsBtn');
-                        downloadBtn.onclick = function () {
-                            const txt = 'TrackMyTickets - Organization Credentials\n' +
-                                '==========================================\n\n' +
-                                'Subdomain: ' + creds.subdomain + '\n' +
-                                'Admin Email: ' + creds.adminEmail + '\n' +
-                                'Password: ' + creds.password + '\n' +
-                                'Login URL: ' + creds.loginUrl + '\n' +
-                                'Dashboard URL: ' + creds.dashboardUrl + '\n\n' +
-                                'Keep these details secure. Login at: ' + creds.loginUrl;
-                            const blob = new Blob([txt], { type: 'text/plain' });
-                            const a = document.createElement('a');
-                            a.href = URL.createObjectURL(blob);
-                            a.download = 'trackmytickets-credentials-' + creds.subdomain + '.txt';
-                            a.click();
-                            URL.revokeObjectURL(a.href);
-                        };
+                        const notice = document.getElementById('successEmailNotice');
+                        if (notice && data.email_sent) {
+                            notice.innerHTML = 'We sent login instructions to <strong>' + data.admin_user.email + '</strong>. Your password is never displayed on this page.';
+                        }
 
                     } else {
                         registerError.innerHTML = '<i class="fas fa-exclamation-circle"></i> ' + (data.error || 'Failed to create organization.');

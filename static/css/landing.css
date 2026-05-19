@@ -589,6 +589,41 @@ h1, h2, h3, .section-title, .modal-title {
     font-weight: 500;
 }
 
+.stats--highlights .stat-icon-wrap {
+    width: 48px;
+    height: 48px;
+    margin: 0 auto 0.75rem;
+    border-radius: 12px;
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.12), rgba(139, 92, 246, 0.12));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--primary-color);
+    font-size: 1.25rem;
+}
+
+.stats--highlights .stat-label {
+    color: var(--text-dark);
+    font-weight: 700;
+    font-size: 0.95rem;
+}
+
+.stats--highlights .stat-desc {
+    margin-top: 0.35rem;
+    font-size: 0.8rem;
+    color: var(--text-light);
+    line-height: 1.4;
+}
+
+.credentials-box--safe {
+    text-align: left;
+}
+
+.credential-link {
+    color: var(--primary-color);
+    text-decoration: underline;
+}
+
 /* ── Features ─────────────────────────────────────────────────────────── */
 .features {
     padding: 6rem 2rem;

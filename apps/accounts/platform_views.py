@@ -12,6 +12,7 @@ from apps.accounts.models import User
 from django.db.models import Count, Q
 from django.conf import settings
 from apps.core.permissions import IsPlatformAdmin
+from .subdomain_policy import normalize_subdomain, validate_organization_subdomain
 
 logger = logging.getLogger('apps')
 
@@ -204,12 +205,15 @@ class PlatformOrganizationsView(views.APIView):
         
         if not all([name, subdomain, email, admin_email, admin_name, admin_password]):
             return Response({'error': 'All fields are required'}, status=400)
-        
-        # Check if subdomain already exists
+
+        subdomain = normalize_subdomain(subdomain)
+        ok, err = validate_organization_subdomain(subdomain)
+        if not ok:
+            return Response({'error': err}, status=400)
+
         if Organization.objects.filter(subdomain=subdomain).exists():
             return Response({'error': 'Subdomain already exists'}, status=400)
-        
-        # Create organization
+
         org = Organization.objects.create(
             name=name,
             subdomain=subdomain,
@@ -218,8 +222,7 @@ class PlatformOrganizationsView(views.APIView):
             cluster_id=cluster_id if cluster_id else None,
             is_active=True
         )
-        
-        # New org has no tenant DB yet; user is created in default DB with organization_id.
+
         from apps.core.routers import set_current_db_alias, reset_current_db_alias
         set_current_db_alias('default')
         try:
@@ -235,8 +238,8 @@ class PlatformOrganizationsView(views.APIView):
             )
         finally:
             reset_current_db_alias()
-        
-        # ✉️ Send org creation email with credentials
+
+        email_sent = False
         try:
             from apps.notifications.email_service import send_org_created_email
             superadmin_email = getattr(request.user, 'email', None)
@@ -244,9 +247,10 @@ class PlatformOrganizationsView(views.APIView):
                 org, admin_email, admin_name, admin_password,
                 notify_superadmin_email=superadmin_email
             )
+            email_sent = True
         except Exception as e:
             logger.warning(f'Failed to send org creation email: {e}')
-        
+
         return Response({
             'id': org.id,
             'name': org.name,
@@ -254,10 +258,10 @@ class PlatformOrganizationsView(views.APIView):
             'admin_user': {
                 'email': admin_user.email,
                 'full_name': admin_user.full_name,
-                # Password sent via email only — never in API response
             },
             'access_urls': _org_access_urls(org),
-            'message': 'Organization created successfully'
+            'email_sent': email_sent,
+            'message': 'Organization created successfully',
         }, status=201)
 
 class PublicOrganizationRegisterView(views.APIView):
@@ -289,16 +293,18 @@ class PublicOrganizationRegisterView(views.APIView):
         
         if not all([name, subdomain, email, admin_email, admin_name, admin_password]):
             return Response({'error': 'All fields are required'}, status=400)
-        
-        # Check if subdomain already exists
+
+        subdomain = normalize_subdomain(subdomain)
+        ok, err = validate_organization_subdomain(subdomain)
+        if not ok:
+            return Response({'error': err}, status=400)
+
         if Organization.objects.filter(subdomain=subdomain).exists():
             return Response({'error': 'Subdomain already exists'}, status=400)
-        
-        # Check if email is already used for another organization globally
+
         if Organization.objects.filter(email=email).exists():
             return Response({'error': 'Organization with this email already exists'}, status=400)
-            
-        # Create organization
+
         org = Organization.objects.create(
             name=name,
             subdomain=subdomain,
@@ -329,17 +335,17 @@ class PublicOrganizationRegisterView(views.APIView):
         finally:
             reset_current_db_alias()
         
-        # ✉️ Send org creation email with credentials
+        email_sent = False
         try:
             from apps.notifications.email_service import send_org_created_email
-            # No superadmin to notify for public registrations, just send to the new admin
             send_org_created_email(
                 org, admin_email, admin_name, admin_password,
                 notify_superadmin_email=None
             )
+            email_sent = True
         except Exception as e:
             logger.warning(f'Failed to send org creation email during public registration: {e}')
-        
+
         return Response({
             'id': org.id,
             'name': org.name,
@@ -347,10 +353,14 @@ class PublicOrganizationRegisterView(views.APIView):
             'admin_user': {
                 'email': admin_user.email,
                 'full_name': admin_user.full_name,
-                # Password sent via email only — never in API response
             },
             'access_urls': _org_access_urls(org),
-            'message': 'Organization registered successfully'
+            'email_sent': email_sent,
+            'message': (
+                'Organization registered. Check your email for login instructions.'
+                if email_sent else
+                'Organization registered. Use the login link below with the password you chose.'
+            ),
         }, status=201)
 
 

@@ -622,6 +622,52 @@ html {
     }
 }
 
+.auth-trust-banner {
+    display: flex;
+    gap: 0.75rem;
+    align-items: flex-start;
+    padding: 0.85rem 1rem;
+    margin-bottom: 1.25rem;
+    background: #f0f9ff;
+    border: 1px solid #bae6fd;
+    border-radius: var(--auth-radius);
+    font-size: 0.8rem;
+    color: #0c4a6e;
+    line-height: 1.45;
+}
+
+.auth-trust-banner i {
+    color: #0284c7;
+    margin-top: 0.15rem;
+    flex-shrink: 0;
+}
+
+.auth-trust-banner strong {
+    display: block;
+    margin-bottom: 0.25rem;
+    color: #0f172a;
+}
+
+.auth-trust-banner code {
+    font-size: 0.75rem;
+    background: #e0f2fe;
+    padding: 0.1rem 0.35rem;
+    border-radius: 4px;
+}
+
+.auth-trust-note {
+    display: block;
+    margin-top: 0.35rem;
+    font-size: 0.72rem;
+    color: #64748b;
+}
+
+.auth-trust-banner--platform {
+    background: #f8fafc;
+    border-color: var(--auth-border);
+    color: var(--auth-text-muted);
+}
+
 @media (prefers-reduced-motion: reduce) {
     .auth-blob,
     .auth-hero-inner,
