@@ -128,6 +128,8 @@
         let phraseIndex = 0;
         let charIndex = 0;
         let isDeleting = false;
+        // Clear SEO fallback text before animation (fallback remains in HTML for no-JS crawlers)
+        textElement.textContent = '';
 
         function type() {
             const currentPhrase = phrases[phraseIndex];
@@ -154,7 +156,10 @@
         }
         type();
     } else if (textElement) {
-        textElement.textContent = 'Modern Support Teams';
+        // Keep static H1 text when user prefers reduced motion (fallback already in HTML)
+        if (!textElement.textContent.trim()) {
+            textElement.textContent = 'Internal IT Teams';
+        }
     }
 
     // ── Screenshot carousel ─────────────────────────────────────────────
